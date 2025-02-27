@@ -5,9 +5,41 @@ from django.contrib.auth.models import Group, User
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
-from .form import UserForm
+from .form import UserForm, UbicacionForm, UnidadDeMedidaForm
+from .models import Ubicacion, UnidadDeMedida
 # Create your views here.
 
+def crear_unidad(request):
+    unidades = UnidadDeMedida.objects.all()  # Obtener todas las unidades de medida
+    form = UnidadDeMedidaForm(request.POST or None)  # Crear el formulario
+    if form.is_valid():
+        form.save()  # Guardar la nueva unidad de medida
+        return redirect('almacen:crear_unidad')  # Redirige a la misma página para mostrar la nueva unidad
+    return render(request, 'almacen/crear_unidad.html', {'form': form, 'unidades': unidades})
+
+def editar_unidad(request, pk):
+    unidad = get_object_or_404(UnidadDeMedida, pk=pk)  # Obtener la unidad de medida por su PK
+    form = UnidadDeMedidaForm(request.POST or None, instance=unidad)  # Rellenar el formulario con los datos existentes
+    if form.is_valid():
+        form.save()  # Guardar los cambios en la unidad de medida
+        return redirect('almacen:crear_unidad')  # Redirige a la vista de creación (o a donde desees)
+    return render(request, 'almacen/editar_unidad.html', {'form': form, 'unidades': UnidadDeMedida.objects.all()})
+
+def crear_ubicacion(request):
+    ubicaciones = Ubicacion.objects.all()
+    form = UbicacionForm(request.POST or None)
+    if form.is_valid():
+        form.save()
+        return redirect('almacen:crear_ubicacion')  # Redirige a la misma página para mostrar la ubicación recién creada
+    return render(request, 'almacen/crear_ubicacion.html', {'form': form, 'ubicaciones': ubicaciones})
+
+def editar_ubicacion(request, pk):
+    ubicacion = get_object_or_404(Ubicacion, pk=pk)
+    form = UbicacionForm(request.POST or None, instance=ubicacion)
+    if form.is_valid():
+        form.save()
+        return redirect('almacen:crear_ubicacion')  # Redirige a la vista de creación
+    return render(request, 'almacen/editar_ubicacion.html', {'form': form, 'ubicaciones': Ubicacion.objects.all()})
 
 
 @login_required

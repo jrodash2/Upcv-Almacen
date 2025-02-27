@@ -1,7 +1,39 @@
 from django import forms
 from django.contrib.auth.models import User, Group
-
+from django.forms import CheckboxInput, DateInput
 from django.core.exceptions import ValidationError
+from .models import Ubicacion, UnidadDeMedida
+
+
+class UnidadDeMedidaForm(forms.ModelForm):
+    class Meta:
+        model = UnidadDeMedida
+        fields = ['nombre', 'simbolo']
+        widgets = {
+            'nombre': forms.TextInput(attrs={'placeholder': 'Nombre de la unidad', 'class': 'form-control'}),
+            'simbolo': forms.TextInput(attrs={'placeholder': 'Símbolo de la unidad', 'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(UnidadDeMedidaForm, self).__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs['class'] = field.widget.attrs.get('class', '') + ' form-control'
+
+
+class UbicacionForm(forms.ModelForm):
+    class Meta:
+        model = Ubicacion
+        fields = ['nombre', 'descripcion', 'activo']  # Ensure 'activo' is included
+        widgets = {
+            'descripcion': forms.Textarea(attrs={'placeholder': 'Descripcion de la ubicacion','rows': 4, 'cols': 40}),
+            'nombre': forms.TextInput(attrs={'placeholder': 'Nombre de la ubicacion', 'class': 'form-control'}),
+            'activo': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(UbicacionForm, self).__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs['class'] = field.widget.attrs.get('class', '') + ' form-control'
 
 
 class UserForm(forms.ModelForm):

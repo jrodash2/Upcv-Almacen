@@ -179,21 +179,7 @@
                     </svg><span>Dashboard</span></a>
                   
                 </li>
-                <li class="sidebar-list" ><i class="fa fa-thumb-tack"> </i><a class="sidebar-link sidebar-title" href="#">
-                  <svg class="stroke-icon">
-                    <use href="../assets/svg/icon-sprite.svg#stroke-home"></use>
-                  </svg>
-                  <svg class="fill-icon">
-                    <use href="../assets/svg/icon-sprite.svg#fill-home"></use>
-                  </svg><span>Empleados</span></a>
-                <ul class="sidebar-submenu">
-                  <li><a href="">Agregar </a></li>
-                  <li><a href="">Listar </a></li>
-                  <li><a href="#">Historial</a></li>
-                  <li><a href="">Credenciales</a></li>
-                  <li><a href="#">Búsqueda avanzada</a></li>
-                </ul>
-              </li>
+                </li>
 
 
                 <li class="sidebar-list"><i class="fa fa-thumb-tack"></i><a class="sidebar-link sidebar-title" href="#">
@@ -204,11 +190,11 @@
                     <use href="../assets/svg/icon-sprite.svg#fill-gallery"></use>
                   </svg><span>Configuración</span></a>
                 <ul class="sidebar-submenu">
-               
+                  <li><a href="{% url 'almacen:crear_unidad' %}">Unidades</a></li>
+                  <li><a href="{% url 'almacen:crear_ubicacion' %}">Ubicaciones</a></li>
                   <li><a href="{% url 'almacen:user_create' %}">Usuarios</a></li>
                   <li><a href="#">Manuales</a></li>
-                  <li><a href="">Config.General</a></li>
-                </ul>
+                 </ul>
               </li>
               {% endif %}
                               </ul>
