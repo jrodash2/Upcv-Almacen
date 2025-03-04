@@ -2,7 +2,63 @@ from django import forms
 from django.contrib.auth.models import User, Group
 from django.forms import CheckboxInput, DateInput
 from django.core.exceptions import ValidationError
-from .models import Ubicacion, UnidadDeMedida
+from .models import Ubicacion, UnidadDeMedida, Proveedor, Departamento, Categoria, Articulo
+
+
+class ArticuloForm(forms.ModelForm):
+    class Meta:
+        model = Articulo
+        fields = ['codigo', 'nombre', 'descripcion', 'stock', 'precio', 'proveedor', 'categoria', 'unidad_medida', 'ubicacion', 'estado']
+        widgets = {
+            'codigo': forms.TextInput(attrs={'placeholder': 'Código del artículo', 'class': 'form-control'}),
+            'nombre': forms.TextInput(attrs={'placeholder': 'Nombre del artículo', 'class': 'form-control'}),
+            'descripcion': forms.Textarea(attrs={'placeholder': 'Descripción del artículo', 'rows': 4, 'cols': 40, 'class': 'form-control'}),
+            'stock': forms.NumberInput(attrs={'placeholder': 'Stock del artículo', 'class': 'form-control'}),
+            'precio': forms.NumberInput(attrs={'placeholder': 'Precio del artículo', 'class': 'form-control'}),
+            'proveedor': forms.Select(attrs={'class': 'form-control'}),
+            'categoria': forms.Select(attrs={'class': 'form-control'}),
+            'unidad_medida': forms.Select(attrs={'class': 'form-control'}),
+            'ubicacion': forms.Select(attrs={'class': 'form-control'}),
+            'estado': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(ArticuloForm, self).__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs['class'] = field.widget.attrs.get('class', '') + ' form-control'
+
+
+class ProveedorForm(forms.ModelForm):
+    class Meta:
+        model = Proveedor
+        fields = ['nombre', 'direccion', 'telefono', 'email', 'nit']
+        widgets = {
+            'nombre': forms.TextInput(attrs={'placeholder': 'Nombre del proveedor', 'class': 'form-control'}),
+            'direccion': forms.TextInput(attrs={'placeholder': 'Dirección del proveedor', 'class': 'form-control'}),
+            'telefono': forms.TextInput(attrs={'placeholder': 'Teléfono del proveedor', 'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'placeholder': 'Email del proveedor', 'class': 'form-control'}),
+            'nit': forms.TextInput(attrs={'placeholder': 'NIT del proveedor', 'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(ProveedorForm, self).__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs['class'] = field.widget.attrs.get('class', '') + ' form-control'
+
+
+class CategoriaForm(forms.ModelForm):
+    class Meta:
+        model = Categoria
+        fields = ['nombre', 'descripcion']
+        widgets = {
+            'nombre': forms.TextInput(attrs={'placeholder': 'Nombre de la categoría', 'class': 'form-control'}),
+            'descripcion': forms.Textarea(attrs={'placeholder': 'Descripción de la categoría', 'rows': 4, 'cols': 40, 'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(CategoriaForm, self).__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs['class'] = field.widget.attrs.get('class', '') + ' form-control'
 
 
 class UnidadDeMedidaForm(forms.ModelForm):

@@ -1,0 +1,231 @@
+{% extends 'almacen/base.html' %}
+{% load static %}
+{% block content %}
+
+<!-- Cargar jQuery -->
+<script src="{% static 'assets/js/jquery.min.js' %}"></script>
+<!-- Cargar Calendar js -->
+<script src="{% static 'assets/js/datatable/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'assets/js/datatable/datatables/datatable.custom.js' %}"></script>
+
+<div class="page-body">
+  <div class="container-fluid">
+    <div class="page-title">
+      <div class="row">
+        <div class="col-6">
+          <h4 class="card-title mb-0">{% if form.instance.pk %}Editar Artículo{% else %}Crear Artículo{% endif %}</h4>
+        </div>
+        <div class="col-6">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="index.html">
+                <svg class="stroke-icon">
+                  <use href="../assets/svg/icon-sprite.svg#stroke-home"></use>
+                </svg></a></li>
+            <li class="breadcrumb-item">Dashboard</li>
+            <li class="breadcrumb-item active">Artículo</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Container-fluid starts-->
+  <div class="container-fluid">
+    <div class="edit-profile">
+      <div class="row">
+        <!-- Formulario de creación de artículo -->
+        <div class="col-xl-12">
+          <div class="card">
+            <div class="card-header">
+              <!-- Puedes agregar un título aquí si lo deseas -->
+            </div>
+            <div class="card-body">
+              <!-- Mostramos los mensajes de éxito o error si existen -->
+              {% if messages %}
+              <ul>
+                {% for message in messages %}
+                <li class="message">{{ message }}</li>
+                {% endfor %}
+              </ul>
+              {% endif %}
+              {% if form.errors %}
+              <div class="alert alert-danger">
+                <ul>
+                  {% for field, errors in form.errors.items %}
+                  <li><strong>{{ field }}:</strong> {{ errors|join:', ' }}</li>
+                  {% endfor %}
+                </ul>
+              </div>
+              {% endif %}
+              
+              <!-- Formulario para crear o editar un artículo -->
+              <form method="POST">
+                {% csrf_token %}
+                
+                <div class="row">
+                    <!-- Columna 1 -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.codigo.id_for_label }}">Código</label>
+                            {{ form.codigo }}
+                        </div>
+                    </div>
+        
+                    <!-- Columna 2 -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.nombre.id_for_label }}">Nombre</label>
+                            {{ form.nombre }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Columna 3 -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.descripcion.id_for_label }}">Descripción</label>
+                            {{ form.descripcion }}
+                        </div>
+                    </div>
+        
+                    <!-- Columna 4 -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.stock.id_for_label }}">Stock</label>
+                            {{ form.stock }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Columna 5 -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.precio.id_for_label }}">Precio</label>
+                            {{ form.precio }}
+                        </div>
+                    </div>
+        
+                    <!-- Columna 6 -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.proveedor.id_for_label }}">Proveedor</label>
+                            {{ form.proveedor }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Columna 7 -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.categoria.id_for_label }}">Categoría</label>
+                            {{ form.categoria }}
+                        </div>
+                    </div>
+        
+                    <!-- Columna 8 -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.unidad_medida.id_for_label }}">Unidad de Medida</label>
+                            {{ form.unidad_medida }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Columna 9 -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.ubicacion.id_for_label }}">Ubicación</label>
+                            {{ form.ubicacion }}
+                        </div>
+                    </div>
+        
+                    <!-- Columna 10 -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.estado.id_for_label }}">Estado</label>
+                            {{ form.estado }}
+                        </div>
+                    </div>
+                </div>
+                
+                <br>
+                <div class="form-footer text-end">
+                  <button class="btn btn-primary" type="submit">
+                    {% if form.instance.pk %}Actualizar Artículo{% else %}Crear Artículo{% endif %}
+                  </button>
+                </div>
+              </form>
+
+              <!-- Tabla para mostrar los artículos creados -->
+              <div class="mt-4">
+                <h5>Artículos Creados</h5>
+                <div class="table-responsive custom-scrollbar">
+                  <table class="display" id="basic-9">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Código</th>
+                        <th>Nombre</th>
+                        <th>Descripción</th>
+                        <th>Stock</th>
+                        <th>Precio</th>
+                        <th>Proveedor</th>
+                        <th>Categoría</th>
+                        <th>Unidad de Medida</th>
+                        <th>Ubicación</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for articulo in articulos %}
+                      <tr>
+                        <td>{{ articulo.id }}</td>
+                        <td>{{ articulo.codigo }}</td>
+                        <td>{{ articulo.nombre }}</td>
+                        <td>{{ articulo.descripcion }}</td>
+                        <td>{{ articulo.stock }}</td>
+                        <td>Q {{ articulo.precio }}</td>
+                        <td>{{ articulo.proveedor }}</td>
+                        <td>{{ articulo.categoria }}</td>
+                        <td>{{ articulo.unidad_medida }}</td>
+                        <td>{{ articulo.ubicacion }}</td>
+                        <td>{{ articulo.estado }}</td>
+                        <td> 
+                          <a href="{% url 'almacen:editar_articulo' articulo.id %}" class="btn btn-primary btn-sm">Editar</a>
+                        </td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <th>ID</th>
+                        <th>Código</th>
+                        <th>Nombre</th>
+                        <th>Descripción</th>
+                        <th>Stock</th>
+                        <th>Precio</th>
+                        <th>Proveedor</th>
+                        <th>Categoría</th>
+                        <th>Unidad de Medida</th>
+                        <th>Ubicación</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Container-fluid Ends-->
+</div>
+{% endblock %}

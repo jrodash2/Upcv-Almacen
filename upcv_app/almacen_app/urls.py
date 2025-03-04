@@ -14,5 +14,10 @@ urlpatterns = [
     path('ubicacion/editar/<int:pk>/', views.editar_ubicacion, name='editar_ubicacion'),  # Vista para editar una ubicación
     path('unidad/', views.crear_unidad, name='crear_unidad'),  
     path('unidad/editar/<int:pk>/', views.editar_unidad, name='editar_unidad'),  
-
+    path('categoria/', views.crear_categoria, name='crear_categoria'),  # Vista para crear y listar categorías
+    path('categoria/editar/<int:pk>/', views.editar_categoria, name='editar_categoria'),  # Vista para editar una categoría
+    path('proveedor/', views.crear_proveedor, name='crear_proveedor'),  # Vista para crear y listar proveedores
+    path('proveedor/editar/<int:pk>/', views.editar_proveedor, name='editar_proveedor'),  # Vista para editar un proveedor
+    path('articulo/', views.crear_articulo, name='crear_articulo'),  # Vista para crear y listar artículos
+    path('articulo/editar/<int:pk>/', views.editar_articulo, name='editar_articulo'),  # Vista para editar un artículo
 ]

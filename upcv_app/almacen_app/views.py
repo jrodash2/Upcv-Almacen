@@ -5,9 +5,60 @@ from django.contrib.auth.models import Group, User
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
-from .form import UserForm, UbicacionForm, UnidadDeMedidaForm
-from .models import Ubicacion, UnidadDeMedida
+from .form import UserForm, UbicacionForm, UnidadDeMedidaForm, CategoriaForm, ProveedorForm, ArticuloForm
+from .models import Ubicacion, UnidadDeMedida, Categoria, Proveedor, Articulo
 # Create your views here.
+
+def crear_articulo(request):
+    articulos = Articulo.objects.all()  # Obtener todos los artículos
+    form = ArticuloForm(request.POST or None)  # Crear el formulario
+    if form.is_valid():
+        form.save()  # Guardar el nuevo artículo
+        return redirect('almacen:crear_articulo')  # Redirige a la misma página para mostrar el nuevo artículo
+    return render(request, 'almacen/crear_articulo.html', {'form': form, 'articulos': articulos})
+
+def editar_articulo(request, pk):
+    articulo = get_object_or_404(Articulo, pk=pk)  # Obtener el artículo por su PK
+    form = ArticuloForm(request.POST or None, instance=articulo)  # Rellenar el formulario con los datos existentes
+    if form.is_valid():
+        form.save()  # Guardar los cambios en el artículo
+        return redirect('almacen:crear_articulo')  # Redirige a la vista de creación (o a donde desees)
+    return render(request, 'almacen/editar_articulo.html', {'form': form, 'articulos': Articulo.objects.all()})
+
+
+def crear_proveedor(request):
+    proveedores = Proveedor.objects.all()  # Obtener todos los proveedores
+    form = ProveedorForm(request.POST or None)  # Crear el formulario
+    if form.is_valid():
+        form.save()  # Guardar el nuevo proveedor
+        return redirect('almacen:crear_proveedor')  # Redirige a la misma página para mostrar el nuevo proveedor
+    return render(request, 'almacen/crear_proveedor.html', {'form': form, 'proveedores': proveedores})
+
+def editar_proveedor(request, pk):
+    proveedor = get_object_or_404(Proveedor, pk=pk)  # Obtener el proveedor por su PK
+    form = ProveedorForm(request.POST or None, instance=proveedor)  # Rellenar el formulario con los datos existentes
+    if form.is_valid():
+        form.save()  # Guardar los cambios en el proveedor
+        return redirect('almacen:crear_proveedor')  # Redirige a la vista de creación (o a donde desees)
+    return render(request, 'almacen/editar_proveedor.html', {'form': form, 'proveedores': Proveedor.objects.all()})
+
+# Views for Categoria
+
+def crear_categoria(request):
+    categorias = Categoria.objects.all()  # Obtener todas las categorías
+    form = CategoriaForm(request.POST or None)  # Crear el formulario
+    if form.is_valid():
+        form.save()  # Guardar la nueva categoría
+        return redirect('almacen:crear_categoria')  # Redirige a la misma página para mostrar la nueva categoría
+    return render(request, 'almacen/crear_categoria.html', {'form': form, 'categorias': categorias})
+
+def editar_categoria(request, pk):
+    categoria = get_object_or_404(Categoria, pk=pk)  # Obtener la categoría por su PK
+    form = CategoriaForm(request.POST or None, instance=categoria)  # Rellenar el formulario con los datos existentes
+    if form.is_valid():
+        form.save()  # Guardar los cambios en la categoría
+        return redirect('almacen:crear_categoria')  # Redirige a la vista de creación (o a donde desees)
+    return render(request, 'almacen/editar_categoria.html', {'form': form, 'categorias': Categoria.objects.all()})
 
 def crear_unidad(request):
     unidades = UnidadDeMedida.objects.all()  # Obtener todas las unidades de medida

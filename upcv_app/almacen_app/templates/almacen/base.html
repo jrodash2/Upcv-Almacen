@@ -170,8 +170,8 @@
                 </li>
                 {% if user.is_authenticated %}
                 
-                <li class="sidebar-list" ><i class="fa fa-thumb-tack"> </i><a class="sidebar-link sidebar-title" href="{% url 'almacen:dahsboard' %}">
-                    <svg class="stroke-icon">
+                <li class="sidebar-list" ><i class="fa fa-thumb-tack"> </i><a class="sidebar-link " href="{% url 'almacen:dahsboard' %}">
+                    <svg >
                       <use href="../assets/svg/icon-sprite.svg#stroke-home"></use>
                     </svg>
                     <svg class="fill-icon">
@@ -179,8 +179,6 @@
                     </svg><span>Dashboard</span></a>
                   
                 </li>
-                </li>
-
 
                 <li class="sidebar-list"><i class="fa fa-thumb-tack"></i><a class="sidebar-link sidebar-title" href="#">
                   <svg class="stroke-icon">
@@ -192,6 +190,9 @@
                 <ul class="sidebar-submenu">
                   <li><a href="{% url 'almacen:crear_unidad' %}">Unidades</a></li>
                   <li><a href="{% url 'almacen:crear_ubicacion' %}">Ubicaciones</a></li>
+                  <li><a href="{% url 'almacen:crear_categoria' %}">Categorias</a></li>
+                  <li><a href="{% url 'almacen:crear_proveedor' %}">Proveedores</a></li>
+                  <li><a href="{% url 'almacen:crear_articulo' %}">Articulos</a></li>
                   <li><a href="{% url 'almacen:user_create' %}">Usuarios</a></li>
                   <li><a href="#">Manuales</a></li>
                  </ul>
