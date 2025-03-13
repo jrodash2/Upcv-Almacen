@@ -80,6 +80,17 @@ class Articulo(models.Model):
     def __str__(self):
         return f'{self.nombre} ({self.codigo})'
 
+class Serie(models.Model):
+    serie = models.CharField(max_length=50)  # Serie que puede contener letras
+    numero_inicial = models.PositiveIntegerField()  # Número inicial
+    numero_final = models.PositiveIntegerField()  # Número final
+    activo = models.BooleanField(default=True)  # Campo de activo
+    numero_actual = models.PositiveIntegerField(default=0)  # Número actual para seguimiento
+
+    def __str__(self):
+        return f'Serie {self.serie} ({self.numero_inicial} - {self.numero_final})'
+
+
 class Ingreso(models.Model):
     articulo = models.ForeignKey(Articulo, related_name='ingresos', on_delete=models.CASCADE)
     cantidad = models.PositiveIntegerField()
@@ -88,19 +99,35 @@ class Ingreso(models.Model):
     numero_factura = models.CharField(max_length=50, unique=True)  # Número de factura
     fecha_factura = models.DateTimeField(null=True, blank=True)  # Fecha de la factura
     numero_detalles_factura = models.PositiveIntegerField(default=1)  # Número de detalles (renglones)
-    cantidad_renglon = models.PositiveIntegerField()  # Cantidad por renglón de factura
+    renglon = models.PositiveIntegerField()  # Renglon
     precio_total_ingreso = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # Total de ingreso calculado
     fecha_creacion = models.DateTimeField(auto_now_add=True)  # Fecha de creación
     fecha_actualizacion = models.DateTimeField(auto_now=True)  # Fecha de actualización
+    serie = models.ForeignKey('Serie', on_delete=models.SET_NULL, null=True, blank=True)  # Relación con Serie
+    numero_serie = models.PositiveIntegerField(null=True, blank=True)  # Número de serie actual
 
     def save(self, *args, **kwargs):
         # Calcular el precio total de ingreso automáticamente
         self.precio_total_ingreso = self.articulo.precio * self.cantidad
+
+        # Asignar automáticamente un número de serie de la serie activa
+        if not self.serie:
+            serie_activa = Serie.objects.filter(activo=True).first()
+            if serie_activa and serie_activa.numero_actual < serie_activa.numero_final:
+                self.serie = serie_activa
+                self.numero_serie = serie_activa.numero_inicial + serie_activa.numero_actual
+                serie_activa.numero_actual += 1
+                serie_activa.save()
+            else:
+                raise ValidationError("No hay series activas disponibles o se ha alcanzado el número final de la serie activa.")
+
         super().save(*args, **kwargs)
+
+    def numero_serie_completo(self):
+        return f'{self.serie.serie}-{self.numero_serie}' if self.serie else None
 
     def __str__(self):
         return f'Ingreso de {self.cantidad} unidades de {self.articulo.nombre} (Factura: {self.numero_factura})'
-
 
 # Modelo de Kardex (Movimientos de Inventario)
 class Kardex(models.Model):

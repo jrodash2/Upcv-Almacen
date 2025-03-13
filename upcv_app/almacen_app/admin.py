@@ -2,7 +2,7 @@ from django.contrib import admin
 
 # Register your models here.
 from django.contrib import admin
-from .models import Proveedor, Departamento, Categoria, Ubicacion, UnidadDeMedida, Articulo, Ingreso, Kardex, Asignacion, Movimiento, FraseMotivacional
+from .models import Proveedor, Departamento, Categoria, Ubicacion, UnidadDeMedida, Articulo, Ingreso, Kardex, Asignacion, Movimiento, FraseMotivacional, Serie
 
 # Registrar Proveedor
 class ProveedorAdmin(admin.ModelAdmin):
@@ -63,11 +63,20 @@ admin.site.register(Articulo, ArticuloAdmin)
 
 # Registrar Ingreso
 class IngresoAdmin(admin.ModelAdmin):
-    list_display = ('articulo', 'cantidad', 'fecha_ingreso', 'numero_factura', 'fecha_factura', 'precio_total_ingreso', 'fecha_creacion', 'fecha_actualizacion')
+    list_display = ('articulo', 'cantidad', 'fecha_ingreso', 'numero_factura', 'fecha_factura', 'precio_total_ingreso', 'fecha_creacion', 'fecha_actualizacion', 'numero_serie_completo')
     search_fields = ('numero_factura',)
     list_filter = ('fecha_ingreso', 'fecha_factura', 'proveedor')
+    exclude = ('serie', 'numero_serie')  # Excluir los campos 'serie' y 'numero_serie' del formulario de administración
 
 admin.site.register(Ingreso, IngresoAdmin)
+
+# Registrar Serie
+class SerieAdmin(admin.ModelAdmin):
+    list_display = ('serie', 'numero_inicial', 'numero_final', 'numero_actual', 'activo')
+    search_fields = ('serie',)
+    list_filter = ('activo',)
+
+admin.site.register(Serie, SerieAdmin)
 
 # Registrar Kardex
 class KardexAdmin(admin.ModelAdmin):
