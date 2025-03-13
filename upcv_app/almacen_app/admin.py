@@ -2,7 +2,7 @@ from django.contrib import admin
 
 # Register your models here.
 from django.contrib import admin
-from .models import Proveedor, Departamento, Categoria, Ubicacion, UnidadDeMedida, Articulo, Ingreso, Kardex, Asignacion, Movimiento
+from .models import Proveedor, Departamento, Categoria, Ubicacion, UnidadDeMedida, Articulo, Ingreso, Kardex, Asignacion, Movimiento, FraseMotivacional
 
 # Registrar Proveedor
 class ProveedorAdmin(admin.ModelAdmin):
@@ -11,6 +11,15 @@ class ProveedorAdmin(admin.ModelAdmin):
     list_filter = ('fecha_creacion', 'fecha_actualizacion')
 
 admin.site.register(Proveedor, ProveedorAdmin)
+
+# Crea una clase que personaliza la vista en el admin
+class FraseMotivacionalAdmin(admin.ModelAdmin):
+    list_display = ('frase', 'personaje')  # Qué campos mostrar en la lista
+    search_fields = ('frase', 'personaje')  # Habilitar búsqueda por estos campos
+    ordering = ('personaje',)  # Ordenar por el campo 'personaje'
+
+# Registra el modelo con la clase personalizada
+admin.site.register(FraseMotivacional, FraseMotivacionalAdmin)
 
 # Registrar Departamento
 class DepartamentoAdmin(admin.ModelAdmin):

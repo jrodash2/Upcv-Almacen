@@ -2,7 +2,23 @@ from django import forms
 from django.contrib.auth.models import User, Group
 from django.forms import CheckboxInput, DateInput
 from django.core.exceptions import ValidationError
-from .models import Ubicacion, UnidadDeMedida, Proveedor, Departamento, Categoria, Articulo
+from .models import Ubicacion, UnidadDeMedida, Proveedor, Departamento, Categoria, Articulo, Departamento
+
+
+class DepartamentoForm(forms.ModelForm):
+    class Meta:
+        model = Departamento
+        fields = ['id_departamento', 'nombre', 'descripcion']
+        widgets = {
+            'id_departamento': forms.TextInput(attrs={'placeholder': 'ID del departamento', 'class': 'form-control'}),
+            'nombre': forms.TextInput(attrs={'placeholder': 'Nombre del departamento', 'class': 'form-control'}),
+            'descripcion': forms.Textarea(attrs={'placeholder': 'Descripción del departamento', 'rows': 4, 'cols': 40, 'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(DepartamentoForm, self).__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs['class'] = field.widget.attrs.get('class', '') + ' form-control'
 
 
 class ArticuloForm(forms.ModelForm):

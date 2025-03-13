@@ -1,6 +1,13 @@
 {% extends 'almacen/base.html' %}
-
+{% load static %}
 {% block content %}
+
+<!-- Cargar jQuery -->
+<script src="{% static 'assets/js/jquery.min.js' %}"></script>
+<!-- Cargar Calendar js -->
+<script src="{% static 'assets/js/datatable/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'assets/js/datatable/datatables/datatable.custom.js' %}"></script>
+
 <div class="page-body">
   <div class="container-fluid">
     <div class="page-title">
@@ -84,32 +91,42 @@
                 </div>
               </form>
 
-              <!-- Tabla para mostrar las ubicaciones creadas -->
-              <div class="mt-4">
-                <h5>Unidades Creadas</h5>
-                <table class="table table-striped">
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Nombre</th>
-                      <th>Simbolo</th>
-                      <th>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for unidad in unidades %}
-                    <tr>
-                      <td>{{ unidad.id }}</td>
-                      <td>{{ unidad.nombre }}</td>
-                      <td>{{ unidad.simbolo }}</td>
-                      <td> 
-                        <a href="{% url 'almacen:editar_unidad' unidad.id %}" class="btn btn-primary btn-sm">Editar</a>
-                      </td>
-                    </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
-              </div>
+<!-- Tabla para mostrar las unidades creadas -->
+<div class="mt-4">
+  <h5>Unidades Creadas</h5>
+  <div class="table-responsive custom-scrollbar">
+    <table class="display" id="basic-9">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nombre</th>
+          <th>Simbolo</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for unidad in unidades %}
+        <tr>
+          <td>{{ unidad.id }}</td>
+          <td>{{ unidad.nombre }}</td>
+          <td>{{ unidad.simbolo }}</td>
+          <td>
+            <a href="{% url 'almacen:editar_unidad' unidad.id %}" class="btn btn-primary btn-sm">Editar</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <th>ID</th>
+          <th>Nombre</th>
+          <th>Simbolo</th>
+          <th>Acciones</th>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
             </div>
           </div>
         </div>

@@ -5,8 +5,29 @@ from django.contrib.auth.models import Group, User
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
-from .form import UserForm, UbicacionForm, UnidadDeMedidaForm, CategoriaForm, ProveedorForm, ArticuloForm
-from .models import Ubicacion, UnidadDeMedida, Categoria, Proveedor, Articulo
+from .form import UserForm, UbicacionForm, UnidadDeMedidaForm, CategoriaForm, ProveedorForm, ArticuloForm, DepartamentoForm
+from .models import Ubicacion, UnidadDeMedida, Categoria, Proveedor, Articulo, Departamento
+
+
+# Views for Departamento
+
+def crear_departamento(request):
+    departamentos = Departamento.objects.all()  # Obtener todos los departamentos
+    form = DepartamentoForm(request.POST or None)  # Crear el formulario
+    if form.is_valid():
+        form.save()  # Guardar el nuevo departamento
+        return redirect('almacen:crear_departamento')  # Redirige a la misma página para mostrar el nuevo departamento
+    return render(request, 'almacen/crear_departamento.html', {'form': form, 'departamentos': departamentos})
+
+def editar_departamento(request, pk):
+    departamento = get_object_or_404(Departamento, pk=pk)  # Obtener el departamento por su PK
+    form = DepartamentoForm(request.POST or None, instance=departamento)  # Rellenar el formulario con los datos existentes
+    if form.is_valid():
+        form.save()  # Guardar los cambios en el departamento
+        return redirect('almacen:crear_departamento')  # Redirige a la vista de creación (o a donde desees)
+    return render(request, 'almacen/editar_departamento.html', {'form': form, 'departamentos': Departamento.objects.all()})
+
+
 # Create your views here.
 
 def crear_articulo(request):

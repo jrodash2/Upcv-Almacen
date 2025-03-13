@@ -1,6 +1,13 @@
 {% extends 'almacen/base.html' %}
-
+{% load static %}
 {% block content %}
+
+<!-- Cargar jQuery -->
+<script src="{% static 'assets/js/jquery.min.js' %}"></script>
+<!-- Cargar Calendar js -->
+<script src="{% static 'assets/js/datatable/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'assets/js/datatable/datatables/datatable.custom.js' %}"></script>
+
 <div class="page-body">
   <div class="container-fluid">
     <div class="page-title">
@@ -109,38 +116,51 @@
                 </div>
               </form>
 
-              <!-- Tabla para mostrar los proveedores creados -->
-              <div class="mt-4">
-                <h5>Proveedores Creados</h5>
-                <table class="table table-striped">
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Nombre</th>
-                      <th>Dirección</th>
-                      <th>Teléfono</th>
-                      <th>Email</th>
-                      <th>NIT</th>
-                      <th>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for proveedor in proveedores %}
-                    <tr>
-                      <td>{{ proveedor.id }}</td>
-                      <td>{{ proveedor.nombre }}</td>
-                      <td>{{ proveedor.direccion }}</td>
-                      <td>{{ proveedor.telefono }}</td>
-                      <td>{{ proveedor.email }}</td>
-                      <td>{{ proveedor.nit }}</td>
-                      <td> 
-                        <a href="{% url 'almacen:editar_proveedor' proveedor.id %}" class="btn btn-primary btn-sm">Editar</a>
-                      </td>
-                    </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
-              </div>
+<!-- Tabla para mostrar los proveedores creados -->
+<div class="mt-4">
+  <h5>Proveedores Creados</h5>
+  <div class="table-responsive custom-scrollbar">
+    <table class="display" id="basic-9">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nombre</th>
+          <th>Dirección</th>
+          <th>Teléfono</th>
+          <th>Email</th>
+          <th>NIT</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for proveedor in proveedores %}
+        <tr>
+          <td>{{ proveedor.id }}</td>
+          <td>{{ proveedor.nombre }}</td>
+          <td>{{ proveedor.direccion }}</td>
+          <td>{{ proveedor.telefono }}</td>
+          <td>{{ proveedor.email }}</td>
+          <td>{{ proveedor.nit }}</td>
+          <td>
+            <a href="{% url 'almacen:editar_proveedor' proveedor.id %}" class="btn btn-primary btn-sm">Editar</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <th>ID</th>
+          <th>Nombre</th>
+          <th>Dirección</th>
+          <th>Teléfono</th>
+          <th>Email</th>
+          <th>NIT</th>
+          <th>Acciones</th>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
             </div>
           </div>
         </div>

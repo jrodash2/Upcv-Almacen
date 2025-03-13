@@ -13,7 +13,7 @@
     <div class="page-title">
       <div class="row">
         <div class="col-6">
-          <h4 class="card-title mb-0">{% if form.instance.pk %}Editar Ubicación{% else %}Crear Ubicación{% endif %}</h4>
+          <h4 class="card-title mb-0">{% if form.instance.pk %}Editar Departamento{% else %}Crear Departamento{% endif %}</h4>
         </div>
         <div class="col-6">
           <ol class="breadcrumb">
@@ -22,7 +22,7 @@
                   <use href="../assets/svg/icon-sprite.svg#stroke-home"></use>
                 </svg></a></li>
             <li class="breadcrumb-item">Dashboard</li>
-            <li class="breadcrumb-item active">Ubicación</li>
+            <li class="breadcrumb-item active">Departamento</li>
           </ol>
         </div>
       </div>
@@ -33,7 +33,7 @@
   <div class="container-fluid">
     <div class="edit-profile">
       <div class="row">
-        <!-- Formulario de creación de ubicación -->
+        <!-- Formulario de creación de departamento -->
         <div class="col-xl-12">
           <div class="card">
             <div class="card-header">
@@ -57,8 +57,7 @@
                 </ul>
               </div>
               {% endif %}
-              
-              <!-- Formulario para crear o editar una ubicación -->
+              <!-- Formulario para crear o editar un departamento -->
               <form method="POST">
                 {% csrf_token %}
                 
@@ -66,84 +65,79 @@
                     <!-- Columna 1 -->
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label for="{{ form.nombre.id_for_label }}">Nombre</label>
-                            {{ form.nombre }}
+                            <label for="{{ form.id_departamento.id_for_label }}">ID Departamento</label>
+                            {{ form.id_departamento }}
                         </div>
                     </div>
         
                     <!-- Columna 2 -->
                     <div class="col-md-6">
                         <div class="form-group">
+                            <label for="{{ form.nombre.id_for_label }}">Nombre</label>
+                            {{ form.nombre }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Columna 3 -->
+                    <div class="col-md-12">
+                        <div class="form-group">
                             <label for="{{ form.descripcion.id_for_label }}">Descripción</label>
                             {{ form.descripcion }}
                         </div>
                     </div>
                 </div>
-                   <!-- Estado: Activo/Inactivo -->
-                   <div class="row">
-                    <div class="col-md-6">
-                      <div class="form-group">
-                        <label for="{{ form.activo.id_for_label }}">Clic para activar o desactivar</label>
-                        {{ form.activo }}
-                      </div>
-                    </div>
-                  </div>
-                <br>
                 
-             
-
+                <br>
                 <div class="form-footer text-end">
                   <button class="btn btn-primary" type="submit">
-                    {% if form.instance.pk %}Actualizar Ubicación{% else %}Crear Ubicación{% endif %}
+                    {% if form.instance.pk %}Actualizar Departamento{% else %}Crear Departamento{% endif %}
                   </button>
                 </div>
               </form>
-
-<!-- Tabla para mostrar las ubicaciones creadas -->
-<div class="mt-4">
-  <h5>Ubicaciones Creadas</h5>
-  <div class="table-responsive custom-scrollbar">
-    <table class="display" id="basic-9">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Nombre</th>
-          <th>Descripción</th>
-          <th>Fecha de Creación</th>
-          <th>Fecha de Actualización</th>
-          <th>Estado</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for ubicacion in ubicaciones %}
-        <tr>
-          <td>{{ ubicacion.id }}</td>
-          <td>{{ ubicacion.nombre }}</td>
-          <td>{{ ubicacion.descripcion }}</td>
-          <td>{{ ubicacion.fecha_creacion }}</td>
-          <td>{{ ubicacion.fecha_actualizacion }}</td>
-          <td>{% if ubicacion.activo %}Activa{% else %}Inactiva{% endif %}</td>
-          <td>
-            <a href="{% url 'almacen:editar_ubicacion' ubicacion.id %}" class="btn btn-primary btn-sm">Editar</a>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-      <tfoot>
-        <tr>
-          <th>ID</th>
-          <th>Nombre</th>
-          <th>Descripción</th>
-          <th>Fecha de Creación</th>
-          <th>Fecha de Actualización</th>
-          <th>Estado</th>
-          <th>Acciones</th>
-        </tr>
-      </tfoot>
-    </table>
-  </div>
-</div>
+              <!-- Tabla para mostrar los departamentos creados -->
+              <div class="mt-4">
+                <h5>Departamentos Creados</h5>
+                <div class="table-responsive custom-scrollbar">
+                  <table class="display" id="basic-9">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Descripción</th>
+                        <th>Fecha de Creación</th>
+                        <th>Fecha de Actualización</th>
+                        <th>Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for departamento in departamentos %}
+                      <tr>
+                        <td>{{ departamento.id_departamento }}</td>
+                        <td>{{ departamento.nombre }}</td>
+                        <td>{{ departamento.descripcion }}</td>
+                        <td>{{ departamento.fecha_creacion }}</td>
+                        <td>{{ departamento.fecha_actualizacion }}</td>
+                        <td> 
+                          <a href="{% url 'almacen:editar_departamento' departamento.id %}" class="btn btn-primary btn-sm">Editar</a>
+                        </td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Descripción</th>
+                        <th>Fecha de Creación</th>
+                        <th>Fecha de Actualización</th>
+                        <th>Acciones</th>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
             </div>
           </div>
         </div>
