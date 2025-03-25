@@ -1,8 +1,9 @@
 from django.contrib import admin
-
-# Register your models here.
-from django.contrib import admin
-from .models import Proveedor, Departamento, Categoria, Ubicacion, UnidadDeMedida, Articulo, Ingreso, Kardex, Asignacion, Movimiento, FraseMotivacional, Serie
+from .models import (
+    Proveedor, Departamento, Categoria, Ubicacion, UnidadDeMedida, 
+    Articulo, Kardex, Asignacion, Movimiento, FraseMotivacional, 
+    Serie, form1h, DetalleFactura
+)
 
 # Registrar Proveedor
 class ProveedorAdmin(admin.ModelAdmin):
@@ -18,7 +19,6 @@ class FraseMotivacionalAdmin(admin.ModelAdmin):
     search_fields = ('frase', 'personaje')  # Habilitar búsqueda por estos campos
     ordering = ('personaje',)  # Ordenar por el campo 'personaje'
 
-# Registra el modelo con la clase personalizada
 admin.site.register(FraseMotivacional, FraseMotivacionalAdmin)
 
 # Registrar Departamento
@@ -54,21 +54,12 @@ admin.site.register(UnidadDeMedida, UnidadDeMedidaAdmin)
 
 # Registrar Articulo
 class ArticuloAdmin(admin.ModelAdmin):
-    list_display = ('codigo', 'nombre', 'stock', 'precio', 'estado', 'proveedor', 'categoria', 'unidad_medida', 'ubicacion')
-    search_fields = ('codigo', 'nombre')
-    list_filter = ('estado', 'proveedor', 'categoria')
-    list_editable = ('estado', 'stock')
+    list_display = ( 'nombre','categoria', 'unidad_medida', 'ubicacion')
+    search_fields = ( 'nombre',)
+    list_filter = ('categoria',)
+
 
 admin.site.register(Articulo, ArticuloAdmin)
-
-# Registrar Ingreso
-class IngresoAdmin(admin.ModelAdmin):
-    list_display = ('articulo', 'cantidad', 'fecha_ingreso', 'numero_factura', 'fecha_factura', 'precio_total_ingreso', 'fecha_creacion', 'fecha_actualizacion', 'numero_serie_completo')
-    search_fields = ('numero_factura',)
-    list_filter = ('fecha_ingreso', 'fecha_factura', 'proveedor')
-    exclude = ('serie', 'numero_serie')  # Excluir los campos 'serie' y 'numero_serie' del formulario de administración
-
-admin.site.register(Ingreso, IngresoAdmin)
 
 # Registrar Serie
 class SerieAdmin(admin.ModelAdmin):
@@ -83,7 +74,7 @@ class KardexAdmin(admin.ModelAdmin):
     list_display = ('articulo', 'tipo_movimiento', 'cantidad', 'fecha', 'observacion')
     search_fields = ('articulo__nombre',)
     list_filter = ('tipo_movimiento', 'fecha')
-
+ 
 admin.site.register(Kardex, KardexAdmin)
 
 # Registrar Asignacion
@@ -101,3 +92,17 @@ class MovimientoAdmin(admin.ModelAdmin):
     list_filter = ('tipo_movimiento', 'fecha_movimiento', 'usuario')
 
 admin.site.register(Movimiento, MovimientoAdmin)
+
+# Registrar DetalleFactura
+class DetalleFacturaInline(admin.TabularInline):
+    model = DetalleFactura
+    extra = 1  # Número de detalles de factura a mostrar como formularios vacíos al principio
+
+# Registrar form1h
+class form1hAdmin(admin.ModelAdmin):
+    list_display = ('numero_factura', 'proveedor', 'fecha_factura', 'precio_total_ingreso', 'fecha_creacion', 'fecha_actualizacion')
+    search_fields = ('numero_factura', 'proveedor__nombre')
+    list_filter = ('fecha_creacion', 'fecha_actualizacion', 'proveedor')
+    inlines = [DetalleFacturaInline]  # Agrega los detalles de la factura en el formulario de form1h
+
+admin.site.register(form1h, form1hAdmin)

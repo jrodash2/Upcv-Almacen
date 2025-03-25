@@ -24,18 +24,14 @@ class DepartamentoForm(forms.ModelForm):
 class ArticuloForm(forms.ModelForm):
     class Meta:
         model = Articulo
-        fields = ['codigo', 'nombre', 'descripcion', 'stock', 'precio', 'proveedor', 'categoria', 'unidad_medida', 'ubicacion', 'estado']
+        fields = ['nombre', 'categoria', 'unidad_medida', 'ubicacion']
         widgets = {
-            'codigo': forms.TextInput(attrs={'placeholder': 'Código del artículo', 'class': 'form-control'}),
+            
             'nombre': forms.TextInput(attrs={'placeholder': 'Nombre del artículo', 'class': 'form-control'}),
-            'descripcion': forms.Textarea(attrs={'placeholder': 'Descripción del artículo', 'rows': 4, 'cols': 40, 'class': 'form-control'}),
-            'stock': forms.NumberInput(attrs={'placeholder': 'Stock del artículo', 'class': 'form-control'}),
-            'precio': forms.NumberInput(attrs={'placeholder': 'Precio del artículo', 'class': 'form-control'}),
-            'proveedor': forms.Select(attrs={'class': 'form-control'}),
             'categoria': forms.Select(attrs={'class': 'form-control'}),
             'unidad_medida': forms.Select(attrs={'class': 'form-control'}),
             'ubicacion': forms.Select(attrs={'class': 'form-control'}),
-            'estado': forms.Select(attrs={'class': 'form-control'}),
+           
         }
 
     def __init__(self, *args, **kwargs):

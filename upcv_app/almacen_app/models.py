@@ -1,6 +1,8 @@
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.contrib.auth.models import User
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
 
 # Modelo de Proveedor
 class Proveedor(models.Model):
@@ -59,26 +61,15 @@ class UnidadDeMedida(models.Model):
         return f'{self.nombre} ({self.simbolo})'
 
 class Articulo(models.Model):
-    ESTADOS = [
-        ('DISP', 'Disponible'),
-        ('AGOT', 'Agotado'),
-        ('REPO', 'En Reposición'),
-        ('DESC', 'Descontinuado'),
-    ]
-    
-    codigo = models.CharField(max_length=50, unique=True)
+
     nombre = models.CharField(max_length=255)
-    descripcion = models.TextField(null=True, blank=True)
-    stock = models.PositiveIntegerField(default=0)
-    precio = models.DecimalField(max_digits=10, decimal_places=2)
-    proveedor = models.ForeignKey(Proveedor, on_delete=models.SET_NULL, null=True, blank=True)
     categoria = models.ForeignKey(Categoria, on_delete=models.SET_NULL, null=True, blank=True)
     unidad_medida = models.ForeignKey(UnidadDeMedida, on_delete=models.SET_NULL, null=True, blank=True)
     ubicacion = models.ForeignKey(Ubicacion, on_delete=models.SET_NULL, null=True, blank=True)
-    estado = models.CharField(max_length=4, choices=ESTADOS, default='DISP')
+
 
     def __str__(self):
-        return f'{self.nombre} ({self.codigo})'
+        return f'{self.nombre} ({self.categoria})'
 
 class Serie(models.Model):
     serie = models.CharField(max_length=50)  # Serie que puede contener letras
@@ -90,17 +81,42 @@ class Serie(models.Model):
     def __str__(self):
         return f'Serie {self.serie} ({self.numero_inicial} - {self.numero_final})'
 
+# Modelo DetalleFactura
+class DetalleFactura(models.Model):
+    form1h = models.ForeignKey('form1h', related_name='detalles', on_delete=models.CASCADE)  # Relación con form1h
+    articulo = models.ForeignKey(Articulo, related_name='detalles_factura', on_delete=models.CASCADE)
+    cantidad = models.PositiveIntegerField()
+    precio_unitario = models.DecimalField(max_digits=10, decimal_places=2)
+    precio_total = models.DecimalField(max_digits=10, decimal_places=2)
+    id_linea = models.PositiveIntegerField(unique=True)  # Identificador único de la línea
 
-class Ingreso(models.Model):
-    articulo = models.ForeignKey(Articulo, related_name='ingresos', on_delete=models.CASCADE)
+    def save(self, *args, **kwargs):
+        # Calcular el precio total por línea
+        self.precio_total = self.precio_unitario * self.cantidad
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f'Detalle de {self.articulo.nombre} (Linea {self.id_linea})'
+
+
+
+# Modelo Form1h (Factura)
+class form1h(models.Model):
+    articulo = models.ForeignKey(Articulo, related_name='form1h', on_delete=models.CASCADE)
     cantidad = models.PositiveIntegerField()
     fecha_ingreso = models.DateTimeField(auto_now_add=True)
     proveedor = models.ForeignKey(Proveedor, on_delete=models.SET_NULL, null=True, blank=True)
     numero_factura = models.CharField(max_length=50, unique=True)  # Número de factura
-    fecha_factura = models.DateTimeField(null=True, blank=True)  # Fecha de la factura
-    numero_detalles_factura = models.PositiveIntegerField(default=1)  # Número de detalles (renglones)
     renglon = models.PositiveIntegerField()  # Renglon
+    orden_compra = models.CharField(max_length=50, null=True, blank=True)  # Orden de compra
+    nit_proveedor = models.CharField(max_length=50, null=True, blank=True)  # NIT del proveedor
+    proveedor_nombre = models.CharField(max_length=255, null=True, blank=True)  # Nombre del proveedor
+    telefono_proveedor = models.CharField(max_length=20, null=True, blank=True)  # Teléfono del proveedor
+    direccion_proveedor = models.CharField(max_length=255, null=True, blank=True)  # Dirección del proveedor
+    patente = models.CharField(max_length=50, null=True, blank=True)  # Patente
+    fecha_factura = models.DateField(null=True, blank=True)  # Fecha de la factura
     precio_total_ingreso = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # Total de ingreso calculado
+    precio_unitario = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # Precio unitario del artículo
     fecha_creacion = models.DateTimeField(auto_now_add=True)  # Fecha de creación
     fecha_actualizacion = models.DateTimeField(auto_now=True)  # Fecha de actualización
     serie = models.ForeignKey('Serie', on_delete=models.SET_NULL, null=True, blank=True)  # Relación con Serie
@@ -108,7 +124,9 @@ class Ingreso(models.Model):
 
     def save(self, *args, **kwargs):
         # Calcular el precio total de ingreso automáticamente
-        self.precio_total_ingreso = self.articulo.precio * self.cantidad
+        if self.articulo:
+            self.precio_unitario = self.articulo.precio  # Asignamos el precio del artículo
+        self.precio_total_ingreso = self.precio_unitario * self.cantidad
 
         # Asignar automáticamente un número de serie de la serie activa
         if not self.serie:
@@ -128,6 +146,23 @@ class Ingreso(models.Model):
 
     def __str__(self):
         return f'Ingreso de {self.cantidad} unidades de {self.articulo.nombre} (Factura: {self.numero_factura})'
+
+# Signal para actualizar el NIT y proveedor
+@receiver(pre_save, sender=form1h)
+def actualizar_proveedor(sender, instance, **kwargs):
+    if instance.nit_proveedor:
+        # Buscar el proveedor por NIT
+        proveedor = Proveedor.objects.filter(nit=instance.nit_proveedor).first()
+        
+        if proveedor:
+            # Asignar el proveedor al campo proveedor
+            instance.proveedor = proveedor
+        else:
+            # Si no se encuentra el proveedor, puedes lanzar un error o dejar el proveedor como null
+            instance.proveedor = None
+
+
+
 
 # Modelo de Kardex (Movimientos de Inventario)
 class Kardex(models.Model):
@@ -152,7 +187,7 @@ class Asignacion(models.Model):
     destino = models.ForeignKey(Departamento, related_name='asignaciones', on_delete=models.CASCADE)
     fecha_asignacion = models.DateTimeField(auto_now_add=True)
     descripcion = models.TextField(blank=True, null=True)  # Descripción de la asignación
-    id_ingreso = models.ForeignKey(Ingreso, related_name='asignaciones', on_delete=models.SET_NULL, null=True, blank=True)  # Relación con Ingreso
+    id_ingreso = models.ForeignKey(form1h, related_name='asignaciones', on_delete=models.SET_NULL, null=True, blank=True)  # Relación con Ingreso
 
     def save(self, *args, **kwargs):
         # Verificar si hay suficiente stock antes de guardar

@@ -10,49 +10,63 @@
     <meta name="author" content="pixelstrap">
     <link rel="icon" href="{% static 'assets/images/favicon.svg' %}" type="image/x-icon">
     <link rel="shortcut icon" href="{% static 'assets/images/favicon.svg' %}" type="image/x-icon">
-    <title>UPCV</title>
+    <title>App Almacen UPCV</title>
 
-    <!-- Google font-->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;300;400;500;600;700;800&amp;display=swap" rel="stylesheet">
-    
-    <!-- Font Awesome -->
-    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/font-awesome.css' %}">
-    
-    <!-- ico-font-->
-    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/icofont.css' %}">
-    
-    <!-- Themify icon-->
-    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/themify.css' %}">
-    
-    <!-- Flag icon-->
-    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/flag-icon.css' %}">
-    
-    <!-- Feather icon-->
-    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/feather-icon.css' %}">
-    
-    <!-- Plugins css start-->
-    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/slick.css' %}">
-    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/slick-theme.css' %}">
-    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/scrollbar.css' %}">
-    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/animate.css' %}">
-    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/echart.css' %}">
-    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/date-picker.css' %}">
-    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/datatables.css' %}">
-    <link rel="stylesheet" href="{% static 'assets/css/datatable/datatables.min.css' %}" />
-    <!-- Plugins css Ends-->
-    
-    <!-- Bootstrap css-->
-    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/bootstrap.css' %}">
-    
-    <!-- App css-->
-    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/style.css' %}">
-    
-    <link id="color" rel="stylesheet" href="{% static 'assets/css/color-1.css' %}" media="screen">
-    
-    <!-- Responsive css-->
-    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/responsive.css' %}">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Riho admin is super flexible, powerful, clean &amp; modern responsive bootstrap 5 admin template with unlimited possibilities.">
+<meta name="keywords" content="admin template, Riho admin template, dashboard template, flat admin template, responsive admin template, web app">
+<meta name="author" content="pixelstrap">
+<link rel="icon" href="{% static 'assets/images/favicon.svg' %}" type="image/x-icon">
+<link rel="shortcut icon" href="{% static 'assets/images/favicon.svg' %}" type="image/x-icon">
+<title>UPCV</title>
+
+<!-- Google font-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;300;400;500;600;700;800&amp;display=swap" rel="stylesheet">
+
+<!-- Archivos CSS estáticos -->
+<!-- Font Awesome -->
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/font-awesome.css' %}">
+
+<!-- ico-font-->
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/icofont.css' %}">
+
+<!-- Themify icon-->
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/themify.css' %}">
+
+<!-- Flag icon-->
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/flag-icon.css' %}">
+
+<!-- Feather icon-->
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/feather-icon.css' %}">
+
+<!-- Plugins css start-->
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/slick.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/slick-theme.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/scrollbar.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/animate.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/js-datatables/style.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/owlcarousel.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/echart.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/date-picker.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/datatables.css' %}">
+<link rel="stylesheet" href="{% static 'assets/css/datatable/datatables.min.css' %}" />
+<!-- Plugins css Ends-->
+
+<!-- Bootstrap css-->
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/bootstrap.css' %}">
+
+<!-- App css-->
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/style.css' %}">
+
+<link id="color" rel="stylesheet" href="{% static 'assets/css/color-1.css' %}" media="screen">
+
+<!-- Responsive css-->
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/responsive.css' %}">
 </head>
   <body> 
     <!-- loader starts-->
@@ -178,12 +192,12 @@
             <div class="back-btn"><i class="fa fa-angle-left"> </i></div>
             <div class="toggle-sidebar"><i class="status_toggle middle sidebar-toggle" data-feather="grid"> </i></div>
           </div>
-          <div class="logo-icon-wrapper"><a href="index.html"><img class="img-fluid" src="../assets/images/logo/logo-icon.png" alt=""></a></div>
+          <div class="logo-icon-wrapper"><a href=""><img class="img-fluid" src="../assets/images/logo/logo-icon.png" alt=""></a></div>
           <nav class="sidebar-main">
             <div class="left-arrow" id="left-arrow"><i data-feather="arrow-left"></i></div>
             <div id="sidebar-menu">
               <ul class="sidebar-links" id="simple-bar">
-                <li class="back-btn"><a href="index.html"><img class="img-fluid" src="../assets/images/logo/logo-icon.png" alt=""></a>
+                <li class="back-btn"><a href=""><img class="img-fluid" src="../assets/images/logo/logo-icon.png" alt=""></a>
                   <div class="mobile-back text-end"> <span>Back </span><i class="fa fa-angle-right ps-2" aria-hidden="true"></i></div>
                 </li>
                 <li class="pin-title sidebar-main-title">
@@ -239,6 +253,8 @@
           {% block content %}
           <!-- El contenido de la página se inyectará aquí -->
           {% endblock %}
+
+
         </div>
         <footer class="footer">
           <div class="container-fluid">
@@ -255,33 +271,34 @@
       document.getElementById('currentYear').textContent = new Date().getFullYear();
     </script>
   
-   <!-- latest jquery-->
-   <script src="{% static 'assets/js/jquery.min.js' %}"></script>
-   <!-- Bootstrap js-->
-   <script src="{% static 'assets/js/bootstrap/bootstrap.bundle.min.js' %}"></script>
-   <!-- feather icon js-->
-   <script src="{% static 'assets/js/icons/feather-icon/feather.min.js' %}"></script>
-   <script src="{% static 'assets/js/icons/feather-icon/feather-icon.js' %}"></script>
-   <!-- scrollbar js-->
-   <script src="{% static 'assets/js/scrollbar/simplebar.js' %}"></script>
-   <script src="{% static 'assets/js/scrollbar/custom.js' %}"></script>
-   <!-- Sidebar jquery-->
-   <script src="{% static 'assets/js/config.js' %}"></script>
-   <!-- Plugins JS start-->
-   <script src="{% static 'assets/js/sidebar-menu.js' %}"></script>
-   <script src="{% static 'assets/js/sidebar-pin.js' %}"></script>
-   <script src="{% static 'assets/js/slick/slick.min.js' %}"></script>
-   <script src="{% static 'assets/js/slick/slick.js' %}"></script>
-   <script src="{% static 'assets/js/header-slick.js' %}"></script>
-   <!-- calendar js-->
-   <script src="{% static 'assets/js/js-datatables/simple-datatables@latest.js' %}"></script>
-   <script src="{% static 'assets/js/custom-list-product.js' %}"></script>
-   <script src="{% static 'assets/js/owlcarousel/owl.carousel.js' %}"></script>
-   <script src="{% static 'assets/js/ecommerce.js' %}"></script>
-   <!-- Plugins JS Ends-->
-   <!-- Theme js-->
-   <script src="{% static 'assets/js/script.js' %}"></script>
-
+</script>
+  
+<!-- latest jquery-->
+<script src="{% static 'assets/js/jquery.min.js' %}"></script>
+<!-- Bootstrap js-->
+<script src="{% static 'assets/js/bootstrap/bootstrap.bundle.min.js' %}"></script>
+<!-- feather icon js-->
+<script src="{% static 'assets/js/icons/feather-icon/feather.min.js' %}"></script>
+<script src="{% static 'assets/js/icons/feather-icon/feather-icon.js' %}"></script>
+<!-- scrollbar js-->
+<script src="{% static 'assets/js/scrollbar/simplebar.js' %}"></script>
+<script src="{% static 'assets/js/scrollbar/custom.js' %}"></script>
+<!-- Sidebar jquery-->
+<script src="{% static 'assets/js/config.js' %}"></script>
+<!-- Plugins JS start-->
+<script src="{% static 'assets/js/sidebar-menu.js' %}"></script>
+<script src="{% static 'assets/js/sidebar-pin.js' %}"></script>
+<script src="{% static 'assets/js/slick/slick.min.js' %}"></script>
+<script src="{% static 'assets/js/slick/slick.js' %}"></script>
+<script src="{% static 'assets/js/header-slick.js' %}"></script>
+<!-- calendar js-->
+<script src="{% static 'assets/js/js-datatables/simple-datatables@latest.js' %}"></script>
+<script src="{% static 'assets/js/custom-list-product.js' %}"></script>
+<script src="{% static 'assets/js/owlcarousel/owl.carousel.js' %}"></script>
+<script src="{% static 'assets/js/ecommerce.js' %}"></script>
+<!-- Plugins JS Ends-->
+<!-- Theme js-->
+<script src="{% static 'assets/js/script.js' %}"></script>
 
      
   </body>
