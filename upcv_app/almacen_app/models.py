@@ -81,6 +81,27 @@ class Serie(models.Model):
     def __str__(self):
         return f'Serie {self.serie} ({self.numero_inicial} - {self.numero_final})'
 
+
+class Dependencia(models.Model):
+    nombre = models.CharField(max_length=255)
+    descripcion = models.TextField(null=True, blank=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)  # Fecha de creación automática
+    fecha_actualizacion = models.DateTimeField(auto_now=True)  # Fecha de actualización automática
+    activo = models.BooleanField(default=True)  # Campo para determinar si la ubicación está activa
+
+    def __str__(self):
+        return self.nombre
+
+class Programa(models.Model):
+    nombre = models.CharField(max_length=255)
+    descripcion = models.TextField(null=True, blank=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)  # Fecha de creación automática
+    fecha_actualizacion = models.DateTimeField(auto_now=True)  # Fecha de actualización automática
+    activo = models.BooleanField(default=True)  # Campo para determinar si la ubicación está activa
+
+    def __str__(self):
+        return self.nombre
+
 # Modelo DetalleFactura
 class DetalleFactura(models.Model):
     form1h = models.ForeignKey('form1h', related_name='detalles', on_delete=models.CASCADE)  # Relación con form1h
@@ -89,6 +110,7 @@ class DetalleFactura(models.Model):
     precio_unitario = models.DecimalField(max_digits=10, decimal_places=2)
     precio_total = models.DecimalField(max_digits=10, decimal_places=2)
     id_linea = models.PositiveIntegerField(unique=True)  # Identificador único de la línea
+    renglon = models.PositiveIntegerField()  # Renglon
 
     def save(self, *args, **kwargs):
         # Calcular el precio total por línea
@@ -99,15 +121,14 @@ class DetalleFactura(models.Model):
         return f'Detalle de {self.articulo.nombre} (Linea {self.id_linea})'
 
 
-
 # Modelo Form1h (Factura)
 class form1h(models.Model):
-    articulo = models.ForeignKey(Articulo, related_name='form1h', on_delete=models.CASCADE)
-    cantidad = models.PositiveIntegerField()
+   
     fecha_ingreso = models.DateTimeField(auto_now_add=True)
     proveedor = models.ForeignKey(Proveedor, on_delete=models.SET_NULL, null=True, blank=True)
     numero_factura = models.CharField(max_length=50, unique=True)  # Número de factura
-    renglon = models.PositiveIntegerField()  # Renglon
+    dependencia = models.ForeignKey(Dependencia, on_delete=models.SET_NULL, null=True, blank=True)
+    programa = models.ForeignKey(Programa, on_delete=models.SET_NULL, null=True, blank=True)
     orden_compra = models.CharField(max_length=50, null=True, blank=True)  # Orden de compra
     nit_proveedor = models.CharField(max_length=50, null=True, blank=True)  # NIT del proveedor
     proveedor_nombre = models.CharField(max_length=255, null=True, blank=True)  # Nombre del proveedor
@@ -115,18 +136,13 @@ class form1h(models.Model):
     direccion_proveedor = models.CharField(max_length=255, null=True, blank=True)  # Dirección del proveedor
     patente = models.CharField(max_length=50, null=True, blank=True)  # Patente
     fecha_factura = models.DateField(null=True, blank=True)  # Fecha de la factura
-    precio_total_ingreso = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # Total de ingreso calculado
-    precio_unitario = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # Precio unitario del artículo
     fecha_creacion = models.DateTimeField(auto_now_add=True)  # Fecha de creación
     fecha_actualizacion = models.DateTimeField(auto_now=True)  # Fecha de actualización
     serie = models.ForeignKey('Serie', on_delete=models.SET_NULL, null=True, blank=True)  # Relación con Serie
     numero_serie = models.PositiveIntegerField(null=True, blank=True)  # Número de serie actual
 
     def save(self, *args, **kwargs):
-        # Calcular el precio total de ingreso automáticamente
-        if self.articulo:
-            self.precio_unitario = self.articulo.precio  # Asignamos el precio del artículo
-        self.precio_total_ingreso = self.precio_unitario * self.cantidad
+       
 
         # Asignar automáticamente un número de serie de la serie activa
         if not self.serie:
@@ -160,8 +176,6 @@ def actualizar_proveedor(sender, instance, **kwargs):
         else:
             # Si no se encuentra el proveedor, puedes lanzar un error o dejar el proveedor como null
             instance.proveedor = None
-
-
 
 
 # Modelo de Kardex (Movimientos de Inventario)

@@ -2,8 +2,26 @@ from django.contrib import admin
 from .models import (
     Proveedor, Departamento, Categoria, Ubicacion, UnidadDeMedida, 
     Articulo, Kardex, Asignacion, Movimiento, FraseMotivacional, 
-    Serie, form1h, DetalleFactura
+    Serie, form1h, DetalleFactura, Dependencia, Programa
 )
+
+
+# Configuración para el modelo Dependencia
+class DependenciaAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'descripcion', 'activo', 'fecha_creacion', 'fecha_actualizacion')
+    search_fields = ('nombre', 'descripcion')
+    list_filter = ('activo', 'fecha_creacion', 'fecha_actualizacion')
+    # Registrar los modelos en el administrador
+admin.site.register(Dependencia, DependenciaAdmin)
+
+# Configuración para el modelo Programa
+class ProgramaAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'descripcion', 'activo', 'fecha_creacion', 'fecha_actualizacion')
+    search_fields = ('nombre', 'descripcion')
+    list_filter = ('activo', 'fecha_creacion', 'fecha_actualizacion')
+
+
+admin.site.register(Programa, ProgramaAdmin)
 
 # Registrar Proveedor
 class ProveedorAdmin(admin.ModelAdmin):
@@ -100,7 +118,7 @@ class DetalleFacturaInline(admin.TabularInline):
 
 # Registrar form1h
 class form1hAdmin(admin.ModelAdmin):
-    list_display = ('numero_factura', 'proveedor', 'fecha_factura', 'precio_total_ingreso', 'fecha_creacion', 'fecha_actualizacion')
+    list_display = ('numero_factura', 'proveedor', 'fecha_factura', 'fecha_creacion', 'fecha_actualizacion')
     search_fields = ('numero_factura', 'proveedor__nombre')
     list_filter = ('fecha_creacion', 'fecha_actualizacion', 'proveedor')
     inlines = [DetalleFacturaInline]  # Agrega los detalles de la factura en el formulario de form1h
