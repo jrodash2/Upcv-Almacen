@@ -3,6 +3,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
+from django.urls import reverse
 
 # Modelo de Proveedor
 class Proveedor(models.Model):
@@ -140,7 +141,29 @@ class form1h(models.Model):
     fecha_actualizacion = models.DateTimeField(auto_now=True)  # Fecha de actualización automática
 
     def __str__(self):
+<<<<<<< HEAD
         return f'Formulario 1H - {self.numero_factura}'
+=======
+        return f'Ingreso de {self.numero_factura} unidades de {self.nit_proveedor} (Factura: {self.numero_factura})'
+    
+    def get_absolute_url(self):
+        # Esto generará la URL de la vista de detalle de la factura usando el pk del objeto
+        return reverse('detalle_factura', kwargs={'pk': self.pk})
+
+# Signal para actualizar el NIT y proveedor
+@receiver(pre_save, sender=form1h)
+def actualizar_proveedor(sender, instance, **kwargs):
+    if instance.nit_proveedor:
+        # Buscar el proveedor por NIT
+        proveedor = Proveedor.objects.filter(nit=instance.nit_proveedor).first()
+        
+        if proveedor:
+            # Asignar el proveedor al campo proveedor
+            instance.proveedor = proveedor
+        else:
+            # Si no se encuentra el proveedor, puedes lanzar un error o dejar el proveedor como null
+            instance.proveedor = None
+>>>>>>> 586e3764a27b14c0007006edb37629706ef73ccf
 
 
 # Modelo de Kardex (Movimientos de Inventario)

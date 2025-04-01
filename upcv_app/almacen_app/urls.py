@@ -22,6 +22,15 @@ urlpatterns = [
     path('articulo/editar/<int:pk>/', views.editar_articulo, name='editar_articulo'),  # Vista para editar un artículo
     path('departamento/', views.crear_departamento, name='crear_departamento'),  # Vista para crear y listar departamentos
     path('departamento/editar/<int:pk>/', views.editar_departamento, name='editar_departamento'),  # Vista para editar un departamentos
+<<<<<<< HEAD
     path('form1h/', views.crear_form1h, name='crear_form1h'),
     path('proveedor/<int:pk>/', views.proveedor_detail, name='proveedor_detail'),
 ]
+=======
+    path('crear_form1h/', views.CrearForm1hView.as_view(), name='crear_form1h'),
+    path('obtener_proveedor_info/<int:proveedor_id>/', views.obtener_proveedor_info, name='obtener_proveedor_info'),
+    path('crear_detalle_factura/<int:pk>/', views.CrearDetalleFacturaView.as_view(), name='crear_detalle_factura'),
+    path('detalle_factura/<int:pk>/', views.DetalleFacturaView.as_view(), name='detalle_factura'),
+
+    ]
+>>>>>>> 586e3764a27b14c0007006edb37629706ef73ccf

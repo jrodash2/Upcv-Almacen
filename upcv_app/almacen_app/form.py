@@ -2,8 +2,25 @@ from django import forms
 from django.contrib.auth.models import User, Group
 from django.forms import CheckboxInput, DateInput
 from django.core.exceptions import ValidationError
+<<<<<<< HEAD
 from .models import Ubicacion, UnidadDeMedida, Proveedor, Departamento, Categoria, Articulo, Departamento, Kardex, Asignacion, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa
+=======
+from .models import Ubicacion, UnidadDeMedida, Proveedor, Departamento, Categoria, Articulo, Departamento, form1h, DetalleFactura, Articulo
+>>>>>>> 586e3764a27b14c0007006edb37629706ef73ccf
 
+class Form1hForm(forms.ModelForm):
+    class Meta:
+        model = form1h
+        fields = [
+            'proveedor', 'numero_factura', 'dependencia', 'programa', 'orden_compra',
+            'nit_proveedor', 'proveedor_nombre', 'telefono_proveedor', 'direccion_proveedor',
+            'patente', 'fecha_factura', 'serie', 'numero_serie'
+        ]
+
+class DetalleFacturaForm(forms.ModelForm):
+    class Meta:
+        model = DetalleFactura
+        fields = ['articulo', 'cantidad', 'precio_unitario', 'id_linea', 'renglon']
 
 class Form1hForm(forms.ModelForm):
     class Meta:
