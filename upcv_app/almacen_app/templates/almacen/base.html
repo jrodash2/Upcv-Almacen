@@ -124,8 +124,7 @@
         {% else %}
         {% endif %}
         
-
-              
+             
           </div>
           </div>
           <div class="nav-right col-xxl-7 col-xl-6 col-md-7 col-8 pull-right right-header p-0 ms-auto">
@@ -222,7 +221,20 @@
                     </svg><span>Dashboard</span></a>
                   
                 </li>
-
+                
+                <li class="sidebar-list"><i class="fa fa-thumb-tack"></i><a class="sidebar-link sidebar-title" href="#">
+                  <svg class="stroke-icon">
+                    <use href="../assets/svg/icon-sprite.svg#stroke-gallery"></use>
+                  </svg>
+                  <svg class="fill-icon">
+                    <use href="../assets/svg/icon-sprite.svg#fill-gallery"></use>
+                  </svg><span>Crear</span></a>
+                <ul class="sidebar-submenu">
+                  <li><a href="{% url 'almacen:crear_form1h' %}">Formulario 1H</a></li>
+                  <li><a href="">Kardex</a></li>
+            
+                 </ul>
+              </li>
                 <li class="sidebar-list"><i class="fa fa-thumb-tack"></i><a class="sidebar-link sidebar-title" href="#">
                   <svg class="stroke-icon">
                     <use href="../assets/svg/icon-sprite.svg#stroke-gallery"></use>
@@ -241,6 +253,8 @@
                   <li><a href="#">Manuales</a></li>
                  </ul>
               </li>
+
+              
               {% endif %}
                               </ul>
               <div class="right-arrow" id="right-arrow"><i data-feather="arrow-right"></i></div>

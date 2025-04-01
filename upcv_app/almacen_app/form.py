@@ -2,8 +2,37 @@ from django import forms
 from django.contrib.auth.models import User, Group
 from django.forms import CheckboxInput, DateInput
 from django.core.exceptions import ValidationError
-from .models import Ubicacion, UnidadDeMedida, Proveedor, Departamento, Categoria, Articulo, Departamento
+from .models import Ubicacion, UnidadDeMedida, Proveedor, Departamento, Categoria, Articulo, Departamento, Kardex, Asignacion, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa
 
+
+class Form1hForm(forms.ModelForm):
+    class Meta:
+        model = form1h
+        fields = [
+            'proveedor', 'nit_proveedor', 'proveedor_nombre', 'telefono_proveedor',
+            'direccion_proveedor', 'numero_factura', 'dependencia', 'programa',
+            'orden_compra', 'patente', 'fecha_factura', 'serie', 'numero_serie'
+        ]
+        widgets = {
+            'proveedor': forms.Select(attrs={'class': 'form-control'}),
+            'nit_proveedor': forms.TextInput(attrs={'placeholder': 'NIT del proveedor', 'class': 'form-control'}),
+            'proveedor_nombre': forms.TextInput(attrs={'placeholder': 'Nombre del proveedor', 'class': 'form-control'}),
+            'telefono_proveedor': forms.TextInput(attrs={'placeholder': 'Teléfono del proveedor', 'class': 'form-control'}),
+            'direccion_proveedor': forms.TextInput(attrs={'placeholder': 'Dirección del proveedor', 'class': 'form-control'}),
+            'numero_factura': forms.TextInput(attrs={'placeholder': 'Número de factura', 'class': 'form-control'}),
+            'dependencia': forms.Select(attrs={'class': 'form-control'}),
+            'programa': forms.Select(attrs={'class': 'form-control'}),
+            'orden_compra': forms.TextInput(attrs={'placeholder': 'Orden de compra', 'class': 'form-control'}),
+            'patente': forms.TextInput(attrs={'placeholder': 'Patente', 'class': 'form-control'}),
+            'fecha_factura': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'serie': forms.Select(attrs={'class': 'form-control'}),
+            'numero_serie': forms.NumberInput(attrs={'placeholder': 'Número de serie', 'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(Form1hForm, self).__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs['class'] = field.widget.attrs.get('class', '') + ' form-control'
 
 class DepartamentoForm(forms.ModelForm):
     class Meta:

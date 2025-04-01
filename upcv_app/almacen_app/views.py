@@ -5,8 +5,34 @@ from django.contrib.auth.models import Group, User
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
-from .form import UserForm, UbicacionForm, UnidadDeMedidaForm, CategoriaForm, ProveedorForm, ArticuloForm, DepartamentoForm
-from .models import Ubicacion, UnidadDeMedida, Categoria, Proveedor, Articulo, Departamento
+from .form import Form1hForm, UserForm, UbicacionForm, UnidadDeMedidaForm, CategoriaForm, ProveedorForm, ArticuloForm, DepartamentoForm
+from .models import Ubicacion, UnidadDeMedida, Categoria, Proveedor, Articulo, Departamento, Kardex, Asignacion, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa
+from django.views.generic import CreateView
+from django.views.generic import ListView
+from django.urls import reverse_lazy
+from django.http import JsonResponse
+
+def proveedor_detail(request, pk):
+    try:
+        proveedor = Proveedor.objects.get(pk=pk)
+        data = {
+            'nit': proveedor.nit,
+            'nombre': proveedor.nombre,
+            'telefono': proveedor.telefono,
+            'direccion': proveedor.direccion,
+        }
+        return JsonResponse(data)
+    except Proveedor.DoesNotExist:
+        return JsonResponse({'error': 'Proveedor no encontrado'}, status=404)
+    
+
+def crear_form1h(request):
+    form1h_list = form1h.objects.all()  # Obtener todos los registros de form1h
+    form = Form1hForm(request.POST or None)  # Crear el formulario
+    if form.is_valid():
+        form.save()  # Guardar el nuevo registro
+        return redirect('almacen:crear_form1h')  # Redirige a la misma página para mostrar el nuevo registro
+    return render(request, 'almacen/crear_form1h.html', {'form': form, 'form1h_list': form1h_list})
 
 
 # Views for Departamento

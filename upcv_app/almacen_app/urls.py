@@ -22,4 +22,6 @@ urlpatterns = [
     path('articulo/editar/<int:pk>/', views.editar_articulo, name='editar_articulo'),  # Vista para editar un artículo
     path('departamento/', views.crear_departamento, name='crear_departamento'),  # Vista para crear y listar departamentos
     path('departamento/editar/<int:pk>/', views.editar_departamento, name='editar_departamento'),  # Vista para editar un departamentos
+    path('form1h/', views.crear_form1h, name='crear_form1h'),
+    path('proveedor/<int:pk>/', views.proveedor_detail, name='proveedor_detail'),
 ]

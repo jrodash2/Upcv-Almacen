@@ -1,0 +1,31 @@
+{% extends 'almacen/base.html' %}
+{% load static %}
+{% block content %}
+<h1>Lista de Formularios 1H</h1>
+<a href="{% url 'almacen:form1h_create' %}" class="btn btn-primary">Crear Nuevo</a>
+<table class="table">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Proveedor</th>
+            <th>Número de Factura</th>
+            <th>Fecha de Factura</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for form in form1h_list %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ form.proveedor_nombre }}</td>
+            <td>{{ form.numero_factura }}</td>
+            <td>{{ form.fecha_factura }}</td>
+            <td>
+                <a href="" class="btn btn-warning">Editar</a>
+                <a href="" class="btn btn-danger">Eliminar</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

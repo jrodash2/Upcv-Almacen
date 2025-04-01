@@ -119,63 +119,28 @@ class DetalleFactura(models.Model):
 
     def __str__(self):
         return f'Detalle de {self.articulo.nombre} (Linea {self.id_linea})'
-
-
-# Modelo Form1h (Factura)
+    
+    
 class form1h(models.Model):
-   
-    fecha_ingreso = models.DateTimeField(auto_now_add=True)
     proveedor = models.ForeignKey(Proveedor, on_delete=models.SET_NULL, null=True, blank=True)
-    numero_factura = models.CharField(max_length=50, unique=True)  # Número de factura
+    nit_proveedor = models.CharField(max_length=50, null=True, blank=True)
+    proveedor_nombre = models.CharField(max_length=255, null=True, blank=True)
+    telefono_proveedor = models.CharField(max_length=20, null=True, blank=True)
+    direccion_proveedor = models.CharField(max_length=255, null=True, blank=True)
+    numero_factura = models.CharField(max_length=50, unique=True)
     dependencia = models.ForeignKey(Dependencia, on_delete=models.SET_NULL, null=True, blank=True)
     programa = models.ForeignKey(Programa, on_delete=models.SET_NULL, null=True, blank=True)
-    orden_compra = models.CharField(max_length=50, null=True, blank=True)  # Orden de compra
-    nit_proveedor = models.CharField(max_length=50, null=True, blank=True)  # NIT del proveedor
-    proveedor_nombre = models.CharField(max_length=255, null=True, blank=True)  # Nombre del proveedor
-    telefono_proveedor = models.CharField(max_length=20, null=True, blank=True)  # Teléfono del proveedor
-    direccion_proveedor = models.CharField(max_length=255, null=True, blank=True)  # Dirección del proveedor
-    patente = models.CharField(max_length=50, null=True, blank=True)  # Patente
-    fecha_factura = models.DateField(null=True, blank=True)  # Fecha de la factura
-    fecha_creacion = models.DateTimeField(auto_now_add=True)  # Fecha de creación
-    fecha_actualizacion = models.DateTimeField(auto_now=True)  # Fecha de actualización
-    serie = models.ForeignKey('Serie', on_delete=models.SET_NULL, null=True, blank=True)  # Relación con Serie
-    numero_serie = models.PositiveIntegerField(null=True, blank=True)  # Número de serie actual
-
-    def save(self, *args, **kwargs):
-       
-
-        # Asignar automáticamente un número de serie de la serie activa
-        if not self.serie:
-            serie_activa = Serie.objects.filter(activo=True).first()
-            if serie_activa and serie_activa.numero_actual < serie_activa.numero_final:
-                self.serie = serie_activa
-                self.numero_serie = serie_activa.numero_inicial + serie_activa.numero_actual
-                serie_activa.numero_actual += 1
-                serie_activa.save()
-            else:
-                raise ValidationError("No hay series activas disponibles o se ha alcanzado el número final de la serie activa.")
-
-        super().save(*args, **kwargs)
-
-    def numero_serie_completo(self):
-        return f'{self.serie.serie}-{self.numero_serie}' if self.serie else None
+    orden_compra = models.CharField(max_length=50, null=True, blank=True)
+    patente = models.CharField(max_length=50, null=True, blank=True)
+    fecha_factura = models.DateField(null=True, blank=True)
+    fecha_ingreso = models.DateField(auto_now_add=True)  # Fecha de ingreso automática
+    serie = models.ForeignKey(Serie, on_delete=models.SET_NULL, null=True, blank=True)
+    numero_serie = models.PositiveIntegerField(null=True, blank=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)  # Fecha de creación automática
+    fecha_actualizacion = models.DateTimeField(auto_now=True)  # Fecha de actualización automática
 
     def __str__(self):
-        return f'Ingreso de {self.cantidad} unidades de {self.articulo.nombre} (Factura: {self.numero_factura})'
-
-# Signal para actualizar el NIT y proveedor
-@receiver(pre_save, sender=form1h)
-def actualizar_proveedor(sender, instance, **kwargs):
-    if instance.nit_proveedor:
-        # Buscar el proveedor por NIT
-        proveedor = Proveedor.objects.filter(nit=instance.nit_proveedor).first()
-        
-        if proveedor:
-            # Asignar el proveedor al campo proveedor
-            instance.proveedor = proveedor
-        else:
-            # Si no se encuentra el proveedor, puedes lanzar un error o dejar el proveedor como null
-            instance.proveedor = None
+        return f'Formulario 1H - {self.numero_factura}'
 
 
 # Modelo de Kardex (Movimientos de Inventario)
