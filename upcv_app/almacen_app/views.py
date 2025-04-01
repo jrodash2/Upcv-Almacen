@@ -5,8 +5,66 @@ from django.contrib.auth.models import Group, User
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
-from .form import UserForm, UbicacionForm, UnidadDeMedidaForm, CategoriaForm, ProveedorForm, ArticuloForm, DepartamentoForm
-from .models import Ubicacion, UnidadDeMedida, Categoria, Proveedor, Articulo, Departamento
+from .form import UserForm, UbicacionForm, UnidadDeMedidaForm, CategoriaForm, ProveedorForm, ArticuloForm, DepartamentoForm, DetalleFacturaForm, Form1hForm
+from .models import Ubicacion, UnidadDeMedida, Categoria, Proveedor, Articulo, Departamento, form1h, DetalleFactura
+from django.http import HttpResponse
+from django.http import JsonResponse
+from django.urls import reverse_lazy
+from django.views.generic import CreateView
+from django.views.generic import DetailView
+
+def obtener_proveedor_info(request, proveedor_id):
+    proveedor = get_object_or_404(Proveedor, id=proveedor_id)
+    data = {
+        'nombre': proveedor.nombre,
+        'telefono': proveedor.telefono,
+        'direccion': proveedor.direccion,
+    }
+    return JsonResponse(data)
+
+class CrearForm1hView(CreateView):
+    model = form1h  # Asegúrate de que este modelo sea form1h
+    form_class = Form1hForm
+    template_name = 'almacen/crear_form1h.html'
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        # Aquí se realiza la redirección después de guardar el objeto
+        return response
+
+    def get_success_url(self):
+        # Usa el método get_absolute_url para redirigir al detalle de la factura
+        return self.object.get_absolute_url()  # Asegúrate de que el objeto tenga este método
+    
+
+class CrearDetalleFacturaView(CreateView):
+    model = DetalleFactura
+    form_class = DetalleFacturaForm
+    template_name = 'almacen/crear_detalle_factura.html'
+
+    def get_initial(self):
+        # Inicializar con la factura previamente creada
+        initial = super().get_initial()
+        initial['form1h'] = self.kwargs['pk']
+        return initial
+
+    def form_valid(self, form):
+        # Asociar el form1h antes de guardar
+        form.instance.form1h = get_object_or_404(form1h, pk=self.kwargs['pk'])
+        response = super().form_valid(form)
+        return response
+
+    def get_success_url(self):
+        return reverse_lazy('detalle_factura_success', kwargs={'pk': self.object.form1h.pk})
+    
+    def detalle_factura_success(request, pk):
+        return HttpResponse('¡Detalles de la factura guardados exitosamente!')
+
+class DetalleFacturaView(DetailView):
+    model = form1h
+    template_name = 'almacen/detalle_factura.html'  # El template donde se renderizarán los detalles
+    context_object_name = 'factura'  # Esto hace que el objeto 'form1h' se acceda como 'factura' en el template
+
 
 
 # Views for Departamento

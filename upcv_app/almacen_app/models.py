@@ -3,6 +3,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
+from django.urls import reverse
 
 # Modelo de Proveedor
 class Proveedor(models.Model):
@@ -161,7 +162,11 @@ class form1h(models.Model):
         return f'{self.serie.serie}-{self.numero_serie}' if self.serie else None
 
     def __str__(self):
-        return f'Ingreso de {self.cantidad} unidades de {self.articulo.nombre} (Factura: {self.numero_factura})'
+        return f'Ingreso de {self.numero_factura} unidades de {self.nit_proveedor} (Factura: {self.numero_factura})'
+    
+    def get_absolute_url(self):
+        # Esto generará la URL de la vista de detalle de la factura usando el pk del objeto
+        return reverse('detalle_factura', kwargs={'pk': self.pk})
 
 # Signal para actualizar el NIT y proveedor
 @receiver(pre_save, sender=form1h)

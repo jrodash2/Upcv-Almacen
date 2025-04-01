@@ -1,0 +1,35 @@
+<h1>Crear Factura</h1>
+<form method="post" id="factura-form">
+    {% csrf_token %}
+    {{ form.as_p }}  <!-- Esto renderiza el formulario con todos los campos -->
+
+    <!-- Ya no necesitas agregar campos nuevos, solo asegurar que los que existen se autocompleten -->
+    <button type="submit">Guardar Factura</button>
+</form>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // Al cambiar el proveedor
+        $('#id_proveedor').change(function() {
+            var proveedorId = $(this).val();
+
+            if (proveedorId) {
+                // Realizamos una solicitud AJAX para obtener los datos del proveedor
+                $.ajax({
+                    url: '/obtener_proveedor_info/' + proveedorId + '/',  // La URL que manejará la lógica
+                    method: 'GET',
+                    success: function(data) {
+                        // Llenamos los campos automáticamente con los datos recibidos
+                        $('#id_proveedor_nombre').val(data.nombre);
+                        $('#id_telefono_proveedor').val(data.telefono);
+                        $('#id_direccion_proveedor').val(data.direccion);
+                    },
+                    error: function() {
+                        alert('Hubo un error al cargar los datos del proveedor.');
+                    }
+                });
+            }
+        });
+    });
+</script>
