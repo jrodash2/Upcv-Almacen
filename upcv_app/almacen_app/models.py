@@ -121,7 +121,6 @@ class DetalleFactura(models.Model):
     def __str__(self):
         return f'Detalle de {self.articulo.nombre} (Linea {self.id_linea})'
     
-    
 class form1h(models.Model):
     proveedor = models.ForeignKey(Proveedor, on_delete=models.SET_NULL, null=True, blank=True)
     nit_proveedor = models.CharField(max_length=50, null=True, blank=True)
@@ -134,36 +133,48 @@ class form1h(models.Model):
     orden_compra = models.CharField(max_length=50, null=True, blank=True)
     patente = models.CharField(max_length=50, null=True, blank=True)
     fecha_factura = models.DateField(null=True, blank=True)
-    fecha_ingreso = models.DateField(auto_now_add=True)  # Fecha de ingreso automática
+    fecha_ingreso = models.DateField(auto_now_add=True)
     serie = models.ForeignKey(Serie, on_delete=models.SET_NULL, null=True, blank=True)
     numero_serie = models.PositiveIntegerField(null=True, blank=True)
-    fecha_creacion = models.DateTimeField(auto_now_add=True)  # Fecha de creación automática
-    fecha_actualizacion = models.DateTimeField(auto_now=True)  # Fecha de actualización automática
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if not self.numero_serie:
+            serie_activa = Serie.objects.filter(activo=True).order_by('numero_inicial').first()
+
+            if not serie_activa:
+                raise ValidationError("No hay series activas disponibles para asignar un número.")
+
+            self.serie = serie_activa
+
+            # Obtener el último número asignado dentro de la serie activa
+            ultimo_numero = form1h.objects.filter(serie=serie_activa).aggregate(models.Max('numero_serie'))['numero_serie__max']
+
+            # Si hay números asignados, continuar desde el último
+            if ultimo_numero is not None:
+                nuevo_numero = ultimo_numero + 1
+            else:
+                nuevo_numero = serie_activa.numero_inicial
+
+            # Verificar que el número no supere el límite de la serie
+            if nuevo_numero > serie_activa.numero_final:
+                raise ValidationError(f"La serie '{serie_activa.serie}' ha alcanzado su límite. No se pueden asignar más números.")
+
+            self.numero_serie = nuevo_numero
+            serie_activa.numero_actual = nuevo_numero
+            serie_activa.save()
+
+        super().save(*args, **kwargs)
+
+    @property
+    def numero_serie_completo(self):
+        if self.serie:
+            return f"{self.serie.serie}{self.numero_serie:04d}"  # Ejemplo: A0001, A0002...
+        return f"{self.numero_serie:04d}"  # Si no tiene serie, usa 4 dígitos
 
     def __str__(self):
-<<<<<<< HEAD
-        return f'Formulario 1H - {self.numero_factura}'
-=======
-        return f'Ingreso de {self.numero_factura} unidades de {self.nit_proveedor} (Factura: {self.numero_factura})'
-    
-    def get_absolute_url(self):
-        # Esto generará la URL de la vista de detalle de la factura usando el pk del objeto
-        return reverse('detalle_factura', kwargs={'pk': self.pk})
-
-# Signal para actualizar el NIT y proveedor
-@receiver(pre_save, sender=form1h)
-def actualizar_proveedor(sender, instance, **kwargs):
-    if instance.nit_proveedor:
-        # Buscar el proveedor por NIT
-        proveedor = Proveedor.objects.filter(nit=instance.nit_proveedor).first()
-        
-        if proveedor:
-            # Asignar el proveedor al campo proveedor
-            instance.proveedor = proveedor
-        else:
-            # Si no se encuentra el proveedor, puedes lanzar un error o dejar el proveedor como null
-            instance.proveedor = None
->>>>>>> 586e3764a27b14c0007006edb37629706ef73ccf
+        return f"Formulario {self.id} - {self.numero_serie_completo}"
 
 
 # Modelo de Kardex (Movimientos de Inventario)

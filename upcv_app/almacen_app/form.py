@@ -2,11 +2,7 @@ from django import forms
 from django.contrib.auth.models import User, Group
 from django.forms import CheckboxInput, DateInput
 from django.core.exceptions import ValidationError
-<<<<<<< HEAD
-from .models import Ubicacion, UnidadDeMedida, Proveedor, Departamento, Categoria, Articulo, Departamento, Kardex, Asignacion, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa
-=======
-from .models import Ubicacion, UnidadDeMedida, Proveedor, Departamento, Categoria, Articulo, Departamento, form1h, DetalleFactura, Articulo
->>>>>>> 586e3764a27b14c0007006edb37629706ef73ccf
+from .models import DetalleFactura, Ubicacion, UnidadDeMedida, Proveedor, Departamento, Categoria, Articulo, Departamento, Kardex, Asignacion, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa
 
 class Form1hForm(forms.ModelForm):
     class Meta:
@@ -28,7 +24,7 @@ class Form1hForm(forms.ModelForm):
         fields = [
             'proveedor', 'nit_proveedor', 'proveedor_nombre', 'telefono_proveedor',
             'direccion_proveedor', 'numero_factura', 'dependencia', 'programa',
-            'orden_compra', 'patente', 'fecha_factura', 'serie', 'numero_serie'
+            'orden_compra', 'patente', 'fecha_factura'
         ]
         widgets = {
             'proveedor': forms.Select(attrs={'class': 'form-control'}),
@@ -42,8 +38,7 @@ class Form1hForm(forms.ModelForm):
             'orden_compra': forms.TextInput(attrs={'placeholder': 'Orden de compra', 'class': 'form-control'}),
             'patente': forms.TextInput(attrs={'placeholder': 'Patente', 'class': 'form-control'}),
             'fecha_factura': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'serie': forms.Select(attrs={'class': 'form-control'}),
-            'numero_serie': forms.NumberInput(attrs={'placeholder': 'Número de serie', 'class': 'form-control'}),
+
         }
 
     def __init__(self, *args, **kwargs):

@@ -33,7 +33,7 @@
   <div class="container-fluid">
     <div class="edit-profile">
       <div class="row">
-        <!-- Formulario de creación de ubicación -->
+        <!-- Formulario de creación de artículo -->
         <div class="col-xl-12">
           <div class="card">
             <div class="card-header">
@@ -65,16 +65,16 @@
                     <!-- Columna 1 -->
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label for="{{ form.codigo.id_for_label }}">Código</label>
-                            {{ form.codigo }}
+                            <label for="{{ form.nombre.id_for_label }}">Nombre</label>
+                            {{ form.nombre }}
                         </div>
                     </div>
         
                     <!-- Columna 2 -->
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label for="{{ form.nombre.id_for_label }}">Nombre</label>
-                            {{ form.nombre }}
+                            <label for="{{ form.categoria.id_for_label }}">Categoría</label>
+                            {{ form.categoria }}
                         </div>
                     </div>
                 </div>
@@ -83,74 +83,20 @@
                     <!-- Columna 3 -->
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label for="{{ form.descripcion.id_for_label }}">Descripción</label>
-                            {{ form.descripcion }}
+                            <label for="{{ form.unidad_medida.id_for_label }}">Unidad de Medida</label>
+                            {{ form.unidad_medida }}
                         </div>
                     </div>
         
                     <!-- Columna 4 -->
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label for="{{ form.stock.id_for_label }}">Stock</label>
-                            {{ form.stock }}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <!-- Columna 5 -->
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="{{ form.precio.id_for_label }}">Precio</label>
-                            {{ form.precio }}
-                        </div>
-                    </div>
-        
-                    <!-- Columna 6 -->
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="{{ form.proveedor.id_for_label }}">Proveedor</label>
-                            {{ form.proveedor }}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <!-- Columna 7 -->
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="{{ form.categoria.id_for_label }}">Categoría</label>
-                            {{ form.categoria }}
-                        </div>
-                    </div>
-        
-                    <!-- Columna 8 -->
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="{{ form.unidad_medida.id_for_label }}">Unidad de Medida</label>
-                            {{ form.unidad_medida }}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <!-- Columna 9 -->
-                    <div class="col-md-6">
-                        <div class="form-group">
                             <label for="{{ form.ubicacion.id_for_label }}">Ubicación</label>
                             {{ form.ubicacion }}
                         </div>
                     </div>
-        
-                    <!-- Columna 10 -->
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="{{ form.estado.id_for_label }}">Estado</label>
-                            {{ form.estado }}
-                        </div>
-                    </div>
                 </div>
-                
+
                 <br>
                 <div class="form-footer text-end">
                   <button class="btn btn-primary" type="submit">
@@ -166,16 +112,10 @@
                     <thead>
                       <tr>
                         <th>ID</th>
-                        <th>Código</th>
                         <th>Nombre</th>
-                        <th>Descripción</th>
-                        <th>Stock</th>
-                        <th>Precio</th>
-                        <th>Proveedor</th>
                         <th>Categoría</th>
                         <th>Unidad de Medida</th>
                         <th>Ubicación</th>
-                        <th>Estado</th>
                         <th>Acciones</th>
                       </tr>
                     </thead>
@@ -183,16 +123,10 @@
                       {% for articulo in articulos %}
                       <tr>
                         <td>{{ articulo.id }}</td>
-                        <td>{{ articulo.codigo }}</td>
                         <td>{{ articulo.nombre }}</td>
-                        <td>{{ articulo.descripcion }}</td>
-                        <td>{{ articulo.stock }}</td>
-                        <td>Q {{ articulo.precio }}</td>
-                        <td>{{ articulo.proveedor }}</td>
                         <td>{{ articulo.categoria }}</td>
                         <td>{{ articulo.unidad_medida }}</td>
                         <td>{{ articulo.ubicacion }}</td>
-                        <td>{{ articulo.estado }}</td>
                         <td> 
                           <a href="{% url 'almacen:editar_articulo' articulo.id %}" class="btn btn-primary btn-sm">Editar</a>
                         </td>
@@ -202,16 +136,10 @@
                     <tfoot>
                       <tr>
                         <th>ID</th>
-                        <th>Código</th>
                         <th>Nombre</th>
-                        <th>Descripción</th>
-                        <th>Stock</th>
-                        <th>Precio</th>
-                        <th>Proveedor</th>
                         <th>Categoría</th>
                         <th>Unidad de Medida</th>
                         <th>Ubicación</th>
-                        <th>Estado</th>
                         <th>Acciones</th>
                       </tr>
                     </tfoot>
