@@ -41,6 +41,18 @@
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#crearForm1hModal">
                   Crear Formulario 1H
                 </button>
+                
+                {% if messages %}
+  <div class="container mt-3">
+    {% for message in messages %}
+      <div class="alert alert-info dark" role="alert">
+        <p>{{ message }}</p>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+
               </div>
               
             <!-- Tabla para mostrar las categorías creadas -->
@@ -67,7 +79,12 @@
             <td>{{ registro.numero_serie_completo }}</td>
             <td>{{ registro.fecha_factura }}</td>
             <td>
-              <a href="" class="btn btn-primary btn-sm">Editar</a>
+              <td>
+                <a href="{% url 'almacen:agregar_detalle_factura' registro.id %}" class="btn btn-primary btn-sm">
+                    Detalles
+                </a>
+            </td>
+            
             </td>
           </tr>
           {% endfor %}

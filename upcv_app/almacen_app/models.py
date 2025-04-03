@@ -176,6 +176,12 @@ class form1h(models.Model):
     def __str__(self):
         return f"Formulario {self.id} - {self.numero_serie_completo}"
 
+# Modelo para el contador global de id_linea
+class ContadorDetalleFactura(models.Model):
+    contador = models.PositiveIntegerField(default=1)
+
+    def __str__(self):
+        return f"Contador global de detalles: {self.contador}"
 
 # Modelo de Kardex (Movimientos de Inventario)
 class Kardex(models.Model):

@@ -5,12 +5,15 @@ from django.contrib.auth.models import Group, User
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
-from .form import Form1hForm, UserForm, UbicacionForm, UnidadDeMedidaForm, CategoriaForm, ProveedorForm, ArticuloForm, DepartamentoForm
-from .models import Ubicacion, UnidadDeMedida, Categoria, Proveedor, Articulo, Departamento, Kardex, Asignacion, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa
+from .form import DetalleFacturaForm, Form1hForm, UserForm, UbicacionForm, UnidadDeMedidaForm, CategoriaForm, ProveedorForm, ArticuloForm, DepartamentoForm
+from .models import ContadorDetalleFactura, DetalleFactura, Ubicacion, UnidadDeMedida, Categoria, Proveedor, Articulo, Departamento, Kardex, Asignacion, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa
 from django.views.generic import CreateView
 from django.views.generic import ListView
 from django.urls import reverse_lazy
 from django.http import JsonResponse
+from django.core.exceptions import ValidationError
+from django.contrib import messages
+
 
 def proveedor_detail(request, pk):
     try:
@@ -29,10 +32,58 @@ def proveedor_detail(request, pk):
 def crear_form1h(request):
     form1h_list = form1h.objects.all()  # Obtener todos los registros de form1h
     form = Form1hForm(request.POST or None)  # Crear el formulario
-    if form.is_valid():
-        form.save()  # Guardar el nuevo registro
-        return redirect('almacen:crear_form1h')  # Redirige a la misma página para mostrar el nuevo registro
+    
+    if request.method == "POST":
+        if form.is_valid():
+            try:
+                form.save()  # Guardar el nuevo registro
+                return redirect('almacen:crear_form1h')  # Redirige a la misma página para mostrar el nuevo registro
+            except ValidationError as e:
+                messages.error(request, e.message)  # Agregar el mensaje de error a Django messages
+
     return render(request, 'almacen/crear_form1h.html', {'form': form, 'form1h_list': form1h_list})
+
+
+def agregar_detalle_factura(request, form1h_id):
+    form1h_instance = get_object_or_404(form1h, id=form1h_id)
+    detalles_factura = DetalleFactura.objects.filter(form1h=form1h_instance)
+
+    if request.method == "POST":
+        form = DetalleFacturaForm(request.POST, form1h_instance=form1h_instance)
+        if form.is_valid():
+            detalle = form.save(commit=False)
+            detalle.form1h = form1h_instance  # Asigna el form1h correcto
+
+            # Obtener el contador global de id_linea
+            contador_obj = ContadorDetalleFactura.objects.first()
+
+            if contador_obj is None:
+                # Si no hay un contador en la base de datos, crearlo
+                contador_obj = ContadorDetalleFactura.objects.create(contador=1)
+
+            # Obtener el id_linea actual y asignarlo
+            id_linea = contador_obj.contador
+
+            # Asegurarse de que el id_linea sea único
+            while DetalleFactura.objects.filter(id_linea=id_linea).exists():
+                id_linea += 1  # Incrementar hasta encontrar un id_linea único
+
+            detalle.id_linea = id_linea  # Asignamos el id_linea único
+            detalle.save()  # Guardar el detalle con el id_linea único
+
+            # Incrementamos el contador global
+            contador_obj.contador = id_linea + 1
+            contador_obj.save()  # Guardamos el nuevo valor del contador
+
+            return redirect('almacen:agregar_detalle_factura', form1h_id=form1h_id)
+    else:
+        form = DetalleFacturaForm()
+
+    return render(request, 'almacen/agregar_detalle_factura.html', {
+        'form1h_instance': form1h_instance,
+        'form': form,
+        'detalles_factura': detalles_factura
+    })
 
 
 # Views for Departamento

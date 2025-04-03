@@ -4,19 +4,23 @@ from django.forms import CheckboxInput, DateInput
 from django.core.exceptions import ValidationError
 from .models import DetalleFactura, Ubicacion, UnidadDeMedida, Proveedor, Departamento, Categoria, Articulo, Departamento, Kardex, Asignacion, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa
 
-class Form1hForm(forms.ModelForm):
-    class Meta:
-        model = form1h
-        fields = [
-            'proveedor', 'numero_factura', 'dependencia', 'programa', 'orden_compra',
-            'nit_proveedor', 'proveedor_nombre', 'telefono_proveedor', 'direccion_proveedor',
-            'patente', 'fecha_factura', 'serie', 'numero_serie'
-        ]
-
 class DetalleFacturaForm(forms.ModelForm):
     class Meta:
         model = DetalleFactura
-        fields = ['articulo', 'cantidad', 'precio_unitario', 'id_linea', 'renglon']
+        fields = ['articulo', 'cantidad', 'precio_unitario',  'renglon']
+        widgets = {
+            'articulo': forms.Select(attrs={'class': 'form-control'}),
+            'cantidad': forms.NumberInput(attrs={'class': 'form-control'}),
+            'precio_unitario': forms.NumberInput(attrs={'class': 'form-control'}),
+       
+            'renglon': forms.NumberInput(attrs={'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        form1h_instance = kwargs.pop('form1h_instance', None)  # Obtener el form1h de la vista
+        super(DetalleFacturaForm, self).__init__(*args, **kwargs)
+        if form1h_instance:
+            self.instance.form1h = form1h_instance  # Asignar el form1h automáticamente
 
 class Form1hForm(forms.ModelForm):
     class Meta:
