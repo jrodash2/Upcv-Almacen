@@ -48,6 +48,9 @@ def agregar_detalle_factura(request, form1h_id):
     form1h_instance = get_object_or_404(form1h, id=form1h_id)
     detalles_factura = DetalleFactura.objects.filter(form1h=form1h_instance)
 
+    # Calcular el total de la factura
+    total_factura = form1h_instance.calcular_total_factura()
+
     if request.method == "POST":
         form = DetalleFacturaForm(request.POST, form1h_instance=form1h_instance)
         if form.is_valid():
@@ -82,7 +85,8 @@ def agregar_detalle_factura(request, form1h_id):
     return render(request, 'almacen/agregar_detalle_factura.html', {
         'form1h_instance': form1h_instance,
         'form': form,
-        'detalles_factura': detalles_factura
+        'detalles_factura': detalles_factura,
+        'total_factura': total_factura,  # Pasa el total a la plantilla
     })
 
 

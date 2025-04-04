@@ -167,6 +167,9 @@ class form1h(models.Model):
 
         super().save(*args, **kwargs)
 
+    def calcular_total_factura(self):
+        return self.detalles.aggregate(total=models.Sum('precio_total'))['total'] or 0
+    
     @property
     def numero_serie_completo(self):
         if self.serie:

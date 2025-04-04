@@ -1,122 +1,291 @@
-{% extends 'almacen/base.html' %}
-{% load static %}
-
-{% block content %}
+{% extends 'almacen/base.html' %} {% load static %} {% block content %}
 <script src="{% static 'assets/js/jquery.min.js' %}"></script>
 <script src="{% static 'assets/js/datatable/datatables/jquery.dataTables.min.js' %}"></script>
 <script src="{% static 'assets/js/datatable/datatables/datatable.custom.js' %}"></script>
 
+
 <div class="page-body">
-  <div class="container-fluid">
-    <div class="page-title">
-      <div class="row">
-        <div class="col-6">
-            {% if form1h_instance.serie %}
-            <h4 class="card-title mb-0">
-              Agregar Detalle de Formulario 1H - Serie {{ form1h_instance.serie.serie }} {{ form1h_instance.numero_serie }}
-            </h4>
-          {% else %}
-            <h4 class="card-title mb-0">Agregar Detalle de Formulario 1H - Serie no disponible</h4>
-          {% endif %}
-          
-          
-          
-        </div>
-        <div class="col-6">
-          <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="">
-                <svg class="stroke-icon">
-                  <use href="{% static 'assets/svg/icon-sprite.svg#stroke-home' %}"></use>
-                </svg></a></li>
-            <li class="breadcrumb-item">Dashboard</li>
-            <li class="breadcrumb-item active">Detalles de Factura</li>
-          </ol>
-        </div>
-      </div>
+  <!-- Page Sidebar Ends-->
+  <div class="page-body">
+    <!-- Container-fluid starts -->
+    <div class="container-fluid">
+      <table class="table-wrapper invoice-1">
+        <tbody>
+          <tr>
+            <td>
+              <div class="card">
+                <div class="product-box">
+                  <div class="product-img"><img class="img-fluid" src="{% static 'assets/images/logo/upcv3.jpg' %}" alt="">
+                    <div class="product-hover">
+                      <div class="m-t-15 btn-showcase"><a class="btn btn-outline-warning btn-lg" href="" title=""> <i ></i>Confirmar</a><a class="btn btn-outline-warning btn-lg" href="" title=""> <i ></i>Asignar</a><a class="btn btn-outline-warning btn-lg" href=""> <i ></i>Anular</a></div>
+                    </div>
+                  </div>
+            
+                </div>
+              </div>
+              
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <table class="bill-content" style="width: 100%">
+                <tbody>
+                  <tr>
+                    <td style="width: 36%">
+                      <span style="opacity: 0.8">Serie</span>
+                      {% if form1h_instance.serie %}
+                      <h4 class="card-title mb-0">
+                        {{ form1h_instance.serie.serie }} {{form1h_instance.numero_serie }}
+                      </h4>
+                      {% else %}
+                      <h4 class="card-title mb-0">
+                        Formulario 1H - Serie no disponible
+                      </h4>
+                      {% endif %}
+                    </td>
+                    <td style="width: 21%">
+                      <span style="opacity: 0.8">Fecha de Factura</span>
+                      <h6>{{ form1h_instance.fecha_factura|date:"d/m/Y" }}</h6>
+                    </td>
+                    <td>
+                      <span style="opacity: 0.8">Número de Factura</span>
+                      <h6>#{{ form1h_instance.numero_factura }}</h6>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="width: 36%">
+                      <span style="opacity: 0.8">Proveedor</span>
+                      <h6>{{ form1h_instance.proveedor_nombre }}</h6>
+                    </td>
+                    <td>
+                      <span style="opacity: 0.8">NIT</span>
+                      <h6>{{ form1h_instance.nit_proveedor }}</h6>
+                    </td>
+                    <td>
+                      <span style="opacity: 0.8">Teléfono</span>
+                      <h6>{{ form1h_instance.telefono_proveedor }}</h6>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="width: 36%">
+                      <span style="opacity: 0.8">Dirección del Proveedor</span>
+                      <h6>{{ form1h_instance.direccion_proveedor }}</h6>
+                    </td>
+                    <td style="width: 36%">
+                      <span style="opacity: 0.8">Fecha de Ingreso</span>
+                      <h6>{{ form1h_instance.fecha_ingreso|date:"d/m/Y" }}</h6>
+                    </td>
+                    <td>
+                      <span style="opacity: 0.8">Programa</span>
+                      <h6>{{ form1h_instance.programa.nombre }}</h6>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <table
+                class="order-details"
+                style="
+                  width: 100%;
+                  border-collapse: separate;
+                  border-spacing: 0 10px;
+                "
+              >
+                <thead>
+                  <tr
+                    style="
+                      background: #007fbf;
+                      border-radius: 8px;
+                      overflow: hidden;
+                      box-shadow: 0px 10.9412px 10.9412px
+                          rgba(82, 77, 141, 0.04),
+                        0px 9.51387px 7.6111px rgba(82, 77, 141, 0.06),
+                        0px 5.05275px 4.0422px rgba(82, 77, 141, 0.0484671);
+                    "
+                  >
+                    <th
+                      style="
+                        padding: 18px 15px;
+                        border-top-left-radius: 8px;
+                        border-bottom-left-radius: 8px;
+                        text-align: left;
+                      "
+                    >
+                      <span style="color: #fff">Descripción</span>
+                    </th>
+                    <th style="padding: 18px 15px; text-align: left">
+                      <span style="color: #fff">Precio Unitario</span>
+                    </th>
+                    <th style="padding: 18px 15px; text-align: left">
+                      <span style="color: #fff">Cantidad</span>
+                    </th>
+                    <th
+                      style="
+                        padding: 18px 15px;
+                        border-top-right-radius: 8px;
+                        border-bottom-right-radius: 8px;
+                        text-align: right;
+                      "
+                    >
+                      <span style="color: #fff">Total Línea</span>
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {% for detalle in detalles_factura %}
+                  <tr
+                    style="
+                      box-shadow: 0px 10.9412px 10.9412px
+                          rgba(82, 77, 141, 0.04),
+                        0px 9.51387px 7.6111px rgba(82, 77, 141, 0.06),
+                        0px 5.05275px 4.0422px rgba(82, 77, 141, 0.0484671);
+                      border-radius: 5.47059px;
+                    "
+                  >
+                    <td
+                      style="
+                        padding: 18px 15px;
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                      "
+                    >
+                      <span
+                        style="
+                          min-width: 7px;
+                          height: 7px;
+                          border: 4px solid #006666;
+                          background: #fff;
+                          border-radius: 100%;
+                          display: inline-block;
+                        "
+                      ></span>
+                      <span>{{ detalle.articulo.nombre }}</span>
+                    </td>
+                    <td style="padding: 18px 15px">
+                      <span>Q{{ detalle.precio_unitario }}</span>
+                    </td>
+                    <td style="padding: 18px 15px">
+                      <span>{{ detalle.cantidad }}</span>
+                    </td>
+                    <td style="padding: 18px 15px; text-align: right">
+                      <span>Q{{ detalle.precio_total }}</span>
+                    </td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td
+                      colspan="4"
+                      class="text-center"
+                      style="padding: 18px 15px"
+                    >
+                      No hay detalles agregados aún.
+                    </td>
+                  </tr>
+                  {% endfor %}
+                  <!-- Mostrar total de la factura -->
+                  <tr>
+                    <td
+                      colspan="3"
+                      style="text-align: right; font-weight: bold"
+                    >
+                      Total:
+                    </td>
+                    <td style="text-align: right; font-weight: bold">
+                      Q{{ total_factura }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </tbody>
+        <tr
+          style="
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            margin-top: 12px;
+          "
+        >
+          <td></td>
+          <td>
+            <button
+              class="btn btn-primary"
+              type="button"
+              data-bs-toggle="modal"
+              data-bs-target="#detalleFacturaModal"
+              title="btn btn-info btn-lg"
+            >
+              Agregar Detalle
+            </button>
+          </td>
+        </tr>
+      </table>
     </div>
   </div>
 
-  <div class="container-fluid">
-    <div class="edit-profile">
-      <div class="row">
-        <div class="col-xl-12">
-          <div class="card">
-            <div class="card-header bg-primary text-white">
-              <h5 class="mb-0">Nuevo Detalle de Factura</h5>
-            </div>
-            <div class="card-body">
-              <form method="post">
-                {% csrf_token %}
-                <input type="hidden" name="form1h" value="{{ form1h_instance.id }}">
-                <div class="row">
-                  <div class="col-md-6 mb-3">
-                    <label for="id_articulo" class="form-label">Artículo</label>
-                    {{ form.articulo }}
-                  </div>
-                  <div class="col-md-6 mb-3">
-                    <label for="id_cantidad" class="form-label">Cantidad</label>
-                    {{ form.cantidad }}
-                  </div>
-                  <div class="col-md-6 mb-3">
-                    <label for="id_precio_unitario" class="form-label">Precio Unitario</label>
-                    {{ form.precio_unitario }}
-                  </div>
-                 
-                  <div class="col-md-6 mb-3">
-                    <label for="id_renglon" class="form-label">Renglón</label>
-                    {{ form.renglon }}
-                  </div>
-                </div>
-                <div class="text-end">
-                  <button type="submit" class="btn btn-primary">Guardar Detalle</button>
-                </div>
-              </form>
-            </div>
-          </div>
 
-          <!-- Sección para mostrar los detalles de la factura con el nuevo estilo de tabla -->
-          <div class="col-sm-12">
-            <div class="card">
-              <div class="card-header">
-                <h4>Detalles de la Factura</h4><span>Detalles de los artículos y su información correspondiente</span>
+        
+  <!-- Modal -->
+  <div
+    class="modal fade"
+    id="detalleFacturaModal"
+    tabindex="-1"
+    aria-labelledby="detalleFacturaModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="detalleFacturaModalLabel">
+            Nuevo Detalle de la Factura
+          </h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <form method="post">
+            {% csrf_token %}
+            <input
+              type="hidden"
+              name="form1h"
+              value="{{ form1h_instance.id }}"
+            />
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="id_articulo" class="form-label">Artículo</label>
+                {{ form.articulo }}
               </div>
-              <div class="card-block row">
-                <div class="col-sm-12 col-lg-12 col-xl-12">
-                  <div class="table-responsive">
-                    <table class="table light-card">
-                      <thead>
-                        <tr>
-                          <th scope="col">ID Línea</th>
-                          <th scope="col">Artículo</th>
-                          <th scope="col">Cantidad</th>
-                          <th scope="col">Precio Unitario</th>
-                          <th scope="col">Precio Total</th>
-                          <th scope="col">Renglón</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {% for detalle in detalles_factura %}
-                          <tr>
-                            <th scope="row">{{ detalle.id_linea }}</th>
-                            <td>{{ detalle.articulo.nombre }}</td>
-                            <td>{{ detalle.cantidad }}</td>
-                            <td>Q{{ detalle.precio_unitario }}</td>
-                            <td>Q{{ detalle.precio_total }}</td>
-                            <td>{{ detalle.renglon }}</td>
-                          </tr>
-                        {% empty %}
-                          <tr>
-                            <td colspan="6" class="text-center">No hay detalles agregados aún.</td>
-                          </tr>
-                        {% endfor %}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+              <div class="col-md-6 mb-3">
+                <label for="id_cantidad" class="form-label">Cantidad</label>
+                {{ form.cantidad }}
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="id_precio_unitario" class="form-label"
+                  >Precio Unitario</label
+                >
+                {{ form.precio_unitario }}
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="id_renglon" class="form-label">Renglón</label>
+                {{ form.renglon }}
               </div>
             </div>
-          </div>
-
+            <div class="text-end">
+              <button type="submit" class="btn btn-primary">
+                Guardar Detalle
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
@@ -125,7 +294,7 @@
 
 <script>
   $(document).ready(function () {
-    $('.table').DataTable();
+    $(".table").DataTable();
   });
 </script>
 
