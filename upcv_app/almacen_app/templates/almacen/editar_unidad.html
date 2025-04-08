@@ -33,100 +33,69 @@
   <div class="container-fluid">
     <div class="edit-profile">
       <div class="row">
-        <!-- Formulario de creación de ubicación -->
         <div class="col-xl-12">
           <div class="card">
             <div class="card-header">
               <!-- Título opcional -->
+              <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editarUnidadModal">
+                {% if form.instance.pk %}Editar Unidad{% else %}Crear Unidad{% endif %}
+              </button>
             </div>
             <div class="card-body">
               <!-- Mostramos los mensajes de éxito o error si existen -->
               {% if messages %}
-              <ul>
-                {% for message in messages %}
-                <li class="message">{{ message }}</li>
-                {% endfor %}
-              </ul>
-              {% endif %}
-              {% if form.errors %}
-              <div class="alert alert-danger">
                 <ul>
-                  {% for field, errors in form.errors.items %}
-                  <li><strong>{{ field }}:</strong> {{ errors|join:', ' }}</li>
+                  {% for message in messages %}
+                    <li class="message">{{ message }}</li>
                   {% endfor %}
                 </ul>
-              </div>
               {% endif %}
-              
-              <!-- Formulario para crear o editar una ubicación -->
-              <form method="POST">
-                {% csrf_token %}
-                
-                <div class="row">
-                    <!-- Columna 1 -->
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="{{ form.nombre.id_for_label }}">Nombre</label>
-                            {{ form.nombre }}
-                        </div>
-                    </div>
-        
-                    <!-- Columna 2 -->
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="{{ form.descripcion.id_for_label }}">Simbolo</label>
-                            {{ form.simbolo }}
-                        </div>
-                    </div>
+              {% if form.errors %}
+                <div class="alert alert-danger">
+                  <ul>
+                    {% for field, errors in form.errors.items %}
+                      <li><strong>{{ field }}:</strong> {{ errors|join:', ' }}</li>
+                    {% endfor %}
+                  </ul>
                 </div>
-                  
-                <br>
-                
-             
+              {% endif %}
 
-                <div class="form-footer text-end">
-                  <button class="btn btn-primary" type="submit">
-                    {% if form.instance.pk %}Actualizar Unidad{% else %}Crear Unidad{% endif %}
-                  </button>
+              <!-- Tabla para mostrar las unidades creadas -->
+              <div class="mt-4">
+                <h5>Unidades Creadas</h5>
+                <div class="table-responsive custom-scrollbar">
+                  <table class="display" id="basic-9">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Símbolo</th>
+                        <th>Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for unidad in unidades %}
+                        <tr>
+                          <td>{{ unidad.id }}</td>
+                          <td>{{ unidad.nombre }}</td>
+                          <td>{{ unidad.simbolo }}</td>
+                          <td>
+                            <a href="{% url 'almacen:editar_unidad' unidad.id %}" class="btn btn-primary btn-sm">Editar</a>
+                          </td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Símbolo</th>
+                        <th>Acciones</th>
+                      </tr>
+                    </tfoot>
+                  </table>
                 </div>
-              </form>
-
-<!-- Tabla para mostrar las unidades creadas -->
-<div class="mt-4">
-  <h5>Unidades Creadas</h5>
-  <div class="table-responsive custom-scrollbar">
-    <table class="display" id="basic-9">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Nombre</th>
-          <th>Simbolo</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for unidad in unidades %}
-        <tr>
-          <td>{{ unidad.id }}</td>
-          <td>{{ unidad.nombre }}</td>
-          <td>{{ unidad.simbolo }}</td>
-          <td>
-            <a href="{% url 'almacen:editar_unidad' unidad.id %}" class="btn btn-primary btn-sm">Editar</a>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-      <tfoot>
-        <tr>
-          <th>ID</th>
-          <th>Nombre</th>
-          <th>Simbolo</th>
-          <th>Acciones</th>
-        </tr>
-      </tfoot>
-    </table>
-  </div>
-</div>
+              </div>
             </div>
           </div>
         </div>
@@ -134,5 +103,50 @@
     </div>
   </div>
   <!-- Container-fluid Ends-->
+
+  <!-- Modal para Editar Unidad -->
+  <div class="modal fade" id="editarUnidadModal" tabindex="-1" aria-labelledby="editarUnidadModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="editarUnidadModalLabel">Editar Unidad</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <!-- Formulario para editar una unidad -->
+          <form method="POST">
+            {% csrf_token %}
+            
+            <div class="row">
+              <!-- Columna 1 -->
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="{{ form.nombre.id_for_label }}">Nombre</label>
+                  {{ form.nombre }}
+                </div>
+              </div>
+
+              <!-- Columna 2 -->
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="{{ form.simbolo.id_for_label }}">Símbolo</label>
+                  {{ form.simbolo }}
+                </div>
+              </div>
+            </div>
+            <br>
+
+            <div class="form-footer text-end">
+              <button class="btn btn-primary" type="submit">
+                Actualizar Unidad
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div>
+
 {% endblock %}

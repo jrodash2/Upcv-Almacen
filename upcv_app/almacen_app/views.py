@@ -51,6 +51,12 @@ def agregar_detalle_factura(request, form1h_id):
     # Calcular el total de la factura
     total_factura = form1h_instance.calcular_total_factura()
 
+    # Obtener todos los artículos
+    articulos = Articulo.objects.all()  # Ajusta esto según tu modelo de artículos
+    categorias = Categoria.objects.all()
+    ubicaciones = Ubicacion.objects.all()
+    unidades = UnidadDeMedida.objects.all()
+
     if request.method == "POST":
         form = DetalleFacturaForm(request.POST, form1h_instance=form1h_instance)
         if form.is_valid():
@@ -87,6 +93,10 @@ def agregar_detalle_factura(request, form1h_id):
         'form': form,
         'detalles_factura': detalles_factura,
         'total_factura': total_factura,  # Pasa el total a la plantilla
+        'articulos': articulos,  # Agregar la lista de artículos al contexto
+        'categorias': categorias,
+        'ubicaciones': ubicaciones,
+        'unidades': unidades,
     })
 
 
@@ -171,12 +181,16 @@ def crear_unidad(request):
     return render(request, 'almacen/crear_unidad.html', {'form': form, 'unidades': unidades})
 
 def editar_unidad(request, pk):
-    unidad = get_object_or_404(UnidadDeMedida, pk=pk)  # Obtener la unidad de medida por su PK
-    form = UnidadDeMedidaForm(request.POST or None, instance=unidad)  # Rellenar el formulario con los datos existentes
-    if form.is_valid():
-        form.save()  # Guardar los cambios en la unidad de medida
-        return redirect('almacen:crear_unidad')  # Redirige a la vista de creación (o a donde desees)
-    return render(request, 'almacen/editar_unidad.html', {'form': form, 'unidades': UnidadDeMedida.objects.all()})
+    unidad = get_object_or_404(UnidadDeMedida, pk=pk)
+    if request.method == 'POST':
+        form = UnidadDeMedidaForm(request.POST, instance=unidad)
+        if form.is_valid():
+            form.save()
+            return redirect('almacen:crear_unidad')  # Redirige a la lista de unidades
+    else:
+        form = UnidadDeMedidaForm(instance=unidad)
+
+    return render(request, 'almacen/crear_unidad.html', {'form': form})
 
 def crear_ubicacion(request):
     ubicaciones = Ubicacion.objects.all()
@@ -206,6 +220,18 @@ def editar_ubicacion(request, pk):
         return redirect('almacen:crear_ubicacion')  # Redirige a la vista de creación
     return render(request, 'almacen/editar_ubicacion.html', {'form': form, 'ubicaciones': Ubicacion.objects.all()})
 
+def buscar_proveedor_por_nit(request, nit):
+    try:
+        proveedor = Proveedor.objects.get(nit=nit)
+        # Devuelve los datos del proveedor en formato JSON
+        return JsonResponse({
+            'nombre': proveedor.nombre,
+            'telefono': proveedor.telefono,
+            'direccion': proveedor.direccion,
+        })
+    except Proveedor.DoesNotExist:
+        # Si no se encuentra el proveedor, devuelve un error
+        return JsonResponse({'error': 'Proveedor no encontrado'}, status=404)
 
 @login_required
 def user_create(request):

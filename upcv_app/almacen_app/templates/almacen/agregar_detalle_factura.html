@@ -205,97 +205,228 @@
           </tr>
         </tbody>
         <tr
-          style="
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            margin-top: 12px;
-          "
-        >
-          <td></td>
-          <td>
+        style="
+          width: 100%;
+          display: flex;
+          justify-content: space-between;
+          margin-top: 12px;
+        "
+      >
+        <td></td>
+        <td>
+          <!-- Contenedor para los botones -->
+          <div style="display: flex; gap: 10px;">
+            <!-- Botón de Agregar Detalle -->
             <button
               class="btn btn-primary"
               type="button"
               data-bs-toggle="modal"
               data-bs-target="#detalleFacturaModal"
-              title="btn btn-info btn-lg"
+              title="Agregar Detalle"
             >
               Agregar Detalle
             </button>
-          </td>
-        </tr>
+      
+            <!-- Botón de Agregar Artículo -->
+            <button 
+              class="btn btn-primary"
+              type="button"
+              data-bs-toggle="modal"
+              data-bs-target="#crearArticuloModal"
+              title="Crear Nuevo Artículo"
+            >
+              Agregar Artículo
+            </button>
+          </div>
+        </td>
+      </tr>
+      
       </table>
     </div>
   </div>
 
 
-        
-  <!-- Modal -->
-  <div
-    class="modal fade"
-    id="detalleFacturaModal"
-    tabindex="-1"
-    aria-labelledby="detalleFacturaModalLabel"
-    aria-hidden="true"
-  >
+  <!-- Modal para seleccionar artículo -->
+  <div class="modal fade" id="detalleFacturaModal" tabindex="-1" aria-labelledby="detalleFacturaModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="detalleFacturaModalLabel">
-            Nuevo Detalle de la Factura
-          </h5>
-          <button
-            type="button"
-            class="btn-close"
-            data-bs-dismiss="modal"
-            aria-label="Close"
-          ></button>
+          <h5 class="modal-title" id="detalleFacturaModalLabel">Seleccionar Artículo para Detalle</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
           <form method="post">
             {% csrf_token %}
-            <input
-              type="hidden"
-              name="form1h"
-              value="{{ form1h_instance.id }}"
-            />
+            <input type="hidden" name="form1h" value="{{ form1h_instance.id }}" />
             <div class="row">
               <div class="col-md-6 mb-3">
                 <label for="id_articulo" class="form-label">Artículo</label>
-                {{ form.articulo }}
+                <select class="form-control" id="id_articulo" name="articulo">
+                  {% for articulo in articulos %}
+                    <option value="{{ articulo.id }}">{{ articulo.nombre }}</option>
+                  {% endfor %}
+                </select>
               </div>
+
               <div class="col-md-6 mb-3">
                 <label for="id_cantidad" class="form-label">Cantidad</label>
-                {{ form.cantidad }}
+                <input type="number" id="id_cantidad" class="form-control" name="cantidad" required />
               </div>
+
               <div class="col-md-6 mb-3">
-                <label for="id_precio_unitario" class="form-label"
-                  >Precio Unitario</label
-                >
-                {{ form.precio_unitario }}
+                <label for="id_precio_unitario" class="form-label">Precio Unitario</label>
+                <input type="number" class="form-control" id="id_precio_unitario" name="precio_unitario" />
               </div>
+
               <div class="col-md-6 mb-3">
                 <label for="id_renglon" class="form-label">Renglón</label>
-                {{ form.renglon }}
+                <input type="text" id="id_renglon" class="form-control" name="renglon" />
               </div>
             </div>
             <div class="text-end">
-              <button type="submit" class="btn btn-primary">
-                Guardar Detalle
-              </button>
+              <button type="submit" class="btn btn-primary">Guardar Detalle</button>
             </div>
           </form>
+       
+
+          <!-- Tabla de Artículos existentes -->
+          <div class="mt-4">
+            <h5>Artículos Creados</h5>
+            <table class="display" id="basic-9">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Nombre</th>
+                  <th>Categoría</th>
+                  <th>Unidad de Medida</th>
+                  <th>Ubicación</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for articulo in articulos %}
+                  <tr>
+                    <td>{{ articulo.id }}</td>
+                    <td>{{ articulo.nombre }}</td>
+                    <td>{{ articulo.categoria }}</td>
+                    <td>{{ articulo.unidad_medida }}</td>
+                    <td>{{ articulo.ubicacion }}</td>
+                    <td>
+                      <button class="btn btn-success btn-sm seleccionar-articulo" data-id="{{ articulo.id }}" data-nombre="{{ articulo.nombre }}" data-precio="{{ articulo.precio_unitario }}">Seleccionar</button>
+                    </td>
+                  </tr>
+                {% empty %}
+                  <tr>
+                    <td colspan="6" class="text-center">No hay artículos disponibles.</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+<!-- Modal para Crear Nuevo Artículo -->
+<div class="modal fade" id="crearArticuloModal" tabindex="-1" aria-labelledby="crearArticuloModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="crearArticuloModalLabel">Crear Nuevo Artículo</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Formulario para crear un nuevo artículo -->
+        <form method="POST" action="{% url 'almacen:crear_articulo' %}">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label for="id_nombre" class="form-label">Nombre del Artículo</label>
+            <input type="text" class="form-control" id="id_nombre" name="nombre" required />
+          </div>
+
+          <!-- Campo de selección de Categoría -->
+          <div class="mb-3">
+            <label for="id_categoria" class="form-label">Categoría</label>
+            <select class="form-control" id="id_categoria" name="categoria" required>
+              <option value="" disabled selected>Seleccione una Categoría</option>
+              {% for categoria in categorias %}
+                <option value="{{ categoria.id }}">{{ categoria.nombre }}</option>
+              {% empty %}
+                <option value="" disabled>No hay categorías disponibles</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Campo de selección de Ubicación -->
+          <div class="mb-3">
+            <label for="id_ubicacion" class="form-label">Ubicación</label>
+            <select class="form-control" id="id_ubicacion" name="ubicacion" required>
+              <option value="" disabled selected>Seleccione una Ubicación</option>
+              {% for ubicacion in ubicaciones %}
+                <option value="{{ ubicacion.id }}">{{ ubicacion.nombre }}</option>
+              {% empty %}
+                <option value="" disabled>No hay ubicaciones disponibles</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="id_unidad_medida" class="form-label">Unidad de Medida</label>
+            <select class="form-control" id="id_unidad_medida" name="unidad_medida" required>
+              <option value="" disabled selected>Seleccione una Unidad de Medida</option>
+              {% for unidad in unidades %}
+                <option value="{{ unidad.id }}">{{ unidad.nombre }}</option>
+              {% empty %}
+                <option value="" disabled>No hay unidades de medida disponibles</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="text-end">
+            <button type="submit" class="btn btn-primary">Crear Artículo</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
 </div>
 
+
 <script>
-  $(document).ready(function () {
-    $(".table").DataTable();
+  $(document).on('click', '.seleccionar-articulo', function () {
+    var articuloId = $(this).data('id');
+    var articuloNombre = $(this).data('nombre');
+    var articuloPrecio = $(this).data('precio');
+  
+    // Asignar el valor al campo del formulario de detalles
+    $('#id_articulo').val(articuloId);  // Asigna el ID del artículo al campo del select
+    $('#id_precio_unitario').val(articuloPrecio);  // Asigna el precio al campo de precio unitario
+  });
+  
+</script>
+
+<script>
+  // Cuando se envíe el formulario, se ejecutará la recarga
+  $(document).on('submit', '#crearArticuloModal form', function (e) {
+    e.preventDefault(); // Evitar el comportamiento por defecto (recarga normal)
+    
+    // Aquí se podría agregar una lógica para enviar el formulario via AJAX
+    $.ajax({
+      type: 'POST',
+      url: $(this).attr('action'),
+      data: $(this).serialize(),
+      success: function(response) {
+        // Si el artículo se ha creado correctamente, recargamos la página
+        location.reload();
+      },
+      error: function(error) {
+        // Si hay un error, puedes mostrar un mensaje (opcional)
+        alert('Hubo un error al crear el artículo. Intenta nuevamente.');
+      }
+    });
   });
 </script>
+
 
 {% endblock %}

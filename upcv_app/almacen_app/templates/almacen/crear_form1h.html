@@ -131,20 +131,21 @@
             </div>
             <div class="col-md-6 mb-3">
               <label for="id_nit_proveedor" class="form-label">NIT del Proveedor</label>
-              {{ form.nit_proveedor }}
+              <input type="text" id="id_nit_proveedor" name="nit_proveedor" class="form-control" placeholder="Ingresa el NIT del proveedor" />
             </div>
             <div class="col-md-6 mb-3">
               <label for="id_proveedor_nombre" class="form-label">Nombre del Proveedor</label>
-              {{ form.proveedor_nombre }}
+              <input type="text" id="id_proveedor_nombre" name="proveedor_nombre" class="form-control" readonly />
             </div>
             <div class="col-md-6 mb-3">
               <label for="id_telefono_proveedor" class="form-label">Teléfono del Proveedor</label>
-              {{ form.telefono_proveedor }}
+              <input type="text" id="id_telefono_proveedor" name="telefono_proveedor" class="form-control" readonly />
             </div>
             <div class="col-md-6 mb-3">
               <label for="id_direccion_proveedor" class="form-label">Dirección del Proveedor</label>
-              {{ form.direccion_proveedor }}
+              <input type="text" id="id_direccion_proveedor" name="direccion_proveedor" class="form-control" readonly />
             </div>
+            
             <div class="col-md-6 mb-3">
               <label for="id_numero_factura" class="form-label">Número de Factura</label>
               {{ form.numero_factura }}
@@ -182,29 +183,32 @@
 </div>
 
 <script>
-  // Inicializar DataTables
-  $(document).ready(function () {
-    $('#form1hTable').DataTable();
-  });
-
-  // Autocompletar campos relacionados con el proveedor
-  document.getElementById('id_proveedor').addEventListener('change', function () {
-    const proveedorId = this.value;
-    if (proveedorId) {
-      fetch(`/almacen/proveedor/${proveedorId}/`)
+  document.getElementById('id_nit_proveedor').addEventListener('input', function () {
+    const nit = this.value.trim();
+    if (nit.length > 0) {
+      fetch(`/almacen/buscar-proveedor/${nit}/`)
         .then(response => response.json())
         .then(data => {
-          document.getElementById('id_nit_proveedor').value = data.nit;
-          document.getElementById('id_proveedor_nombre').value = data.nombre;
-          document.getElementById('id_telefono_proveedor').value = data.telefono;
-          document.getElementById('id_direccion_proveedor').value = data.direccion;
+          if (data.error) {
+            alert(data.error);  // Si el proveedor no se encuentra, muestra un mensaje de error
+          } else {
+            // Si el proveedor es encontrado, llena los campos con los datos del proveedor
+            document.getElementById('id_proveedor_nombre').value = data.nombre;
+            document.getElementById('id_telefono_proveedor').value = data.telefono;
+            document.getElementById('id_direccion_proveedor').value = data.direccion;
+          }
+        })
+        .catch(error => {
+          console.error('Error al buscar el proveedor:', error);
         });
     } else {
-      document.getElementById('id_nit_proveedor').value = '';
+      // Si el campo NIT está vacío, limpia los demás campos
       document.getElementById('id_proveedor_nombre').value = '';
       document.getElementById('id_telefono_proveedor').value = '';
       document.getElementById('id_direccion_proveedor').value = '';
     }
   });
 </script>
+
+
 {% endblock %}

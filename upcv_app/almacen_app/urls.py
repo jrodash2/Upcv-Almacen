@@ -13,7 +13,7 @@ urlpatterns = [
     path('ubicacion/', views.crear_ubicacion, name='crear_ubicacion'),  # Vista para crear y listar ubicaciones
     path('ubicacion/editar/<int:pk>/', views.editar_ubicacion, name='editar_ubicacion'),  # Vista para editar una ubicación
     path('unidad/', views.crear_unidad, name='crear_unidad'),  
-    path('unidad/editar/<int:pk>/', views.editar_unidad, name='editar_unidad'),  
+    path('unidad/editar/<int:pk>/', views.editar_unidad, name='editar_unidad'), 
     path('categoria/', views.crear_categoria, name='crear_categoria'),  # Vista para crear y listar categorías
     path('categoria/editar/<int:pk>/', views.editar_categoria, name='editar_categoria'),  # Vista para editar una categoría
     path('proveedor/', views.crear_proveedor, name='crear_proveedor'),  # Vista para crear y listar proveedores
@@ -25,4 +25,5 @@ urlpatterns = [
     path('form1h/', views.crear_form1h, name='crear_form1h'),
     path('proveedor/<int:pk>/', views.proveedor_detail, name='proveedor_detail'),
     path('factura/<int:form1h_id>/detalle/', views.agregar_detalle_factura, name='agregar_detalle_factura'),
+    path('buscar-proveedor/<str:nit>/', views.buscar_proveedor_por_nit, name='buscar_proveedor_por_nit'),
 ]
