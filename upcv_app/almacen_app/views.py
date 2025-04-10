@@ -6,11 +6,11 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from .form import DetalleFacturaForm, Form1hForm, UserForm, UbicacionForm, UnidadDeMedidaForm, CategoriaForm, ProveedorForm, ArticuloForm, DepartamentoForm
-from .models import ContadorDetalleFactura, DetalleFactura, Ubicacion, UnidadDeMedida, Categoria, Proveedor, Articulo, Departamento, Kardex, Asignacion, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa
+from .models import ContadorDetalleFactura, DetalleFactura, LineaLibre, Ubicacion, UnidadDeMedida, Categoria, Proveedor, Articulo, Departamento, Kardex, Asignacion, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa
 from django.views.generic import CreateView
 from django.views.generic import ListView
 from django.urls import reverse_lazy
-from django.http import JsonResponse
+from django.http import HttpResponseNotAllowed, JsonResponse
 from django.core.exceptions import ValidationError
 from django.contrib import messages
 
@@ -60,11 +60,8 @@ def agregar_detalle_factura(request, form1h_id):
     form1h_instance = get_object_or_404(form1h, id=form1h_id)
     detalles_factura = DetalleFactura.objects.filter(form1h=form1h_instance)
 
-    # Calcular el total de la factura
     total_factura = form1h_instance.calcular_total_factura()
-
-    # Obtener todos los artículos
-    articulos = Articulo.objects.all()  # Ajusta esto según tu modelo de artículos
+    articulos = Articulo.objects.all()
     categorias = Categoria.objects.all()
     ubicaciones = Ubicacion.objects.all()
     unidades = UnidadDeMedida.objects.all()
@@ -73,28 +70,23 @@ def agregar_detalle_factura(request, form1h_id):
         form = DetalleFacturaForm(request.POST, form1h_instance=form1h_instance)
         if form.is_valid():
             detalle = form.save(commit=False)
-            detalle.form1h = form1h_instance  # Asigna el form1h correcto
+            detalle.form1h = form1h_instance
 
-            # Obtener el contador global de id_linea
-            contador_obj = ContadorDetalleFactura.objects.first()
+            # Intentar obtener un id_linea libre
+            linea_liberada = LineaLibre.objects.order_by('id_linea').first()
 
-            if contador_obj is None:
-                # Si no hay un contador en la base de datos, crearlo
-                contador_obj = ContadorDetalleFactura.objects.create(contador=1)
+            if linea_liberada:
+                id_linea = linea_liberada.id_linea
+                linea_liberada.delete()  # Ya lo vamos a usar
+            else:
+                # Usar el contador global
+                contador_obj, _ = ContadorDetalleFactura.objects.get_or_create(pk=1, defaults={'contador': 1})
+                id_linea = contador_obj.contador
+                contador_obj.contador += 1
+                contador_obj.save()
 
-            # Obtener el id_linea actual y asignarlo
-            id_linea = contador_obj.contador
-
-            # Asegurarse de que el id_linea sea único
-            while DetalleFactura.objects.filter(id_linea=id_linea).exists():
-                id_linea += 1  # Incrementar hasta encontrar un id_linea único
-
-            detalle.id_linea = id_linea  # Asignamos el id_linea único
-            detalle.save()  # Guardar el detalle con el id_linea único
-
-            # Incrementamos el contador global
-            contador_obj.contador = id_linea + 1
-            contador_obj.save()  # Guardamos el nuevo valor del contador
+            detalle.id_linea = id_linea
+            detalle.save()
 
             return redirect('almacen:agregar_detalle_factura', form1h_id=form1h_id)
     else:
@@ -104,12 +96,13 @@ def agregar_detalle_factura(request, form1h_id):
         'form1h_instance': form1h_instance,
         'form': form,
         'detalles_factura': detalles_factura,
-        'total_factura': total_factura,  # Pasa el total a la plantilla
-        'articulos': articulos,  # Agregar la lista de artículos al contexto
+        'total_factura': total_factura,
+        'articulos': articulos,
         'categorias': categorias,
         'ubicaciones': ubicaciones,
         'unidades': unidades,
     })
+
 
 
 # Views for Departamento
@@ -244,7 +237,7 @@ def buscar_proveedor_por_nit(request, nit):
     except Proveedor.DoesNotExist:
         # Si no se encuentra el proveedor, devuelve un error
         return JsonResponse({'error': 'Proveedor no encontrado'}, status=404)
-    
+ 
 def eliminar_detalle_factura(request, detalle_id):
     if request.method == "POST":
         detalle = get_object_or_404(DetalleFactura, id=detalle_id)
@@ -260,18 +253,23 @@ def obtener_detalle_factura(request, detalle_id):
         'precio_unitario': detalle.precio_unitario,
         'renglon': detalle.renglon,
     })
+    
+def editar_detalle_factura(request):
+    if request.method == 'POST':
+        detalle_id = request.POST.get("detalle_id")  # Obtener el ID del detalle
+        detalle = get_object_or_404(DetalleFactura, id=detalle_id)  # Buscar el detalle existente
 
-def editar_detalle_factura(request, detalle_id):
-    if request.method == "POST":
-        detalle = get_object_or_404(DetalleFactura, id=detalle_id)
-        detalle.articulo_id = request.POST.get('articulo')
-        detalle.cantidad = request.POST.get('cantidad')
-        detalle.precio_unitario = request.POST.get('precio_unitario')
-        detalle.renglon = request.POST.get('renglon')  # Actualizar el campo 'renglon'
-        detalle.precio_total = float(detalle.cantidad) * float(detalle.precio_unitario)
+        # Actualizar los campos del detalle
+        detalle.articulo_id = request.POST.get("articulo")
+        detalle.cantidad = int(request.POST.get("cantidad"))  # Convertir a entero
+        detalle.precio_unitario = float(request.POST.get("precio_unitario"))  # Convertir a flotante
+        detalle.renglon = request.POST.get("renglon")
+        detalle.precio_total = detalle.cantidad * detalle.precio_unitario  # Multiplicación correcta
         detalle.save()
-        return JsonResponse({'success': True})  # Respuesta JSON para indicar éxito
-    return JsonResponse({'success': False}, status=400)  # Respuesta en caso de error
+
+        return redirect('almacen:agregar_detalle_factura', form1h_id=detalle.form1h.id)
+
+    return HttpResponseNotAllowed(['POST'])
 
 @login_required
 def user_create(request):

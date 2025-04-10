@@ -17,7 +17,7 @@
                 <div class="product-box">
                   <div class="product-img"><img class="img-fluid" src="{% static 'assets/images/logo/upcv3.jpg' %}" alt="">
                     <div class="product-hover">
-                      <div class="m-t-15 btn-showcase"><a class="btn btn-outline-info-2x" href="" title=""> <i ></i>Confirmar</a><a class="btn btn-outline-info-2x" href="" title=""> <i ></i>Asignar</a><a class="btn btn-outline-info-2x" href=""> <i ></i>Anular</a></div>
+                      <div class="m-t-15 btn-showcase"><a class="btn btn-outline-warning btn-lg" href="" title=""> <i ></i>Confirmar</a><a class="btn btn-outline-warning btn-lg" href="" title=""> <i ></i>Asignar</a><a class="btn btn-outline-warning btn-lg" href=""> <i ></i>Anular</a></div>
                     </div>
                   </div>
             
@@ -55,7 +55,7 @@
                   <tr>
                     <td style="width: 36%">
                       <span style="opacity: 0.8">Proveedor</span>
-                      <h6>{{ form1h_instance.proveedor }}</h6>
+                      <h6>{{ form1h_instance.proveedor_nombre }}</h6>
                     </td>
                     <td>
                       <span style="opacity: 0.8">NIT</span>
@@ -349,7 +349,7 @@
                   <td>{{ articulo.unidad_medida }}</td>
                   <td>{{ articulo.ubicacion }}</td>
                   <td>
-                    <button class="btn btn-primary btn-sm seleccionar-articulo" data-id="{{ articulo.id }}" data-nombre="{{ articulo.nombre }}" data-precio="{{ articulo.precio_unitario }}">Seleccionar</button>
+                    <button class="btn btn-success btn-sm seleccionar-articulo" data-id="{{ articulo.id }}" data-nombre="{{ articulo.nombre }}" data-precio="{{ articulo.precio_unitario }}">Seleccionar</button>
                   </td>
                 </tr>
               {% empty %}
@@ -448,7 +448,7 @@
 </div>
 
 
-<!-- Modal para Editar Detalle con imagen y estilo -->
+<!-- Modal para Editar Detalle -->
 <div class="modal fade" id="editarDetalleModal" tabindex="-1" aria-labelledby="editarDetalleModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content dark-sign-up">
@@ -475,9 +475,9 @@
           </div>
 
           <!-- Formulario para editar detalle -->
-          <form id="editarDetalleForm" method="POST">
+          <form id="editarDetalleForm" method="POST" action="{% url 'almacen:editar_detalle_factura' %}">
             {% csrf_token %}
-            <input type="hidden" id="detalleId" name="detalle_id">
+            <input type="hidden" id="detalleId" name="detalle_id"> <!-- Campo oculto para el ID del detalle -->
 
             <!-- Campo Artículo -->
             <div class="mb-3">
@@ -563,7 +563,6 @@
 </div>
 
 
-
 <script>
   $(document).on('click', '.seleccionar-articulo', function () {
     var articuloId = $(this).data('id');
@@ -639,6 +638,7 @@
   });
 </script>
 
+
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     // Manejar clic en el botón de editar
@@ -665,4 +665,5 @@
     });
   });
 </script>
+
 {% endblock %}

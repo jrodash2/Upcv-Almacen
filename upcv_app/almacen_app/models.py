@@ -93,6 +93,11 @@ class Dependencia(models.Model):
     def __str__(self):
         return self.nombre
 
+
+class LineaLibre(models.Model):
+    id_linea = models.IntegerField(unique=True)
+
+
 class Programa(models.Model):
     nombre = models.CharField(max_length=255)
     descripcion = models.TextField(null=True, blank=True)
