@@ -23,7 +23,10 @@ urlpatterns = [
     path('departamento/', views.crear_departamento, name='crear_departamento'),  # Vista para crear y listar departamentos
     path('departamento/editar/<int:pk>/', views.editar_departamento, name='editar_departamento'),  # Vista para editar un departamentos
     path('form1h/', views.crear_form1h, name='crear_form1h'),
-    path('proveedor/<int:pk>/', views.proveedor_detail, name='proveedor_detail'),
     path('factura/<int:form1h_id>/detalle/', views.agregar_detalle_factura, name='agregar_detalle_factura'),
-    path('buscar-proveedor/<str:nit>/', views.buscar_proveedor_por_nit, name='buscar_proveedor_por_nit'),
+    path('eliminar-detalle/<int:detalle_id>/', views.eliminar_detalle_factura, name='eliminar_detalle_factura'),
+    path('editar-detalle/<int:detalle_id>/', views.editar_detalle_factura, name='editar_detalle_factura'),
+    path('almacen/obtener-detalle-factura/<int:detalle_id>/', views.obtener_detalle_factura, name='obtener_detalle_factura'),
+    path('buscar-proveedor-nit/<str:nit>/', views.buscar_proveedor_nit, name='buscar_proveedor_nit'),
+    path('buscar-proveedor-id/<int:proveedor_id>/', views.buscar_proveedor_id, name='buscar_proveedor_id'),
 ]

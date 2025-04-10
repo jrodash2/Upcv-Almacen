@@ -4,6 +4,7 @@ from django.forms import CheckboxInput, DateInput
 from django.core.exceptions import ValidationError
 from .models import DetalleFactura, Ubicacion, UnidadDeMedida, Proveedor, Departamento, Categoria, Articulo, Departamento, Kardex, Asignacion, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa
 
+
 class DetalleFacturaForm(forms.ModelForm):
     class Meta:
         model = DetalleFactura

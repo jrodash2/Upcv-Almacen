@@ -15,19 +15,31 @@ from django.core.exceptions import ValidationError
 from django.contrib import messages
 
 
-def proveedor_detail(request, pk):
+def buscar_proveedor_nit(request, nit):
     try:
-        proveedor = Proveedor.objects.get(pk=pk)
+        proveedor = Proveedor.objects.get(nit=nit)
         data = {
-            'nit': proveedor.nit,
             'nombre': proveedor.nombre,
             'telefono': proveedor.telefono,
             'direccion': proveedor.direccion,
+            'proveedor_id': proveedor.id,
         }
         return JsonResponse(data)
     except Proveedor.DoesNotExist:
         return JsonResponse({'error': 'Proveedor no encontrado'}, status=404)
     
+def buscar_proveedor_id(request, proveedor_id):
+    try:
+        proveedor = Proveedor.objects.get(id=proveedor_id)
+        data = {
+            'nombre': proveedor.nombre,
+            'telefono': proveedor.telefono,
+            'direccion': proveedor.direccion,
+            'nit': proveedor.nit,
+        }
+        return JsonResponse(data)
+    except Proveedor.DoesNotExist:
+        return JsonResponse({'error': 'Proveedor no encontrado'}, status=404)
 
 def crear_form1h(request):
     form1h_list = form1h.objects.all()  # Obtener todos los registros de form1h
@@ -232,6 +244,34 @@ def buscar_proveedor_por_nit(request, nit):
     except Proveedor.DoesNotExist:
         # Si no se encuentra el proveedor, devuelve un error
         return JsonResponse({'error': 'Proveedor no encontrado'}, status=404)
+    
+def eliminar_detalle_factura(request, detalle_id):
+    if request.method == "POST":
+        detalle = get_object_or_404(DetalleFactura, id=detalle_id)
+        detalle.delete()
+        return JsonResponse({'success': True})  # Respuesta JSON para indicar éxito
+    return JsonResponse({'success': False}, status=400)  # Respuesta en caso de error
+
+def obtener_detalle_factura(request, detalle_id):
+    detalle = get_object_or_404(DetalleFactura, id=detalle_id)
+    return JsonResponse({
+        'articulo': detalle.articulo_id,
+        'cantidad': detalle.cantidad,
+        'precio_unitario': detalle.precio_unitario,
+        'renglon': detalle.renglon,
+    })
+
+def editar_detalle_factura(request, detalle_id):
+    if request.method == "POST":
+        detalle = get_object_or_404(DetalleFactura, id=detalle_id)
+        detalle.articulo_id = request.POST.get('articulo')
+        detalle.cantidad = request.POST.get('cantidad')
+        detalle.precio_unitario = request.POST.get('precio_unitario')
+        detalle.renglon = request.POST.get('renglon')  # Actualizar el campo 'renglon'
+        detalle.precio_total = float(detalle.cantidad) * float(detalle.precio_unitario)
+        detalle.save()
+        return JsonResponse({'success': True})  # Respuesta JSON para indicar éxito
+    return JsonResponse({'success': False}, status=400)  # Respuesta en caso de error
 
 @login_required
 def user_create(request):

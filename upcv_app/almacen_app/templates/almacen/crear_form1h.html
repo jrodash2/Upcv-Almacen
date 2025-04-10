@@ -43,68 +43,61 @@
                 </button>
                 
                 {% if messages %}
-  <div class="container mt-3">
-    {% for message in messages %}
-      <div class="alert alert-info dark" role="alert">
-        <p>{{ message }}</p>
-      </div>
-    {% endfor %}
-  </div>
-{% endif %}
-
-
+                  <div class="container mt-3">
+                    {% for message in messages %}
+                      <div class="alert alert-info dark" role="alert">
+                        <p>{{ message }}</p>
+                      </div>
+                    {% endfor %}
+                  </div>
+                {% endif %}
               </div>
-              
-            <!-- Tabla para mostrar las categorías creadas -->
-<div class="mt-4">
-    <h5>Formularios 1H Creados</h5>
-    <div class="table-responsive custom-scrollbar">
-      <table class="display" id="basic-9">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Proveedor</th>
-            <th>Número de Factura</th>
-            <th>Número de Serie</th>
-            <th>Fecha de Factura</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-            {% for registro in form1h_list %}
-          <tr>
-            <td>{{ registro.id }}</td>
-            <td>{{ registro.proveedor_nombre }}</td>
-            <td>{{ registro.numero_factura }}</td>
-            <td>{{ registro.numero_serie_completo }}</td>
-            <td>{{ registro.fecha_factura }}</td>
-            <td>
-              <td>
-                <a href="{% url 'almacen:agregar_detalle_factura' registro.id %}" class="btn btn-primary btn-sm">
-                    Detalles
-                </a>
-            </td>
-            
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-        <tfoot>
-          <tr>
-            <th>ID</th>
-            <th>Proveedor</th>
-            <th>Número de Factura</th>
-            <th>Número de Serie</th>
-            <th>Fecha de Factura</th>
-            <th>Acciones</th>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
-  </div>
             </div>
 
-           
+            <!-- Tabla para mostrar los formularios 1H -->
+            <div class="mt-4">
+              <h5>Formularios 1H Creados</h5>
+              <div class="table-responsive custom-scrollbar">
+                <table class="display" id="basic-9">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Proveedor</th>
+                      <th>Número de Factura</th>
+                      <th>Número de Serie</th>
+                      <th>Fecha de Factura</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for registro in form1h_list %}
+                      <tr>
+                        <td>{{ registro.id }}</td>
+                        <td>{{ registro.proveedor }}</td>
+                        <td>{{ registro.numero_factura }}</td>
+                        <td>{{ registro.numero_serie_completo }}</td>
+                        <td>{{ registro.fecha_factura }}</td>
+                        <td>
+                          <a href="{% url 'almacen:agregar_detalle_factura' registro.id %}" class="btn btn-primary btn-sm">
+                            Detalles
+                          </a>
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <th>ID</th>
+                      <th>Proveedor</th>
+                      <th>Número de Factura</th>
+                      <th>Número de Serie</th>
+                      <th>Fecha de Factura</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -113,102 +106,124 @@
   <!-- Container-fluid Ends-->
 </div>
 
-<!-- Modal para crear formulario 1H -->
+<!-- Modal para Crear Formulario 1H -->
 <div class="modal fade" id="crearForm1hModal" tabindex="-1" aria-labelledby="crearForm1hModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="crearForm1hModalLabel">Crear Formulario 1H</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <form method="post" id="form1h-form">
-          {% csrf_token %}
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label for="id_proveedor" class="form-label">Proveedor</label>
-              {{ form.proveedor }}
-            </div>
-            <div class="col-md-6 mb-3">
-              <label for="id_nit_proveedor" class="form-label">NIT del Proveedor</label>
-              <input type="text" id="id_nit_proveedor" name="nit_proveedor" class="form-control" placeholder="Ingresa el NIT del proveedor" />
-            </div>
-            <div class="col-md-6 mb-3">
-              <label for="id_proveedor_nombre" class="form-label">Nombre del Proveedor</label>
-              <input type="text" id="id_proveedor_nombre" name="proveedor_nombre" class="form-control" readonly />
-            </div>
-            <div class="col-md-6 mb-3">
-              <label for="id_telefono_proveedor" class="form-label">Teléfono del Proveedor</label>
-              <input type="text" id="id_telefono_proveedor" name="telefono_proveedor" class="form-control" readonly />
-            </div>
-            <div class="col-md-6 mb-3">
-              <label for="id_direccion_proveedor" class="form-label">Dirección del Proveedor</label>
-              <input type="text" id="id_direccion_proveedor" name="direccion_proveedor" class="form-control" readonly />
-            </div>
-            
-            <div class="col-md-6 mb-3">
-              <label for="id_numero_factura" class="form-label">Número de Factura</label>
-              {{ form.numero_factura }}
-            </div>
-            <div class="col-md-6 mb-3">
-              <label for="id_dependencia" class="form-label">Dependencia</label>
-              {{ form.dependencia }}
-            </div>
-            <div class="col-md-6 mb-3">
-              <label for="id_programa" class="form-label">Programa</label>
-              {{ form.programa }}
-            </div>
-            <div class="col-md-6 mb-3">
-              <label for="id_orden_compra" class="form-label">Orden de Compra</label>
-              {{ form.orden_compra }}
-            </div>
-            <div class="col-md-6 mb-3">
-              <label for="id_patente" class="form-label">Patente</label>
-              {{ form.patente }}
-            </div>
-            <div class="col-md-6 mb-3">
-              <label for="id_fecha_factura" class="form-label">Fecha de Factura</label>
-              {{ form.fecha_factura }}
-            </div>           
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content dark-sign-up">
+      <div class="modal-body social-profile text-start p-4">
+        <div class="Riho-demo-img">
+          <!-- Título principal -->
+          <div class="title-wrapper pb-3 modal-heading text-center">
+            <h5 class="theme-name mb-0"><span>Crear - </span>Formulario 1H</h5>
+            <p>Por favor, complete el formulario para crear un nuevo Formulario 1H.</p>
           </div>
-          <div class="text-end">
-            <button type="submit" class="btn btn-primary">Guardar</button>
-  
-          </div>
-          
-        </form>
+  <!-- Imagen decorativa -->
+  <div class="overflow-hidden text-center mb-4">
+    <img class="img-fluid" src="{% static 'assets/images/logo/logo.png' %}" alt="imagen decorativa">
+  </div>
+          <!-- Formulario para Crear Formulario 1H -->
+          <form method="post" id="form1h-form">
+            {% csrf_token %}
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="id_proveedor" class="form-label">Proveedor</label>
+                {{ form.proveedor }}
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="id_nit_proveedor" class="form-label">NIT del Proveedor</label>
+                <input type="text" id="id_nit_proveedor" name="nit_proveedor" class="form-control" placeholder="Ingresa el NIT del proveedor" />
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="id_telefono_proveedor" class="form-label">Teléfono del Proveedor</label>
+                <input type="text" id="id_telefono_proveedor" name="telefono_proveedor" class="form-control" readonly />
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="id_direccion_proveedor" class="form-label">Dirección del Proveedor</label>
+                <input type="text" id="id_direccion_proveedor" name="direccion_proveedor" class="form-control" readonly />
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <label for="id_numero_factura" class="form-label">Número de Factura</label>
+                {{ form.numero_factura }}
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="id_dependencia" class="form-label">Dependencia</label>
+                {{ form.dependencia }}
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="id_programa" class="form-label">Programa</label>
+                {{ form.programa }}
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="id_orden_compra" class="form-label">Orden de Compra</label>
+                {{ form.orden_compra }}
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="id_patente" class="form-label">Patente</label>
+                {{ form.patente }}
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="id_fecha_factura" class="form-label">Fecha de Factura</label>
+                {{ form.fecha_factura }}
+              </div>
+            </div>
+            <div class="text-end">
+              <button type="submit" class="btn btn-primary">Guardar</button>
+            </div>
+          </form>
+
+        </div>
       </div>
     </div>
   </div>
 </div>
 
 <script>
-  document.getElementById('id_nit_proveedor').addEventListener('input', function () {
-    const nit = this.value.trim();
-    if (nit.length > 0) {
-      fetch(`/almacen/buscar-proveedor/${nit}/`)
+  // Evento para buscar por NIT
+  document.getElementById('id_nit_proveedor').addEventListener('keypress', function (e) {
+    if (e.keyCode === 13) {
+      e.preventDefault();
+      const nit = this.value.trim();
+  
+      if (nit.length > 0) {
+        fetch(`/almacen/buscar-proveedor-nit/${nit}/`)
+          .then(response => response.json())
+          .then(data => {
+            if (data.error) {
+              alert(data.error);
+            } else {
+              document.getElementById('id_proveedor').value = data.proveedor_id;
+              document.getElementById('id_telefono_proveedor').value = data.telefono;
+              document.getElementById('id_direccion_proveedor').value = data.direccion;
+            }
+          })
+          .catch(error => {
+            console.error('Error al buscar el proveedor por NIT:', error);
+          });
+      }
+    }
+  });
+
+  // Evento para buscar por proveedor (select)
+  document.getElementById('id_proveedor').addEventListener('change', function () {
+    const proveedorId = this.value;
+    if (proveedorId) {
+      fetch(`/almacen/buscar-proveedor-id/${proveedorId}/`)
         .then(response => response.json())
         .then(data => {
           if (data.error) {
-            alert(data.error);  // Si el proveedor no se encuentra, muestra un mensaje de error
+            alert(data.error);
           } else {
-            // Si el proveedor es encontrado, llena los campos con los datos del proveedor
-            document.getElementById('id_proveedor_nombre').value = data.nombre;
             document.getElementById('id_telefono_proveedor').value = data.telefono;
             document.getElementById('id_direccion_proveedor').value = data.direccion;
+            document.getElementById('id_nit_proveedor').value = data.nit;
           }
         })
         .catch(error => {
-          console.error('Error al buscar el proveedor:', error);
+          console.error('Error al buscar el proveedor por ID:', error);
         });
-    } else {
-      // Si el campo NIT está vacío, limpia los demás campos
-      document.getElementById('id_proveedor_nombre').value = '';
-      document.getElementById('id_telefono_proveedor').value = '';
-      document.getElementById('id_direccion_proveedor').value = '';
     }
   });
 </script>
-
 
 {% endblock %}
