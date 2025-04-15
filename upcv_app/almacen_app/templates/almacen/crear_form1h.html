@@ -1,7 +1,4 @@
-{% extends 'almacen/base.html' %}
-{% load static %}
-
-{% block content %}
+{% extends 'almacen/base.html' %} {% load static %} {% block content %}
 
 <!-- Cargar jQuery y DataTables -->
 <script src="{% static 'assets/js/jquery.min.js' %}"></script>
@@ -17,10 +14,13 @@
         </div>
         <div class="col-6">
           <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="">
+            <li class="breadcrumb-item">
+              <a href="">
                 <svg class="stroke-icon">
-                  <use href="{% static 'assets/svg/icon-sprite.svg#stroke-home' %}"></use>
-                </svg></a></li>
+                  <use
+                    href="{% static 'assets/svg/icon-sprite.svg#stroke-home' %}"
+                  ></use></svg></a>
+            </li>
             <li class="breadcrumb-item">Dashboard</li>
             <li class="breadcrumb-item active">Formularios 1H</li>
           </ol>
@@ -36,20 +36,26 @@
         <div class="col-xl-12">
           <div class="card">
             <div class="card-header">
+              <div class="card-body">
               <div class="text-end">
                 <!-- Botón para abrir el modal -->
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#crearForm1hModal">
+                <button
+                  type="button"
+                  class="btn btn-primary"
+                  data-bs-toggle="modal"
+                  data-bs-target="#crearForm1hModal"
+                >
                   Crear Formulario 1H
                 </button>
-                
+
                 {% if messages %}
-                  <div class="container mt-3">
-                    {% for message in messages %}
-                      <div class="alert alert-info dark" role="alert">
-                        <p>{{ message }}</p>
-                      </div>
-                    {% endfor %}
+                <div class="container mt-3">
+                  {% for message in messages %}
+                  <div class="alert alert-info dark" role="alert">
+                    <p>{{ message }}</p>
                   </div>
+                  {% endfor %}
+                </div>
                 {% endif %}
               </div>
             </div>
@@ -71,18 +77,21 @@
                   </thead>
                   <tbody>
                     {% for registro in form1h_list %}
-                      <tr>
-                        <td>{{ registro.id }}</td>
-                        <td>{{ registro.proveedor }}</td>
-                        <td>{{ registro.numero_factura }}</td>
-                        <td>{{ registro.numero_serie_completo }}</td>
-                        <td>{{ registro.fecha_factura }}</td>
-                        <td>
-                          <a href="{% url 'almacen:agregar_detalle_factura' registro.id %}" class="btn btn-primary btn-sm">
-                            Detalles
-                          </a>
-                        </td>
-                      </tr>
+                    <tr>
+                      <td>{{ registro.id }}</td>
+                      <td>{{ registro.proveedor }}</td>
+                      <td>{{ registro.numero_factura }}</td>
+                      <td>{{ registro.numero_serie_completo }}</td>
+                      <td>{{ registro.fecha_factura }}</td>
+                      <td>
+                        <a
+                          href="{% url 'almacen:agregar_detalle_factura' registro.id %}"
+                          class="btn btn-primary btn-sm"
+                        >
+                          Detalles
+                        </a>
+                      </td>
+                    </tr>
                     {% endfor %}
                   </tbody>
                   <tfoot>
@@ -107,7 +116,13 @@
 </div>
 
 <!-- Modal para Crear Formulario 1H -->
-<div class="modal fade" id="crearForm1hModal" tabindex="-1" aria-labelledby="crearForm1hModalLabel" aria-hidden="true">
+<div
+  class="modal fade"
+  id="crearForm1hModal"
+  tabindex="-1"
+  aria-labelledby="crearForm1hModalLabel"
+  aria-hidden="true"
+>
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content dark-sign-up">
       <div class="modal-body social-profile text-start p-4">
@@ -115,12 +130,19 @@
           <!-- Título principal -->
           <div class="title-wrapper pb-3 modal-heading text-center">
             <h5 class="theme-name mb-0"><span>Crear - </span>Formulario 1H</h5>
-            <p>Por favor, complete el formulario para crear un nuevo Formulario 1H.</p>
+            <p>
+              Por favor, complete el formulario para crear un nuevo Formulario
+              1H.
+            </p>
           </div>
-  <!-- Imagen decorativa -->
-  <div class="overflow-hidden text-center mb-4">
-    <img class="img-fluid" src="{% static 'assets/images/logo/logo.png' %}" alt="imagen decorativa">
-  </div>
+          <!-- Imagen decorativa -->
+          <div class="overflow-hidden text-center mb-4">
+            <img
+              class="img-fluid"
+              src="{% static 'assets/images/logo/logo.png' %}"
+              alt="imagen decorativa"
+            />
+          </div>
           <!-- Formulario para Crear Formulario 1H -->
           <form method="post" id="form1h-form">
             {% csrf_token %}
@@ -130,24 +152,52 @@
                 {{ form.proveedor }}
               </div>
               <div class="col-md-6 mb-3">
-                <label for="id_nit_proveedor" class="form-label">NIT del Proveedor</label>
-                <input type="text" id="id_nit_proveedor" name="nit_proveedor" class="form-control" placeholder="Ingresa el NIT del proveedor" />
+                <label for="id_nit_proveedor" class="form-label"
+                  >NIT del Proveedor</label
+                >
+                <input
+                  type="text"
+                  id="id_nit_proveedor"
+                  name="nit_proveedor"
+                  class="form-control"
+                  placeholder="Ingresa el NIT del proveedor"
+                />
               </div>
               <div class="col-md-6 mb-3">
-                <label for="id_telefono_proveedor" class="form-label">Teléfono del Proveedor</label>
-                <input type="text" id="id_telefono_proveedor" name="telefono_proveedor" class="form-control" readonly />
+                <label for="id_telefono_proveedor" class="form-label"
+                  >Teléfono del Proveedor</label
+                >
+                <input
+                  type="text"
+                  id="id_telefono_proveedor"
+                  name="telefono_proveedor"
+                  class="form-control"
+                  readonly
+                />
               </div>
               <div class="col-md-6 mb-3">
-                <label for="id_direccion_proveedor" class="form-label">Dirección del Proveedor</label>
-                <input type="text" id="id_direccion_proveedor" name="direccion_proveedor" class="form-control" readonly />
+                <label for="id_direccion_proveedor" class="form-label"
+                  >Dirección del Proveedor</label
+                >
+                <input
+                  type="text"
+                  id="id_direccion_proveedor"
+                  name="direccion_proveedor"
+                  class="form-control"
+                  readonly
+                />
               </div>
 
               <div class="col-md-6 mb-3">
-                <label for="id_numero_factura" class="form-label">Número de Factura</label>
+                <label for="id_numero_factura" class="form-label"
+                  >Número de Factura</label
+                >
                 {{ form.numero_factura }}
               </div>
               <div class="col-md-6 mb-3">
-                <label for="id_dependencia" class="form-label">Dependencia</label>
+                <label for="id_dependencia" class="form-label"
+                  >Dependencia</label
+                >
                 {{ form.dependencia }}
               </div>
               <div class="col-md-6 mb-3">
@@ -155,7 +205,9 @@
                 {{ form.programa }}
               </div>
               <div class="col-md-6 mb-3">
-                <label for="id_orden_compra" class="form-label">Orden de Compra</label>
+                <label for="id_orden_compra" class="form-label"
+                  >Orden de Compra</label
+                >
                 {{ form.orden_compra }}
               </div>
               <div class="col-md-6 mb-3">
@@ -163,7 +215,9 @@
                 {{ form.patente }}
               </div>
               <div class="col-md-6 mb-3">
-                <label for="id_fecha_factura" class="form-label">Fecha de Factura</label>
+                <label for="id_fecha_factura" class="form-label"
+                  >Fecha de Factura</label
+                >
                 {{ form.fecha_factura }}
               </div>
             </div>
@@ -171,7 +225,6 @@
               <button type="submit" class="btn btn-primary">Guardar</button>
             </div>
           </form>
-
         </div>
       </div>
     </div>
@@ -180,50 +233,59 @@
 
 <script>
   // Evento para buscar por NIT
-  document.getElementById('id_nit_proveedor').addEventListener('keypress', function (e) {
-    if (e.keyCode === 13) {
-      e.preventDefault();
-      const nit = this.value.trim();
-  
-      if (nit.length > 0) {
-        fetch(`/almacen/buscar-proveedor-nit/${nit}/`)
-          .then(response => response.json())
-          .then(data => {
+  document
+    .getElementById("id_nit_proveedor")
+    .addEventListener("keypress", function (e) {
+      if (e.keyCode === 13) {
+        e.preventDefault();
+        const nit = this.value.trim();
+
+        if (nit.length > 0) {
+          fetch(`/almacen/buscar-proveedor-nit/${nit}/`)
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.error) {
+                alert(data.error);
+              } else {
+                document.getElementById("id_proveedor").value =
+                  data.proveedor_id;
+                document.getElementById("id_telefono_proveedor").value =
+                  data.telefono;
+                document.getElementById("id_direccion_proveedor").value =
+                  data.direccion;
+              }
+            })
+            .catch((error) => {
+              console.error("Error al buscar el proveedor por NIT:", error);
+            });
+        }
+      }
+    });
+
+  // Evento para buscar por proveedor (select)
+  document
+    .getElementById("id_proveedor")
+    .addEventListener("change", function () {
+      const proveedorId = this.value;
+      if (proveedorId) {
+        fetch(`/almacen/buscar-proveedor-id/${proveedorId}/`)
+          .then((response) => response.json())
+          .then((data) => {
             if (data.error) {
               alert(data.error);
             } else {
-              document.getElementById('id_proveedor').value = data.proveedor_id;
-              document.getElementById('id_telefono_proveedor').value = data.telefono;
-              document.getElementById('id_direccion_proveedor').value = data.direccion;
+              document.getElementById("id_telefono_proveedor").value =
+                data.telefono;
+              document.getElementById("id_direccion_proveedor").value =
+                data.direccion;
+              document.getElementById("id_nit_proveedor").value = data.nit;
             }
           })
-          .catch(error => {
-            console.error('Error al buscar el proveedor por NIT:', error);
+          .catch((error) => {
+            console.error("Error al buscar el proveedor por ID:", error);
           });
       }
-    }
-  });
-
-  // Evento para buscar por proveedor (select)
-  document.getElementById('id_proveedor').addEventListener('change', function () {
-    const proveedorId = this.value;
-    if (proveedorId) {
-      fetch(`/almacen/buscar-proveedor-id/${proveedorId}/`)
-        .then(response => response.json())
-        .then(data => {
-          if (data.error) {
-            alert(data.error);
-          } else {
-            document.getElementById('id_telefono_proveedor').value = data.telefono;
-            document.getElementById('id_direccion_proveedor').value = data.direccion;
-            document.getElementById('id_nit_proveedor').value = data.nit;
-          }
-        })
-        .catch(error => {
-          console.error('Error al buscar el proveedor por ID:', error);
-        });
-    }
-  });
+    });
 </script>
 
 {% endblock %}
