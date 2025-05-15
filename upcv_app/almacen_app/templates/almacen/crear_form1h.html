@@ -57,44 +57,51 @@
               <div class="table-responsive custom-scrollbar">
                 <table class="display" id="basic-9">
                   <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Proveedor</th>
-                      <th>Número de Factura</th>
-                      <th>Número de Serie</th>
-                      <th>Fecha de Factura</th>
-                      <th>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for registro in form1h_list %}
-                    <tr>
-                      <td>{{ registro.id }}</td>
-                      <td>{{ registro.proveedor }}</td>
-                      <td>{{ registro.numero_factura }}</td>
-                      <td>{{ registro.numero_serie_completo }}</td>
-                      <td>{{ registro.fecha_factura }}</td>
-                      <td>
-                        <a
-                          href="{% url 'almacen:agregar_detalle_factura' registro.id %}"
-                          class="btn btn-primary btn-sm"
-                        >
-                          Detalles
-                        </a>
-                      </td>
-                    </tr>
-                    {% endfor %}
-                  </tbody>
-                  <tfoot>
-                    <tr>
-                      <th>ID</th>
-                      <th>Proveedor</th>
-                      <th>Número de Factura</th>
-                      <th>Número de Serie</th>
-                      <th>Fecha de Factura</th>
-                      <th>Acciones</th>
-                    </tr>
-                  </tfoot>
+  <tr>
+    <th>ID</th>
+    <th>Proveedor</th>
+    <th>Número de Factura</th>
+    <th>Número de Serie</th>
+    <th>Fecha de Factura</th>
+    <th>Estado</th>  <!-- Nueva columna -->
+    <th>Acciones</th>
+  </tr>
+</thead>
+<tbody>
+  {% for registro in form1h_list %}
+  <tr>
+    <td>{{ registro.id }}</td>
+    <td>{{ registro.proveedor }}</td>
+    <td>{{ registro.numero_factura }}</td>
+    <td>{{ registro.numero_serie_completo }}</td>
+    <td>{{ registro.fecha_factura }}</td>
+    <td>
+      {% if registro.estado == 'confirmado' %}
+        ✅
+      {% else %}
+        ⏳ 
+      {% endif %}
+    </td>
+    <td>
+      <a href="{% url 'almacen:agregar_detalle_factura' registro.id %}" class="btn btn-primary btn-sm">
+        Detalles
+      </a>
+    </td>
+  </tr>
+  {% endfor %}
+</tbody>
+<tfoot>
+  <tr>
+    <th>ID</th>
+    <th>Proveedor</th>
+    <th>Número de Factura</th>
+    <th>Número de Serie</th>
+    <th>Fecha de Factura</th>
+    <th>Estado</th>  <!-- Pie de tabla también -->
+    <th>Acciones</th>
+  </tr>
+</tfoot>
+
                 </table>
               </div>
             </div>

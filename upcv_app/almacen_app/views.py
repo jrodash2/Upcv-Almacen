@@ -18,6 +18,10 @@ from .models import LineaLibre, ContadorDetalleFactura, LineaReservada
 from django.views.decorators.http import require_POST
 
 
+from django.views.decorators.http import require_POST
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
+
 @require_POST
 def confirmar_form1h(request, form1h_id):
     formulario = get_object_or_404(form1h, id=form1h_id)
@@ -25,14 +29,13 @@ def confirmar_form1h(request, form1h_id):
     if formulario.estado == 'borrador':
         formulario.estado = 'confirmado'
         formulario.save()
-        messages.success(request, f'El formulario #{formulario.id} ha sido confirmado exitosamente.')
+        messages.success(request, f'El formulario Serie {formulario.serie.serie} {formulario.numero_serie}  ha sido confirmado exitosamente.')
     elif formulario.estado == 'confirmado':
-        messages.info(request, f'El formulario #{formulario.id} ya está confirmado.')
+        messages.info(request, f'El formulario Serie {formulario.serie.serie} {formulario.numero_serie}  ya está confirmado.')
     else:
-        messages.warning(request, f'El formulario #{formulario.id} no se puede confirmar en su estado actual.')
+        messages.warning(request, f'El formulario Serie {formulario.serie.serie} {formulario.numero_serie}  no se puede confirmar en su estado actual.')
 
     return redirect('almacen:agregar_detalle_factura', form1h_id=form1h_id)
-
 
 
 def buscar_proveedor_nit(request, nit):
