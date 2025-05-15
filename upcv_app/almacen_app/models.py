@@ -7,7 +7,7 @@ from django.urls import reverse
 
 # Modelo de Proveedor
 class Proveedor(models.Model):
-    nombre = models.CharField(max_length=255)
+    nombre = models.CharField(max_length=255)                       
     direccion = models.CharField(max_length=255)
     telefono = models.CharField(max_length=20, null=True, blank=True)
     email = models.EmailField(null=True, blank=True)
@@ -108,15 +108,19 @@ class Programa(models.Model):
     def __str__(self):
         return self.nombre
 
-# Modelo DetalleFactura
 class DetalleFactura(models.Model):
-    form1h = models.ForeignKey('form1h', related_name='detalles', on_delete=models.CASCADE)  # Relación con form1h
+    form1h = models.ForeignKey('form1h', related_name='detalles', on_delete=models.CASCADE)
     articulo = models.ForeignKey(Articulo, related_name='detalles_factura', on_delete=models.CASCADE)
     cantidad = models.PositiveIntegerField()
     precio_unitario = models.DecimalField(max_digits=10, decimal_places=2)
     precio_total = models.DecimalField(max_digits=10, decimal_places=2)
-    id_linea = models.PositiveIntegerField(unique=True)  # Identificador único de la línea
-    renglon = models.PositiveIntegerField()  # Renglon
+    id_linea = models.PositiveIntegerField()
+    renglon = models.PositiveIntegerField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['form1h', 'id_linea'], name='unique_linea_per_form1h')
+        ]
 
     def save(self, *args, **kwargs):
         # Calcular el precio total por línea
@@ -125,8 +129,26 @@ class DetalleFactura(models.Model):
 
     def __str__(self):
         return f'Detalle de {self.articulo.nombre} (Linea {self.id_linea})'
+
+    
+from django.db import models
+
+class LineaReservada(models.Model):
+    form1h = models.ForeignKey('form1h', on_delete=models.CASCADE)
+    numero_linea = models.IntegerField(unique=True)
+    disponible = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"Línea {self.numero_linea} para Formulario {self.form1h.id}"
+
     
 class form1h(models.Model):
+    ESTADO_CHOICES = [
+        ('borrador', 'Borrador'),
+        ('confirmado', 'Confirmado'),
+    ]
+
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='borrador')
     proveedor = models.ForeignKey(Proveedor, on_delete=models.SET_NULL, null=True, blank=True)
     nit_proveedor = models.CharField(max_length=50, null=True, blank=True)
     proveedor_nombre = models.CharField(max_length=255, null=True, blank=True)
@@ -255,3 +277,5 @@ class FraseMotivacional(models.Model):
 
     def __str__(self):
         return f'{self.personaje}: {self.frase}'
+    
+    

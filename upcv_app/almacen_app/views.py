@@ -6,13 +6,33 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from .form import DetalleFacturaForm, Form1hForm, UserForm, UbicacionForm, UnidadDeMedidaForm, CategoriaForm, ProveedorForm, ArticuloForm, DepartamentoForm
-from .models import ContadorDetalleFactura, DetalleFactura, LineaLibre, Ubicacion, UnidadDeMedida, Categoria, Proveedor, Articulo, Departamento, Kardex, Asignacion, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa
+from .models import ContadorDetalleFactura, DetalleFactura, LineaLibre, Ubicacion, UnidadDeMedida, Categoria, Proveedor, Articulo, Departamento, Kardex, Asignacion, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa, LineaReservada
 from django.views.generic import CreateView
 from django.views.generic import ListView
 from django.urls import reverse_lazy
 from django.http import HttpResponseNotAllowed, JsonResponse
 from django.core.exceptions import ValidationError
 from django.contrib import messages
+from .utils import reservar_lineas
+from .models import LineaLibre, ContadorDetalleFactura, LineaReservada
+from django.views.decorators.http import require_POST
+
+
+@require_POST
+def confirmar_form1h(request, form1h_id):
+    formulario = get_object_or_404(form1h, id=form1h_id)
+
+    if formulario.estado == 'borrador':
+        formulario.estado = 'confirmado'
+        formulario.save()
+        messages.success(request, f'El formulario #{formulario.id} ha sido confirmado exitosamente.')
+    elif formulario.estado == 'confirmado':
+        messages.info(request, f'El formulario #{formulario.id} ya está confirmado.')
+    else:
+        messages.warning(request, f'El formulario #{formulario.id} no se puede confirmar en su estado actual.')
+
+    return redirect('almacen:agregar_detalle_factura', form1h_id=form1h_id)
+
 
 
 def buscar_proveedor_nit(request, nit):
@@ -42,18 +62,47 @@ def buscar_proveedor_id(request, proveedor_id):
         return JsonResponse({'error': 'Proveedor no encontrado'}, status=404)
 
 def crear_form1h(request):
-    form1h_list = form1h.objects.all()  # Obtener todos los registros de form1h
-    form = Form1hForm(request.POST or None)  # Crear el formulario
-    
+    form1h_list = form1h.objects.all()
+    form = Form1hForm(request.POST or None)
+
     if request.method == "POST":
         if form.is_valid():
             try:
-                form.save()  # Guardar el nuevo registro
-                return redirect('almacen:crear_form1h')  # Redirige a la misma página para mostrar el nuevo registro
-            except ValidationError as e:
-                messages.error(request, e.message)  # Agregar el mensaje de error a Django messages
+                cantidad = form.cleaned_data.get('cantidad_detalles')
+                nuevo_formulario = form.save()
 
-    return render(request, 'almacen/crear_form1h.html', {'form': form, 'form1h_list': form1h_list})
+                # Obtener o crear el contador global
+                contador, _ = ContadorDetalleFactura.objects.get_or_create(id=1)
+
+                for _ in range(cantidad):
+                    if LineaLibre.objects.exists():
+                        libre = LineaLibre.objects.first()
+                        numero_linea = libre.id_linea
+                        libre.delete()
+                    else:
+                        numero_linea = contador.contador
+                        contador.contador += 1
+
+                    # Asegúrate de que no esté duplicado
+                    if not LineaReservada.objects.filter(numero_linea=numero_linea).exists():
+                        LineaReservada.objects.create(
+                            form1h=nuevo_formulario,
+                            numero_linea=numero_linea,
+                            disponible=True
+                        )
+
+                contador.save()
+
+                messages.success(request, f"Formulario creado y se reservaron {cantidad} líneas.")
+                return redirect('almacen:agregar_detalle_factura', form1h_id=nuevo_formulario.id)
+            except ValidationError as e:
+                messages.error(request, e.message)
+
+    return render(request, 'almacen/crear_form1h.html', {
+        'form': form,
+        'form1h_list': form1h_list
+    })
+
 
 
 def agregar_detalle_factura(request, form1h_id):
@@ -66,31 +115,54 @@ def agregar_detalle_factura(request, form1h_id):
     ubicaciones = Ubicacion.objects.all()
     unidades = UnidadDeMedida.objects.all()
 
+    # Filtrar líneas disponibles para este form1h
+    lineas_reservadas = LineaReservada.objects.filter(
+        form1h=form1h_instance,
+        disponible=True
+    ).order_by('numero_linea')
+
+    print("======= LÍNEAS RESERVADAS =======")
+    for linea in lineas_reservadas:
+        print(f"Línea: {linea.numero_linea} | Disponible: {linea.disponible} | Formulario ID: {linea.form1h_id}")
+
     if request.method == "POST":
-        form = DetalleFacturaForm(request.POST, form1h_instance=form1h_instance)
+        numero_linea = request.POST.get('detalle_numero_linea')
+        renglon = request.POST.get('renglon')
+
+        # Clonar POST y añadir el id_linea que necesita el form
+        post_data = request.POST.copy()
+        post_data['id_linea'] = numero_linea  # Esto se inyecta en el form
+
+        form = DetalleFacturaForm(post_data, form1h_instance=form1h_instance)
+
         if form.is_valid():
             detalle = form.save(commit=False)
             detalle.form1h = form1h_instance
+            detalle.renglon = renglon  # Puedes usar directamente: detalle.renglon = numero_linea
 
-            # Intentar obtener un id_linea libre
-            linea_liberada = LineaLibre.objects.order_by('id_linea').first()
+            try:
+                linea_reservada = LineaReservada.objects.get(
+                    numero_linea=numero_linea,
+                    form1h=form1h_instance,
+                    disponible=True
+                )
 
-            if linea_liberada:
-                id_linea = linea_liberada.id_linea
-                linea_liberada.delete()  # Ya lo vamos a usar
-            else:
-                # Usar el contador global
-                contador_obj, _ = ContadorDetalleFactura.objects.get_or_create(pk=1, defaults={'contador': 1})
-                id_linea = contador_obj.contador
-                contador_obj.contador += 1
-                contador_obj.save()
+                detalle.save()
 
-            detalle.id_linea = id_linea
-            detalle.save()
+                # Marcar la línea como no disponible
+                linea_reservada.disponible = False
+                linea_reservada.save()
 
-            return redirect('almacen:agregar_detalle_factura', form1h_id=form1h_id)
+                messages.success(request, f"Detalle agregado usando línea #{numero_linea}.")
+                return redirect('almacen:agregar_detalle_factura', form1h_id=form1h_id)
+
+            except LineaReservada.DoesNotExist:
+                messages.error(request, "La línea seleccionada no está disponible o ya fue utilizada.")
+        else:
+            print("Errores del formulario:", form.errors)
+            messages.error(request, "Error al guardar el detalle. Verifica los campos.")
     else:
-        form = DetalleFacturaForm()
+        form = DetalleFacturaForm(form1h_instance=form1h_instance)
 
     return render(request, 'almacen/agregar_detalle_factura.html', {
         'form1h_instance': form1h_instance,
@@ -101,6 +173,7 @@ def agregar_detalle_factura(request, form1h_id):
         'categorias': categorias,
         'ubicaciones': ubicaciones,
         'unidades': unidades,
+        'lineas_reservadas': lineas_reservadas,
     })
 
 

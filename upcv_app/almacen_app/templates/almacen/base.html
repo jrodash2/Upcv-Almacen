@@ -222,18 +222,14 @@
                   
                 </li>
                 
-                <li class="sidebar-list"><i class="fa fa-thumb-tack"></i><a class="sidebar-link sidebar-title" href="#">
+                <li class="sidebar-list"><i class="fa fa-thumb-tack"></i><a class="sidebar-link " href="{% url 'almacen:crear_form1h' %}">
                   <svg class="stroke-icon">
                     <use href="../assets/svg/icon-sprite.svg#stroke-gallery"></use>
                   </svg>
                   <svg class="fill-icon">
-                    <use href="../assets/svg/icon-sprite.svg#fill-gallery"></use>
-                  </svg><span>Crear</span></a>
-                <ul class="sidebar-submenu">
-                  <li><a href="{% url 'almacen:crear_form1h' %}">Formulario 1H</a></li>
-                  <li><a href="">Kardex</a></li>
-            
-                 </ul>
+                    <use href="{% url 'almacen:crear_form1h' %}"></use>
+                  </svg><span>Formulario 1H</span></a>
+
               </li>
                 <li class="sidebar-list"><i class="fa fa-thumb-tack"></i><a class="sidebar-link sidebar-title" href="#">
                   <svg class="stroke-icon">

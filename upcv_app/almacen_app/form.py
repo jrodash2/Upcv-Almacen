@@ -8,13 +8,13 @@ from .models import DetalleFactura, Ubicacion, UnidadDeMedida, Proveedor, Depart
 class DetalleFacturaForm(forms.ModelForm):
     class Meta:
         model = DetalleFactura
-        fields = ['articulo', 'cantidad', 'precio_unitario',  'renglon']
+        fields = ['articulo', 'cantidad', 'precio_unitario', 'renglon', 'id_linea']
         widgets = {
             'articulo': forms.Select(attrs={'class': 'form-control'}),
             'cantidad': forms.NumberInput(attrs={'class': 'form-control'}),
             'precio_unitario': forms.NumberInput(attrs={'class': 'form-control'}),
-       
             'renglon': forms.NumberInput(attrs={'class': 'form-control'}),
+            'id_linea': forms.HiddenInput(),  # Esto para no mostrarlo en el formulario
         }
 
     def __init__(self, *args, **kwargs):
@@ -23,13 +23,24 @@ class DetalleFacturaForm(forms.ModelForm):
         if form1h_instance:
             self.instance.form1h = form1h_instance  # Asignar el form1h automáticamente
 
+
 class Form1hForm(forms.ModelForm):
+    cantidad_detalles = forms.IntegerField(
+        min_value=1,
+        required=True,
+        label="Cantidad de Detalles",
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Ej. 5'
+        })
+    )
+
     class Meta:
         model = form1h
         fields = [
             'proveedor', 'nit_proveedor', 'proveedor_nombre', 'telefono_proveedor',
             'direccion_proveedor', 'numero_factura', 'dependencia', 'programa',
-            'orden_compra', 'patente', 'fecha_factura'
+            'orden_compra', 'patente', 'fecha_factura', 'cantidad_detalles'  # ✅ AÑADIDO AQUÍ
         ]
         widgets = {
             'proveedor': forms.Select(attrs={'class': 'form-control'}),
@@ -43,8 +54,8 @@ class Form1hForm(forms.ModelForm):
             'orden_compra': forms.TextInput(attrs={'placeholder': 'Orden de compra', 'class': 'form-control'}),
             'patente': forms.TextInput(attrs={'placeholder': 'Patente', 'class': 'form-control'}),
             'fecha_factura': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-
         }
+
 
     def __init__(self, *args, **kwargs):
         super(Form1hForm, self).__init__(*args, **kwargs)

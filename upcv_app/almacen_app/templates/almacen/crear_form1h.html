@@ -48,15 +48,6 @@
                   Crear Formulario 1H
                 </button>
 
-                {% if messages %}
-                <div class="container mt-3">
-                  {% for message in messages %}
-                  <div class="alert alert-info dark" role="alert">
-                    <p>{{ message }}</p>
-                  </div>
-                  {% endfor %}
-                </div>
-                {% endif %}
               </div>
             </div>
 
@@ -163,6 +154,7 @@
                   placeholder="Ingresa el NIT del proveedor"
                 />
               </div>
+              
               <div class="col-md-6 mb-3">
                 <label for="id_telefono_proveedor" class="form-label"
                   >Teléfono del Proveedor</label
@@ -175,6 +167,7 @@
                   readonly
                 />
               </div>
+              
               <div class="col-md-6 mb-3">
                 <label for="id_direccion_proveedor" class="form-label"
                   >Dirección del Proveedor</label
@@ -221,6 +214,19 @@
                 {{ form.fecha_factura }}
               </div>
             </div>
+            <div class="col-md-6 mb-3">
+  <label for="id_cantidad_detalles" class="form-label">Cantidad de Detalles</label>
+  <input
+    type="number"
+    id="id_cantidad_detalles"
+    name="cantidad_detalles"
+    class="form-control"
+    min="1"
+    placeholder="Ej. 5"
+    required
+  />
+</div>
+
             <div class="text-end">
               <button type="submit" class="btn btn-primary">Guardar</button>
             </div>

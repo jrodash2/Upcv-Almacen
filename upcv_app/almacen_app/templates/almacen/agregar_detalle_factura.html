@@ -8,6 +8,16 @@
   <!-- Page Sidebar Ends-->
   <div class="page-body">
     <!-- Container-fluid starts -->
+    
+                {% comment %} {% if messages %}
+                <div class="container mt-3">
+                  {% for message in messages %}
+                  <div class="alert alert-info dark" role="alert">
+                    <p>{{ message }}</p>
+                  </div>
+                  {% endfor %}
+                </div>
+                {% endif %} {% endcomment %}
     <div class="container-fluid">
       <table class="table-wrapper invoice-1">
         <tbody>
@@ -17,7 +27,33 @@
                 <div class="product-box">
                   <div class="product-img"><img class="img-fluid" src="{% static 'assets/images/logo/upcv3.jpg' %}" alt="">
                     <div class="product-hover">
-                      <div class="m-t-15 btn-showcase"><a class="btn btn-outline-warning btn-lg" href="" title=""> <i ></i>Confirmar</a><a class="btn btn-outline-warning btn-lg" href="" title=""> <i ></i>Asignar</a><a class="btn btn-outline-warning btn-lg" href=""> <i ></i>Anular</a></div>
+                      <div class="m-t-15 btn-showcase">
+    
+    <!-- Botón Confirmar funcional con POST -->
+    {% if form1h_instance.estado != 'confirmado' %}
+        <form method="post" action="{% url 'almacen:confirmar_form1h' form1h_instance.id %}" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-warning btn-lg" title="Confirmar">
+                <i class="fa fa-check-circle"></i> Confirmar
+            </button>
+        </form>
+    {% else %}
+        <a class="btn btn-outline-secondary btn-lg disabled" title="Formulario confirmado">
+            <i class="fa fa-check-circle"></i> Confirmado
+        </a>
+    {% endif %}
+
+    <!-- Botón Asignar (en espera de implementación) -->
+    <a class="btn btn-outline-warning btn-lg" href="#" title="Asignar">
+        <i class="fa fa-user-plus"></i> Asignar
+    </a>
+
+    <!-- Botón Anular (en espera de implementación) -->
+    <a class="btn btn-outline-warning btn-lg" href="#" title="Anular">
+        <i class="fa fa-times-circle"></i> Anular
+    </a>
+</div>
+
                     </div>
                   </div>
             
@@ -232,31 +268,34 @@
       >
         <td></td>
         <td>
-          <!-- Contenedor para los botones -->
-          <div style="display: flex; gap: 10px;">
-            <!-- Botón de Agregar Detalle -->
-            <button
-              class="btn btn-primary"
-              type="button"
-              data-bs-toggle="modal"
-              data-bs-target="#detalleFacturaModal"
-              title="Agregar Detalle"
-            >
-              Agregar Detalle
-            </button>
-           
-            <!-- Botón de Agregar Artículo -->
-            <button 
-              class="btn btn-primary"
-              type="button"
-              data-bs-toggle="modal"
-              data-bs-target="#crearArticuloModal"
-              title="Crear Nuevo Artículo"
-            >
-              Agregar Artículo
-            </button>
-          </div>
-        </td>
+  {% if form1h_instance.estado != 'confirmado' %}
+    <!-- Contenedor para los botones -->
+    <div style="display: flex; gap: 10px;">
+      <!-- Botón de Agregar Detalle -->
+      <button
+        class="btn btn-primary"
+        type="button"
+        data-bs-toggle="modal"
+        data-bs-target="#detalleFacturaModal"
+        title="Agregar Detalle"
+      >
+        Agregar Detalle
+      </button>
+
+      <!-- Botón de Agregar Artículo -->
+      <button 
+        class="btn btn-primary"
+        type="button"
+        data-bs-toggle="modal"
+        data-bs-target="#crearArticuloModal"
+        title="Crear Nuevo Artículo"
+      >
+        Agregar Artículo
+      </button>
+    </div>
+  {% endif %}
+</td>
+
       </tr>
       
       </table>
@@ -291,38 +330,60 @@
           </div>
 
           <!-- Formulario -->
-          <form method="post" onsubmit="showSuccessMessage('¡Detalle agregado correctamente!')">
-            {% csrf_token %}
-            <input type="hidden" name="form1h" value="{{ form1h_instance.id }}" />
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label for="id_articulo" class="form-label">Artículo</label>
-                <select class="form-control" id="id_articulo" name="articulo">
-                  {% for articulo in articulos %}
+<form method="post" onsubmit="showSuccessMessage('¡Detalle agregado correctamente!')">
+    {% csrf_token %}
+    <input type="hidden" name="form1h" value="{{ form1h_instance.id }}" />
+
+    <div class="row">
+        <!-- Campo para seleccionar artículo -->
+        <div class="col-md-6 mb-3">
+            <label for="id_articulo" class="form-label">Artículo</label>
+            <select class="form-control" id="id_articulo" name="articulo" required>
+                {% for articulo in articulos %}
                     <option value="{{ articulo.id }}">{{ articulo.nombre }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-  
-              <div class="col-md-6 mb-3">
-                <label for="id_cantidad" class="form-label">Cantidad</label>
-                <input type="number" id="id_cantidad" class="form-control" name="cantidad" required />
-              </div>
-  
-              <div class="col-md-6 mb-3">
-                <label for="id_precio_unitario" class="form-label">Precio Unitario</label>
-                <input type="number" class="form-control" id="id_precio_unitario" name="precio_unitario" />
-              </div>
-  
-              <div class="col-md-6 mb-3">
-                <label for="id_renglon" class="form-label">Renglón</label>
-                <input type="text" id="id_renglon" class="form-control" name="renglon" />
-              </div>
-            </div>
-            <div class="text-end">
-              <button type="submit" class="btn btn-primary ">Guardar Detalle</button>
-            </div>
-          </form>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Campo para ingresar la cantidad -->
+        <div class="col-md-6 mb-3">
+            <label for="id_cantidad" class="form-label">Cantidad</label>
+            <input type="number" id="id_cantidad" class="form-control" name="cantidad" required />
+        </div>
+
+        <!-- Campo para ingresar el precio unitario -->
+        <div class="col-md-6 mb-3">
+            <label for="id_precio_unitario" class="form-label">Precio Unitario</label>
+            <input type="number" class="form-control" id="id_precio_unitario" name="precio_unitario" required />
+        </div>
+
+        <!-- Campo para seleccionar el número de línea reservado -->
+        <div class="col-md-6 mb-3">
+            <label for="detalle_numero_linea" class="form-label">Número de Línea</label>
+            <select name="detalle_numero_linea" class="form-control" required>
+                {% for linea in lineas_reservadas %}
+                    <option value="{{ linea.numero_linea }}">{{ linea.numero_linea }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Campo visible para 'renglon' -->
+        <div class="col-md-6 mb-3">
+            <label for="renglon" class="form-label">Renglón</label>
+            <input type="number" id="renglon" class="form-control" name="renglon" value="{{ renglon_value }}" required />
+        </div>
+
+        <!-- Campo oculto para 'id_linea' -->
+        <input type="hidden" name="id_linea" value="{{ id_linea_value }}">
+
+    </div>
+
+    <div class="text-end">
+        <button type="submit" class="btn btn-primary">Guardar Detalle</button>
+    </div>
+</form>
+
+
 
         </div>
 
