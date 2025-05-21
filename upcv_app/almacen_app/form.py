@@ -23,6 +23,33 @@ class DetalleFacturaForm(forms.ModelForm):
         if form1h_instance:
             self.instance.form1h = form1h_instance  # Asignar el form1h automáticamente
 
+class SerieForm(forms.ModelForm):
+    class Meta:
+        model = Serie
+        fields = ['serie', 'numero_inicial', 'numero_final', 'activo']
+        widgets = {
+            'serie': forms.TextInput(attrs={
+                'placeholder': 'Código de la serie',
+                'class': 'form-control'
+            }),
+            'numero_inicial': forms.NumberInput(attrs={
+                'placeholder': 'Número inicial',
+                'class': 'form-control'
+            }),
+            'numero_final': forms.NumberInput(attrs={
+                'placeholder': 'Número final',
+                'class': 'form-control'
+            }),
+            'activo': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(SerieForm, self).__init__(*args, **kwargs)
+        for field_name, field in self.fields.items():
+            if not isinstance(field.widget, forms.CheckboxInput):
+                field.widget.attrs['class'] = field.widget.attrs.get('class', '') + ' form-control'
 
 class Form1hForm(forms.ModelForm):
     cantidad_detalles = forms.IntegerField(

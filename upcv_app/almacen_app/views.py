@@ -5,7 +5,7 @@ from django.contrib.auth.models import Group, User
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
-from .form import DetalleFacturaForm, Form1hForm, UserForm, UbicacionForm, UnidadDeMedidaForm, CategoriaForm, ProveedorForm, ArticuloForm, DepartamentoForm
+from .form import DetalleFacturaForm, Form1hForm, UserForm, UbicacionForm, UnidadDeMedidaForm, CategoriaForm, ProveedorForm, ArticuloForm, DepartamentoForm, SerieForm
 from .models import ContadorDetalleFactura, DetalleFactura, LineaLibre, Ubicacion, UnidadDeMedida, Categoria, Proveedor, Articulo, Departamento, Kardex, Asignacion, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa, LineaReservada
 from django.views.generic import CreateView
 from django.views.generic import ListView
@@ -16,11 +16,34 @@ from django.contrib import messages
 from .utils import reservar_lineas
 from .models import LineaLibre, ContadorDetalleFactura, LineaReservada
 from django.views.decorators.http import require_POST
-
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView
+from .models import Serie
 
 from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
+
+
+
+def serie_form_list(request, pk=None):
+    if pk:
+        instance = get_object_or_404(Serie, pk=pk)
+    else:
+        instance = None
+
+    if request.method == 'POST':
+        form = SerieForm(request.POST, instance=instance)
+        if form.is_valid():
+            form.save()
+            return redirect('almacen:lista_series')
+    else:
+        form = SerieForm(instance=instance)
+
+    series = Serie.objects.all()
+    return render(request, 'almacen/serie_list.html', {
+        'form': form,
+        'series': series,
+    })
 
 @require_POST
 def confirmar_form1h(request, form1h_id):

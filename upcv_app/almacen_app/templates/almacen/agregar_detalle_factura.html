@@ -221,14 +221,19 @@
                     <td style="padding: 18px 15px; text-align: right">
                       <span>Q{{ detalle.precio_total }}</span>
                     </td>
-                    <td style="text-align: center; vertical-align: middle;">
-                      <i class="fa fa-edit editar-detalle-btn fa-2x" 
-   style="cursor: pointer;" 
-   data-id="{{ detalle.id }}" 
-   data-bs-toggle="modal" 
-   data-bs-target="#editarDetalleModal"></i>
-                      <i class="fa fa-trash-o eliminar-detalle-btn fa-2x" style="cursor: pointer;" data-url="{% url 'almacen:eliminar_detalle_factura' detalle.id %}"></i>
-                    </td>
+<td style="text-align: center; vertical-align: middle;">
+  {% if form1h_instance.estado != 'confirmado' %}
+    <i class="fa fa-edit editar-detalle-btn fa-2x" 
+       style="cursor: pointer;" 
+       data-id="{{ detalle.id }}" 
+       data-bs-toggle="modal" 
+       data-bs-target="#editarDetalleModal"></i>
+    <i class="fa fa-trash-o eliminar-detalle-btn fa-2x" 
+       style="cursor: pointer;" 
+       data-url="{% url 'almacen:eliminar_detalle_factura' detalle.id %}"></i>
+  {% endif %}
+</td>
+
                   {% empty %}
                   <tr>
                     <td

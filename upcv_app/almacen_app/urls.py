@@ -31,6 +31,8 @@ urlpatterns = [
     path('buscar-proveedor-id/<int:proveedor_id>/', views.buscar_proveedor_id, name='buscar_proveedor_id'),
     path('agregar-detalle/<int:form1h_id>/', views.agregar_detalle_factura, name='agregar_detalle_factura'),
     path('confirmar-form1h/<int:form1h_id>/', views.confirmar_form1h, name='confirmar_form1h'),
+    path('series/', views.serie_form_list, name='lista_series'),
+    path('series/<int:pk>/editar/', views.serie_form_list, name='editar_serie'),
 
 
 ]
