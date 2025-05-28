@@ -69,6 +69,13 @@
 <link rel="stylesheet" type="text/css" href="{% static 'assets/css/responsive.css' %}">
 </head>
   <body> 
+
+    <style>
+ footer {
+  flex-shrink: 0;
+}
+</style>
+
     <!-- loader starts-->
     <div class="loader-wrapper">
       <div class="loader"> 
@@ -231,6 +238,20 @@
                   </svg><span>Formulario 1H</span></a>
 
               </li>
+
+                <li class="sidebar-list"><i class="fa fa-thumb-tack"></i><a class="sidebar-link sidebar-title" href="#">
+                  <svg class="stroke-icon">
+                    <use href="../assets/svg/icon-sprite.svg#stroke-gallery"></use>
+                  </svg>
+                  <svg class="fill-icon">
+                    <use href="../assets/svg/icon-sprite.svg#fill-gallery"></use>
+                  </svg><span>Asignaciones</span></a>
+                <ul class="sidebar-submenu">
+                  <li><a href="{% url 'almacen:crear_asignacion_detalle' %}">Asignar</a></li>
+                  <li><a href="{% url 'almacen:lista_departamentos' %}">Agisnados</a></li>
+                  
+                 </ul>
+              </li>
                 <li class="sidebar-list"><i class="fa fa-thumb-tack"></i><a class="sidebar-link sidebar-title" href="#">
                   <svg class="stroke-icon">
                     <use href="../assets/svg/icon-sprite.svg#stroke-gallery"></use>
@@ -269,15 +290,7 @@
         </div>
 
         
-        <footer class="footer">
-          <div class="container-fluid">
-            <div class="row">
-              <div class="col-md-12 footer-copyright text-center">
-                <p class="mb-0">Copyright <span id="currentYear"></span> © Informatica UPCV</p>
-              </div>
-            </div>
-          </div>
-        </footer>
+
       </div>
     </div>
     <script>
@@ -319,6 +332,15 @@
 
 <script src="{% static 'assets/js/icons/icons-notify.js' %}"></script>
 
-     
+<!-- Footer SIEMPRE va fuera de .page-body -->
+  <footer class="footer">
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-md-12 footer-copyright text-center">
+          <p class="mb-0">Copyright <span id="currentYear"></span> © Informatica UPCV</p>
+        </div>
+      </div>
+    </div>
+  </footer>     
   </body>
 </html>

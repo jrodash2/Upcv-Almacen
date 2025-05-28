@@ -1,0 +1,70 @@
+{% extends 'almacen/base.html' %}
+{% load static %}
+{% block content %}
+
+<div class="page-body">
+  <div class="container-fluid">
+    <div class="page-title">
+      <div class="row">
+        <div class="col-6">
+          <h4 class="card-title mb-0">Departamentos</h4>
+        </div>
+        <div class="col-6">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="">
+                <svg class="stroke-icon">
+                  <use href="../assets/svg/icon-sprite.svg#stroke-home"></use>
+                </svg></a></li>
+            <li class="breadcrumb-item">Dashboard</li>
+            <li class="breadcrumb-item active">Departamentos</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+
+{% if departamentos %}
+  <div class="row">
+    {% for dept in departamentos %}
+      <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 mb-4">
+        <a href="{% url 'almacen:detalle_departamento' dept.pk %}" class="text-decoration-none text-dark">
+          <div class="card h-100 card-hover">
+            <div class="card-body new-product">
+              <div class="product-cost d-flex justify-content-between align-items-center">
+                <div class="add-product d-flex align-items-center">
+                  <div class="product-icon bg-light-primary me-2">
+                    <svg>
+                      <use href="{% static 'assets/svg/icon-sprite.svg#box-add' %}"></use>
+                    </svg>
+                  </div>
+                  <h6 class="mb-0">{{ dept.nombre }}</h6>
+                </div>
+                <div class="product-icon">
+                  <svg>
+                    <use href="{% static 'assets/svg/icon-sprite.svg#arrow-right' %}"></use>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="alert alert-info">
+    No hay departamentos registrados.
+  </div>
+{% endif %}
+
+<style>
+  .card-hover:hover {
+    transform: scale(1.03);
+    transition: transform 0.3s ease;
+    z-index: 2;
+  }
+</style>
+
+
+
+
+{% endblock %}

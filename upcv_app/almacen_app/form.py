@@ -49,7 +49,9 @@ class AsignacionDetalleFacturaForm(forms.ModelForm):
         queryset_filtrado = Articulo.objects.filter(id__in=stock_disponible.keys())
 
         self.fields['articulo'].queryset = queryset_filtrado
-
+        
+        for field in self.fields.values():
+            field.widget.attrs.update({'class': 'form-control'})
 
 class DetalleFacturaForm(forms.ModelForm):
     class Meta:

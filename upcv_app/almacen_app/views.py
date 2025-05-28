@@ -24,6 +24,33 @@ from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
 import json
 
+def lista_departamentos(request):
+    departamentos = Departamento.objects.all()
+    return render(request, 'almacen/lista_departamentos.html', {
+        'departamentos': departamentos
+    })
+
+def detalle_departamento(request, pk):
+    departamento = get_object_or_404(Departamento, pk=pk)
+
+    # Agrupamos por artículo y sumamos la cantidad
+    asignaciones_agrupadas = (
+        AsignacionDetalleFactura.objects
+        .filter(destino=departamento)
+        .values('articulo__nombre')
+        .annotate(total_asignado=Sum('cantidad_asignada'))
+        .order_by('articulo__nombre')
+    )
+
+    # También traemos las asignaciones individuales si las quieres mostrar aparte
+    asignaciones_detalle = AsignacionDetalleFactura.objects.filter(destino=departamento).order_by('-fecha_asignacion')
+
+    return render(request, 'almacen/detalle_departamento.html', {
+        'departamento': departamento,
+        'asignaciones_agrupadas': asignaciones_agrupadas,
+        'asignaciones_detalle': asignaciones_detalle
+    })
+
 
 def crear_asignacion_detalle(request):
     if request.method == 'POST':

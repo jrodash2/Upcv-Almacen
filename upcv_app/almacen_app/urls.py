@@ -34,6 +34,8 @@ urlpatterns = [
     path('series/', views.serie_form_list, name='lista_series'),
     path('series/<int:pk>/editar/', views.serie_form_list, name='editar_serie'),
     path('asignacion-detalle/nueva/', views.crear_asignacion_detalle, name='crear_asignacion_detalle'),
+    path('departamentos/', views.lista_departamentos, name='lista_departamentos'),
+    path('departamento/<int:pk>/', views.detalle_departamento, name='detalle_departamento'),
 
 
 ]
