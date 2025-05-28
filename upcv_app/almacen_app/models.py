@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
 from django.urls import reverse
+from django.db.models import Sum
 
 # Modelo de Proveedor
 class Proveedor(models.Model):
@@ -15,32 +16,10 @@ class Proveedor(models.Model):
     fecha_creacion = models.DateTimeField(auto_now_add=True)  # Fecha de creación automática
     fecha_actualizacion = models.DateTimeField(auto_now=True)  # Fecha de actualización automática
 
-    def __str__(self):
+    def __str__(self): 
         return self.nombre
 
 
-# Modelo de Departamento
-class Departamento(models.Model):
-    id_departamento = models.CharField(max_length=50, unique=True)  # ID personalizado del departamento
-    nombre = models.CharField(max_length=255)
-    descripcion = models.TextField(null=True, blank=True)
-    fecha_creacion = models.DateTimeField(auto_now_add=True)  # Fecha de creación automática
-    fecha_actualizacion = models.DateTimeField(auto_now=True)  # Fecha de actualización automática
-
-    def __str__(self):
-        return self.nombre
-
-
-# Modelo de Categoría
-class Categoria(models.Model):
-    nombre = models.CharField(max_length=255)
-    descripcion = models.TextField(null=True, blank=True)
-    fecha_creacion = models.DateTimeField(auto_now_add=True)  # Fecha de creación automática
-    fecha_actualizacion = models.DateTimeField(auto_now=True)  # Fecha de actualización automática
-
-    def __str__(self):
-        return self.nombre
-    
 
 class Ubicacion(models.Model):
     nombre = models.CharField(max_length=255)
@@ -53,24 +32,99 @@ class Ubicacion(models.Model):
         return self.nombre
 
 
+
 # Modelo de Unidad de Medida
 class UnidadDeMedida(models.Model):
-    nombre = models.CharField(max_length=50)
+    nombre = models.CharField(max_length=50) 
     simbolo = models.CharField(max_length=10)
 
     def __str__(self):
         return f'{self.nombre} ({self.simbolo})'
+    
+# Modelo de Categoría
+class Categoria(models.Model):
+    nombre = models.CharField(max_length=255)
+    descripcion = models.TextField(null=True, blank=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)  # Fecha de creación automática
+    fecha_actualizacion = models.DateTimeField(auto_now=True)  # Fecha de actualización automática
 
+    def __str__(self):
+        return self.nombre
+    
 class Articulo(models.Model):
 
     nombre = models.CharField(max_length=255)
     categoria = models.ForeignKey(Categoria, on_delete=models.SET_NULL, null=True, blank=True)
     unidad_medida = models.ForeignKey(UnidadDeMedida, on_delete=models.SET_NULL, null=True, blank=True)
     ubicacion = models.ForeignKey(Ubicacion, on_delete=models.SET_NULL, null=True, blank=True)
-
+    activo = models.BooleanField(default=True) # Campo para determinar si el artículo está activo
 
     def __str__(self):
         return f'{self.nombre} ({self.categoria})'
+
+# Modelo de Departamento
+class Departamento(models.Model):
+    id_departamento = models.CharField(max_length=50, unique=True)  # ID personalizado del departamento
+    nombre = models.CharField(max_length=255)
+    descripcion = models.TextField(null=True, blank=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)  # Fecha de creación automática
+    fecha_actualizacion = models.DateTimeField(auto_now=True)  # Fecha de actualización automática
+    activo = models.BooleanField(default=True) # Campo para determinar si el departamento está activo
+    
+    def __str__(self):
+        return self.nombre
+
+ 
+class DetalleFactura(models.Model):
+    form1h = models.ForeignKey('form1h', related_name='detalles', on_delete=models.CASCADE)
+    articulo = models.ForeignKey(Articulo, related_name='detalles_factura', on_delete=models.CASCADE)
+    cantidad = models.PositiveIntegerField()
+    precio_unitario = models.DecimalField(max_digits=10, decimal_places=2)
+    precio_total = models.DecimalField(max_digits=10, decimal_places=2)
+    id_linea = models.PositiveIntegerField()
+    renglon = models.PositiveIntegerField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['form1h', 'id_linea'], name='unique_linea_per_form1h')
+        ]
+
+    def save(self, *args, **kwargs):
+        # Calcular el precio total por línea
+        self.precio_total = self.precio_unitario * self.cantidad
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        stock_total = DetalleFactura.objects.filter(articulo=self.articulo).aggregate(models.Sum('cantidad'))['cantidad__sum'] or 0
+        return f'Detalle de {self.articulo.nombre} (Stock total: {stock_total})'
+
+
+class AsignacionDetalleFactura(models.Model):
+    articulo = models.ForeignKey(Articulo, on_delete=models.CASCADE)
+    cantidad_asignada = models.PositiveIntegerField()
+    destino = models.ForeignKey(Departamento, on_delete=models.CASCADE)
+    fecha_asignacion = models.DateTimeField(auto_now_add=True)
+    descripcion = models.TextField(null=True, blank=True)
+
+    def clean(self):
+        super().clean()
+        if self.articulo is None:
+            raise ValidationError("El campo artículo es obligatorio.")
+        
+        # Calcular el stock total disponible desde DetalleFactura
+        total_stock = DetalleFactura.objects.filter(articulo=self.articulo).aggregate(
+            total=Sum('cantidad'))['total'] or 0
+        total_asignado = AsignacionDetalleFactura.objects.filter(articulo=self.articulo).aggregate(
+            total=Sum('cantidad_asignada'))['total'] or 0
+        disponible = total_stock - total_asignado
+
+        if self.cantidad_asignada > disponible:
+            raise ValidationError("La cantidad asignada no puede ser mayor al stock disponible.")
+
+    def __str__(self):
+        return f"{self.cantidad_asignada} de {self.articulo.nombre} a {self.destino.nombre}"
+
+   
 
 class Serie(models.Model):
     serie = models.CharField(max_length=50)  # Serie que puede contener letras
@@ -108,27 +162,6 @@ class Programa(models.Model):
     def __str__(self):
         return self.nombre
 
-class DetalleFactura(models.Model):
-    form1h = models.ForeignKey('form1h', related_name='detalles', on_delete=models.CASCADE)
-    articulo = models.ForeignKey(Articulo, related_name='detalles_factura', on_delete=models.CASCADE)
-    cantidad = models.PositiveIntegerField()
-    precio_unitario = models.DecimalField(max_digits=10, decimal_places=2)
-    precio_total = models.DecimalField(max_digits=10, decimal_places=2)
-    id_linea = models.PositiveIntegerField()
-    renglon = models.PositiveIntegerField()
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=['form1h', 'id_linea'], name='unique_linea_per_form1h')
-        ]
-
-    def save(self, *args, **kwargs):
-        # Calcular el precio total por línea
-        self.precio_total = self.precio_unitario * self.cantidad
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f'Detalle de {self.articulo.nombre} (Linea {self.id_linea})'
 
     
 from django.db import models
@@ -229,28 +262,6 @@ class Kardex(models.Model):
     def __str__(self):
         return f'{self.tipo_movimiento} de {self.cantidad} unidades de {self.articulo.nombre}'
 
-# Modelo de Asignación (Asignación de artículos)
-class Asignacion(models.Model):
-    articulo = models.ForeignKey(Articulo, related_name='asignaciones', on_delete=models.CASCADE)
-    cantidad = models.PositiveIntegerField()
-    destino = models.ForeignKey(Departamento, related_name='asignaciones', on_delete=models.CASCADE)
-    fecha_asignacion = models.DateTimeField(auto_now_add=True)
-    descripcion = models.TextField(blank=True, null=True)  # Descripción de la asignación
-    id_ingreso = models.ForeignKey(form1h, related_name='asignaciones', on_delete=models.SET_NULL, null=True, blank=True)  # Relación con Ingreso
-
-    def save(self, *args, **kwargs):
-        # Verificar si hay suficiente stock antes de guardar
-        if self.cantidad > self.articulo.stock:
-            raise ValidationError(f"No hay suficiente stock de {self.articulo.nombre} para asignar.")
-        
-        # Reducir el stock del artículo al momento de la asignación
-        self.articulo.stock -= self.cantidad
-        self.articulo.save()
-
-        super(Asignacion, self).save(*args, **kwargs)
-
-    def __str__(self):
-        return f'Asignación de {self.cantidad} unidades de {self.articulo.nombre} a {self.destino.nombre}'
 
 
 # Modelo de Movimiento (Registra los movimientos internos, transferencias, etc.)

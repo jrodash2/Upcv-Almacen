@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
     Proveedor, Departamento, Categoria, Ubicacion, UnidadDeMedida, 
-    Articulo, Kardex, Asignacion, Movimiento, FraseMotivacional, 
+    Articulo, Kardex, AsignacionDetalleFactura, Movimiento, FraseMotivacional, 
     Serie, form1h, DetalleFactura, Dependencia, Programa
 )
 
@@ -95,13 +95,17 @@ class KardexAdmin(admin.ModelAdmin):
  
 admin.site.register(Kardex, KardexAdmin)
 
-# Registrar Asignacion
-class AsignacionAdmin(admin.ModelAdmin):
-    list_display = ('articulo', 'cantidad', 'destino', 'fecha_asignacion')
-    search_fields = ('articulo__nombre', 'destino__nombre')
+# Registrar AsignacionDetalleFactura
+class AsignacionDetalleFacturaAdmin(admin.ModelAdmin):
+    list_display = ('get_articulo', 'cantidad_asignada', 'destino', 'fecha_asignacion')
+    search_fields = ('detalle__articulo__nombre', 'destino__nombre')
     list_filter = ('fecha_asignacion', 'destino')
 
-admin.site.register(Asignacion, AsignacionAdmin)
+    def get_articulo(self, obj):
+        return obj.detalle.articulo.nombre
+    get_articulo.short_description = 'Artículo'
+
+admin.site.register(AsignacionDetalleFactura, AsignacionDetalleFacturaAdmin)
 
 # Registrar Movimiento
 class MovimientoAdmin(admin.ModelAdmin):

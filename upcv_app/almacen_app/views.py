@@ -5,8 +5,8 @@ from django.contrib.auth.models import Group, User
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
-from .form import DetalleFacturaForm, Form1hForm, UserForm, UbicacionForm, UnidadDeMedidaForm, CategoriaForm, ProveedorForm, ArticuloForm, DepartamentoForm, SerieForm
-from .models import ContadorDetalleFactura, DetalleFactura, LineaLibre, Ubicacion, UnidadDeMedida, Categoria, Proveedor, Articulo, Departamento, Kardex, Asignacion, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa, LineaReservada
+from .form import DetalleFacturaForm, Form1hForm, UserForm, UbicacionForm, UnidadDeMedidaForm, CategoriaForm, ProveedorForm, ArticuloForm, DepartamentoForm, SerieForm, AsignacionDetalleFacturaForm
+from .models import ContadorDetalleFactura, DetalleFactura, LineaLibre, Ubicacion, UnidadDeMedida, Categoria, Proveedor, Articulo, Departamento, Kardex, AsignacionDetalleFactura, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa, LineaReservada
 from django.views.generic import CreateView
 from django.views.generic import ListView
 from django.urls import reverse_lazy
@@ -18,13 +18,48 @@ from .models import LineaLibre, ContadorDetalleFactura, LineaReservada
 from django.views.decorators.http import require_POST
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from .models import Serie
-
+from django.db.models import Sum
 from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
+import json
 
 
+def crear_asignacion_detalle(request):
+    if request.method == 'POST':
+        form = AsignacionDetalleFacturaForm(request.POST)
+        if form.is_valid():
+            try:
+                form.save()
+                messages.success(request, "Asignación creada correctamente.")
+                return redirect('almacen:crear_asignacion_detalle')
+            except Exception as e:
+                messages.error(request, f"Error al asignar: {e}")
+    else:
+        form = AsignacionDetalleFacturaForm()
 
+    stock_por_articulo = DetalleFactura.objects.values('articulo').annotate(stock_total=Sum('cantidad'))
+    asignado_por_articulo = AsignacionDetalleFactura.objects.values('articulo').annotate(asignado_total=Sum('cantidad_asignada'))
+
+    stock_dict = {}
+    for item in stock_por_articulo:
+        articulo_id = item['articulo']
+        total_stock = item['stock_total'] or 0
+        total_asignado = next((a['asignado_total'] for a in asignado_por_articulo if a['articulo'] == articulo_id), 0)
+        stock_disponible = total_stock - (total_asignado or 0)
+        stock_dict[articulo_id] = stock_disponible
+
+    # Obtener última asignación
+    ultima_asignacion = AsignacionDetalleFactura.objects.order_by('-fecha_asignacion').first()
+
+    return render(request, 'almacen/crear_asignacion_detalle.html', {
+        'form': form,
+        'stock_dict': stock_dict,
+        'ultima_asignacion': ultima_asignacion,
+    })
+    
+    
+    
 def serie_form_list(request, pk=None):
     if pk:
         instance = get_object_or_404(Serie, pk=pk)

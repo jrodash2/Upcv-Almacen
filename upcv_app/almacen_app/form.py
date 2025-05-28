@@ -2,7 +2,53 @@ from django import forms
 from django.contrib.auth.models import User, Group
 from django.forms import CheckboxInput, DateInput
 from django.core.exceptions import ValidationError
-from .models import DetalleFactura, Ubicacion, UnidadDeMedida, Proveedor, Departamento, Categoria, Articulo, Departamento, Kardex, Asignacion, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa
+from .models import DetalleFactura, Ubicacion, UnidadDeMedida, Proveedor, Departamento, Categoria, Articulo, Departamento, Kardex, AsignacionDetalleFactura, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa
+
+from django.db.models import Sum, F, Value
+from django.db.models.functions import Coalesce
+
+class AsignacionDetalleFacturaForm(forms.ModelForm):
+    articulo = forms.ModelChoiceField(
+        queryset=Articulo.objects.none(),  # Inicialmente vacío, se llenará en __init__
+        label='Artículo'
+    )
+    destino = forms.ModelChoiceField(
+        queryset=Departamento.objects.all(),
+        label='Departamento'
+    )
+
+    class Meta:
+        model = AsignacionDetalleFactura
+        fields = ['articulo', 'cantidad_asignada', 'destino', 'descripcion']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Obtener artículos con stock total > 0 (considerando lo asignado)
+        # 1. Sumar cantidades en DetalleFactura
+        stock_por_articulo = DetalleFactura.objects.values('articulo').annotate(
+            total_stock=Coalesce(Sum('cantidad'), 0)
+        )
+
+        # 2. Sumar cantidades asignadas
+        asignado_por_articulo = AsignacionDetalleFactura.objects.values('articulo').annotate(
+            total_asignado=Coalesce(Sum('cantidad_asignada'), 0)
+        )
+
+        # 3. Construir diccionario de stock disponible por artículo
+        stock_disponible = {}
+        for item in stock_por_articulo:
+            articulo_id = item['articulo']
+            total_stock = item['total_stock']
+            total_asignado = next((a['total_asignado'] for a in asignado_por_articulo if a['articulo'] == articulo_id), 0)
+            disponible = total_stock - total_asignado
+            if disponible > 0:
+                stock_disponible[articulo_id] = disponible
+
+        # 4. Filtrar artículos cuyo id está en stock_disponible (es decir, con stock > 0)
+        queryset_filtrado = Articulo.objects.filter(id__in=stock_disponible.keys())
+
+        self.fields['articulo'].queryset = queryset_filtrado
 
 
 class DetalleFacturaForm(forms.ModelForm):

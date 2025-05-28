@@ -1,0 +1,48 @@
+{% block content %}
+  <h2>Asignar artículo desde Detalle de Factura</h2>
+  
+  <form method="post" id="asignacion-form">
+    {% csrf_token %}
+    {{ form.as_p }}
+    
+    <div id="stock-info" style="margin-top: 10px; font-weight: bold;">
+      Cantidad en stock: <span id="stock-cantidad"></span>
+    </div>
+    
+    <button type="submit" class="btn btn-success">Asignar</button>
+  </form>
+
+
+  {% if ultima_asignacion %}
+  <div class="card mt-4 border p-3">
+    <h5>Última asignación registrada</h5>
+    <ul>
+      <li><strong>Artículo:</strong> {{ ultima_asignacion.articulo.nombre }}</li>
+      <li><strong>Departamento:</strong> {{ ultima_asignacion.destino.nombre }}</li>
+      <li><strong>Cantidad asignada:</strong> {{ ultima_asignacion.cantidad_asignada }}</li>
+      <li><strong>Fecha:</strong> {{ ultima_asignacion.fecha_asignacion }}</li>
+      
+    </ul>
+  </div>
+{% endif %}
+
+
+  <script>
+    const stockPorArticulo = {{ stock_dict|safe }};
+    const articuloSelect = document.querySelector('select[name="articulo"]');
+    const stockCantidadSpan = document.getElementById('stock-cantidad');
+
+    if (articuloSelect) {
+      articuloSelect.addEventListener('change', function () {
+        const articuloId = parseInt(this.value);
+        if (articuloId && stockPorArticulo[articuloId] !== undefined) {
+          stockCantidadSpan.textContent = stockPorArticulo[articuloId];
+        } else {
+          stockCantidadSpan.textContent = '';
+        }
+      });
+
+      articuloSelect.dispatchEvent(new Event('change'));
+    }
+  </script>
+{% endblock %}

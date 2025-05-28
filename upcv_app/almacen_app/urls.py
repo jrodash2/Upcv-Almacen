@@ -33,6 +33,7 @@ urlpatterns = [
     path('confirmar-form1h/<int:form1h_id>/', views.confirmar_form1h, name='confirmar_form1h'),
     path('series/', views.serie_form_list, name='lista_series'),
     path('series/<int:pk>/editar/', views.serie_form_list, name='editar_serie'),
+    path('asignacion-detalle/nueva/', views.crear_asignacion_detalle, name='crear_asignacion_detalle'),
 
 
 ]
