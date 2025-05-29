@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import (
     Proveedor, Departamento, Categoria, Ubicacion, UnidadDeMedida, 
     Articulo, Kardex, AsignacionDetalleFactura, Movimiento, FraseMotivacional, 
-    Serie, form1h, DetalleFactura, Dependencia, Programa
+    Serie, form1h, DetalleFactura, Dependencia, Programa, UsuarioDepartamento
 )
 
 
@@ -13,6 +13,14 @@ class DependenciaAdmin(admin.ModelAdmin):
     list_filter = ('activo', 'fecha_creacion', 'fecha_actualizacion')
     # Registrar los modelos en el administrador
 admin.site.register(Dependencia, DependenciaAdmin)
+
+
+class UsuarioDepartamentoAdmin(admin.ModelAdmin):
+    list_display = ('usuario', 'departamento')
+    search_fields = ('usuario__username', 'departamento__nombre')
+    list_filter = ('departamento',)
+
+admin.site.register(UsuarioDepartamento, UsuarioDepartamentoAdmin)
 
 # Configuración para el modelo Programa
 class ProgramaAdmin(admin.ModelAdmin):

@@ -74,6 +74,15 @@ class Departamento(models.Model):
     def __str__(self):
         return self.nombre
 
+class UsuarioDepartamento(models.Model):
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE)
+    departamento = models.ForeignKey(Departamento, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('usuario', 'departamento')
+
+    def __str__(self):
+        return f'{self.usuario.username} - {self.departamento.nombre}' 
  
 class DetalleFactura(models.Model):
     form1h = models.ForeignKey('form1h', related_name='detalles', on_delete=models.CASCADE)

@@ -17,10 +17,13 @@
         </div>
         <div class="col-6">
           <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="">
+            <li class="breadcrumb-item">
+              <a href="{% url 'almacen:lista_departamentos' %}">
                 <svg class="stroke-icon">
                   <use href="../assets/svg/icon-sprite.svg#stroke-home"></use>
-                </svg></a></li>
+                </svg>
+              </a>
+            </li>
             <li class="breadcrumb-item">Dashboard</li>
             <li class="breadcrumb-item active">Asignaciones</li>
           </ol>
@@ -28,77 +31,128 @@
       </div>
     </div>
 
-    <div class="container-fluid">
+    <div class="container-fluid {% if not tiene_acceso %}position-relative{% endif %}">
       <div class="edit-profile">
         <div class="row">
           <div class="col-xl-12">
-            <div class="card">
-              <div class="card-header">
-                <h5>Totales por artículo</h5>
-              </div>
-              <div class="card-body">
-                <div class="table-responsive custom-scrollbar">
-                  <table class="display" id="tabla-totales">
-                    <thead>
-                      <tr>
-                        <th>Artículo</th>
-                        <th>Total Asignado</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {% for item in asignaciones_agrupadas %}
-                      <tr>
-                        <td>{{ item.articulo__nombre }}</td>
-                        <td>{{ item.total_asignado }}</td>
-                      </tr>
-                      {% endfor %}
-                    </tbody>
-                  </table>
+            {% if tiene_acceso %}
+              <!-- Totales por artículo -->
+              <div class="card">
+                <div class="card-header">
+                  <h5>Totales por artículo</h5>
+                </div>
+                <div class="card-body">
+                  <div class="table-responsive custom-scrollbar">
+                    <table class="display" id="tabla-totales">
+                      <thead>
+                        <tr>
+                          <th>Artículo</th>
+                          <th>Total Asignado</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for item in asignaciones_agrupadas %}
+                        <tr>
+                          <td>{{ item.articulo__nombre }}</td>
+                          <td>{{ item.total_asignado }}</td>
+                        </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div class="card mt-4">
-              <div class="card-header">
-                <h5>Detalle de Asignaciones</h5>
-              </div>
-              <div class="card-body">
-                <div class="table-responsive custom-scrollbar">
-                  <table class="display" id="tabla-detalle">
-                    <thead>
-                      <tr>
-                        <th>Artículo</th>
-                        <th>Cantidad Asignada</th>
-                        <th>Descripción</th>
-                        <th>Fecha</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {% for a in asignaciones_detalle %}
-                      <tr>
-                        <td>{{ a.articulo.nombre }}</td>
-                        <td>{{ a.cantidad_asignada }}</td>
-                        <td>{{ a.descripcion }}</td>
-                        <td>{{ a.fecha_asignacion|date:"d M Y H:i" }}</td>
-                      </tr>
-                      {% empty %}
-                      <tr>
-                        <td colspan="4" class="text-center">Este departamento aún no tiene asignaciones.</td>
-                      </tr>
-                      {% endfor %}
-                    </tbody>
-                  </table>
+              <!-- Detalle de asignaciones -->
+              <div class="card mt-4">
+                <div class="card-header">
+                  <h5>Detalle de Asignaciones</h5>
+                </div>
+                <div class="card-body">
+                  <div class="table-responsive custom-scrollbar">
+                    <table class="display" id="tabla-detalle">
+                      <thead>
+                        <tr>
+                          <th>Artículo</th>
+                          <th>Cantidad Asignada</th>
+                          <th>Descripción</th>
+                          <th>Fecha</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for a in asignaciones_detalle %}
+                        <tr>
+                          <td>{{ a.articulo.nombre }}</td>
+                          <td>{{ a.cantidad_asignada }}</td>
+                          <td>{{ a.descripcion }}</td>
+                          <td>{{ a.fecha_asignacion|date:"d M Y H:i" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                          <td colspan="4" class="text-center">Este departamento aún no tiene asignaciones.</td>
+                        </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <a href="{% url 'almacen:lista_departamentos' %}" class="btn btn-primary mt-3">← Volver a la lista</a>
-
+              <a href="{% url 'almacen:lista_departamentos' %}" class="btn btn-primary mt-3">← Volver a la lista</a>
+            {% endif %}
           </div>
         </div>
       </div>
     </div>
   </div>
 </div>
+
+{% if not tiene_acceso %}
+<style>
+  .blur-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    backdrop-filter: blur(6px);
+    background-color: rgba(0,0,0,0.3);
+    z-index: 1040;
+  }
+
+
+ 
+</style>
+
+<div class="blur-overlay"></div>
+
+<div
+  class="modal fade show d-block"
+  id="crearForm1hModal"
+  tabindex="-1"
+  aria-labelledby="crearForm1hModalLabel"
+  aria-hidden="true"
+  style="z-index: 1050;"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content dark-sign-up">
+      <div class="modal-body social-profile">
+        <div class="modal-toggle-wrapper">
+          <div class="title-wrapper pb-3 modal-heading">
+            <h5 class="theme-name mb-0"><span>Acceso Denegado - </span>Información</h5>
+            <p>Tu usuario no está autorizado para ver este departamento.</p>
+          </div>
+          <p>Usuario: <strong>{{ request.user.username }}</strong></p>
+          <p>Por favor contacta al administrador.</p>
+          <div class="row justify-content-center mt-4">
+            <div class="col-auto">
+              <a href="{% url 'almacen:lista_departamentos' %}" class="btn btn-primary w-100">Volver</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
 
 {% endblock %}

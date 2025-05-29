@@ -3,10 +3,7 @@
 
 {% block content %}
 
-<!-- Cargar jQuery y DataTables -->
 <script src="{% static 'assets/js/jquery.min.js' %}"></script>
-<script src="{% static 'assets/js/datatable/datatables/jquery.dataTables.min.js' %}"></script>
-<script src="{% static 'assets/js/datatable/datatables/datatable.custom.js' %}"></script>
 
 <div class="page-body">
   <div class="container-fluid">
@@ -32,80 +29,113 @@
     </div>
   </div>
 
-  <!-- Container-fluid -->
-<div class="container-fluid">
-  <div class="row">
+  <!-- Formulario -->
+  <div class="container-fluid">
+    <div class="row">
 
-    <!-- Columna del formulario (9 columnas) -->
-    <div class="col-xl-9">
-      <div class="card">
-        <div class="card-body">
+      <div class="col-xl-9">
+        <div class="card">
+          <div class="card-body">
+            <form method="post" id="asignacion-form">
+              {% csrf_token %}
 
-          <!-- Formulario -->
-          <form method="post" id="asignacion-form">
-            {% csrf_token %}
-            {{ form.as_p }}
+              <!-- Buscar artículo -->
+              <div class="mb-3">
+                <label for="busqueda-articulo" class="form-label">Buscar artículo</label>
+                <input type="text" id="busqueda-articulo" class="form-control" placeholder="Escribe el nombre del artículo..." autocomplete="off">
+                <input type="hidden" name="articulo" id="id_articulo">
+                <div id="sugerencias-articulo" class="border rounded p-2 bg-white mt-1" style="display: none; max-height: 200px; overflow-y: auto;"></div>
+              </div>
 
-            <div id="stock-info" style="margin-top: 10px; font-weight: bold;">
-              Cantidad en stock: <span id="stock-cantidad"></span>
-            </div>
+              <!-- Departamento destino -->
+              <div class="mb-3">
+                <label for="{{ form.destino.id_for_label }}" class="form-label">Departamento</label>
+                {{ form.destino }}
+              </div>
 
-            <div class="form-footer text-end mt-3">
-              <button type="submit" class="btn btn-primary">Asignar</button>
-            </div>
-          </form>
+              <!-- Cantidad a asignar -->
+              <div class="mb-3">
+                <label for="{{ form.cantidad_asignada.id_for_label }}" class="form-label">Cantidad a asignar</label>
+                {{ form.cantidad_asignada }}
+              </div>
 
+              <!-- Stock -->
+              <div class="mb-3">
+                <label class="form-label d-block">Cantidad en stock:</label>
+                <span id="stock-cantidad" class="fw-bold"></span>
+              </div>
+
+              <!-- Botón -->
+              <div class="form-footer text-end mt-4">
+                <button type="submit" class="btn btn-primary">Asignar</button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
-    </div>
 
-   {% if ultima_asignacion %}
-<div class="col-xl-3">
-  <div class="card border mt-2 mt-xl-0 h-30">
-    <div class="card-footer p-0">
-      <div class="common-space px-3 py-2">
-        <div>
-          <a class="f-w-600 f-10" href="#">Última Asignación</a>
-          <span class="f-light f-w-400 f-10 d-block">Detalles del último registro:</span>
+      {% if ultima_asignacion %}
+      <!-- Última asignación -->
+      <div class="col-xl-3">
+        <div class="card border mt-2 mt-xl-0 h-30">
+          <div class="card-footer p-0">
+            <div class="common-space px-3 py-2">
+              <div>
+                <a class="f-w-600 f-10" href="#">Última Asignación</a>
+                <span class="f-light f-w-400 f-10 d-block">Detalles del último registro:</span>
+              </div>
+            </div>
+          </div>
+          <div class="card-body pt-2 pb-3 px-3">
+            <ul class="mb-0 list-unstyled">
+              <li><span class="f-w-600 f-10">Artículo:</span> <span class="f-light f-10">{{ ultima_asignacion.articulo.nombre }}</span></li>
+              <li><span class="f-w-600 f-10">Departamento:</span> <span class="f-light f-10">{{ ultima_asignacion.destino.nombre }}</span></li>
+              <li><span class="f-w-600 f-10">Cantidad asignada:</span> <span class="f-light f-10">{{ ultima_asignacion.cantidad_asignada }}</span></li>
+              <li><span class="f-w-600 f-10">Fecha:</span> <span class="f-light f-10">{{ ultima_asignacion.fecha_asignacion }}</span></li>
+            </ul>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="card-body pt-2 pb-3 px-3">
-      <ul class="mb-0 list-unstyled">
-        <li><span class="f-w-600 f-10">Artículo:</span> <span class="f-light f-10">{{ ultima_asignacion.articulo.nombre }}</span></li>
-        <li><span class="f-w-600 f-10">Departamento:</span> <span class="f-light f-10">{{ ultima_asignacion.destino.nombre }}</span></li>
-        <li><span class="f-w-600 f-10">Cantidad asignada:</span> <span class="f-light f-10">{{ ultima_asignacion.cantidad_asignada }}</span></li>
-        <li><span class="f-w-600 f-10">Fecha:</span> <span class="f-light f-10">{{ ultima_asignacion.fecha_asignacion }}</span></li>
-      </ul>
+      {% endif %}
+
     </div>
   </div>
 </div>
-{% endif %}
 
-
-  </div>
-</div>
-<!-- Container-fluid ends -->
-
-
-<!-- Script para stock dinámico -->
+<!-- Script de búsqueda dinámica -->
 <script>
   const stockPorArticulo = {{ stock_dict|safe }};
-  const articuloSelect = document.querySelector('select[name="articulo"]');
-  const stockCantidadSpan = document.getElementById('stock-cantidad');
+  const inputBusqueda = document.getElementById("busqueda-articulo");
+  const sugerenciasDiv = document.getElementById("sugerencias-articulo");
+  const inputArticuloId = document.getElementById("id_articulo");
+  const stockCantidadSpan = document.getElementById("stock-cantidad");
 
-  if (articuloSelect) {
-    articuloSelect.addEventListener('change', function () {
-      const articuloId = parseInt(this.value);
-      if (articuloId && stockPorArticulo[articuloId] !== undefined) {
-        stockCantidadSpan.textContent = stockPorArticulo[articuloId];
-      } else {
-        stockCantidadSpan.textContent = '';
-      }
-    });
-
-    articuloSelect.dispatchEvent(new Event('change'));
-  }
+  inputBusqueda.addEventListener("input", function () {
+    const query = this.value;
+    if (query.length >= 2) {
+      fetch(`/almacen/buscar-articulos/?q=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(data => {
+          sugerenciasDiv.innerHTML = "";
+          data.forEach(item => {
+            const option = document.createElement("div");
+            option.textContent = item.nombre;
+            option.className = "dropdown-item";
+            option.style.cursor = "pointer";
+            option.onclick = () => {
+              inputBusqueda.value = item.nombre;
+              inputArticuloId.value = item.id;
+              sugerenciasDiv.style.display = "none";
+              stockCantidadSpan.textContent = stockPorArticulo[item.id] || '0';
+            };
+            sugerenciasDiv.appendChild(option);
+          });
+          sugerenciasDiv.style.display = data.length ? "block" : "none";
+        });
+    } else {
+      sugerenciasDiv.style.display = "none";
+    }
+  });
 </script>
 
 {% endblock %}

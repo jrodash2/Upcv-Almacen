@@ -36,6 +36,10 @@ urlpatterns = [
     path('asignacion-detalle/nueva/', views.crear_asignacion_detalle, name='crear_asignacion_detalle'),
     path('departamentos/', views.lista_departamentos, name='lista_departamentos'),
     path('departamento/<int:pk>/', views.detalle_departamento, name='detalle_departamento'),
+    path('asignar-usuario-departamento/', views.asignar_departamento_usuario, name='asignar_departamento'),
+    path('eliminar-asignacion/<int:usuario_id>/<int:departamento_id>/', views.eliminar_asignacion, name='eliminar_asignacion'),
+    path('buscar-articulos/', views.buscar_articulos, name='buscar_articulos'),
+    path('stock-formulario-1h/', views.ver_stock_formulario_1h, name='ver_stock_formulario_1h'),
 
 
 ]

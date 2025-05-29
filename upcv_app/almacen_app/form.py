@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.models import User, Group
 from django.forms import CheckboxInput, DateInput
 from django.core.exceptions import ValidationError
-from .models import DetalleFactura, Ubicacion, UnidadDeMedida, Proveedor, Departamento, Categoria, Articulo, Departamento, Kardex, AsignacionDetalleFactura, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa
+from .models import DetalleFactura, Ubicacion, UnidadDeMedida, Proveedor, Departamento, Categoria, Articulo, Departamento, Kardex, AsignacionDetalleFactura, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa, UsuarioDepartamento
 
 from django.db.models import Sum, F, Value
 from django.db.models.functions import Coalesce
@@ -285,3 +285,13 @@ class UserForm(forms.ModelForm):
         # Agregar la clase 'form-control' a todos los campos del formulario
         for field in self.fields.values():
             field.widget.attrs['class'] = field.widget.attrs.get('class', '') + ' form-control'
+            
+
+class UsuarioDepartamentoForm(forms.ModelForm):
+    class Meta:
+        model = UsuarioDepartamento
+        fields = ['usuario', 'departamento']
+        widgets = {
+            'usuario': forms.Select(attrs={'class': 'form-control'}),
+            'departamento': forms.Select(attrs={'class': 'form-control'}),
+        }

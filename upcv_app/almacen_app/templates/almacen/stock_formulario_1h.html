@@ -1,0 +1,85 @@
+{% extends 'almacen/base.html' %}
+{% load static %}
+{% block content %}
+
+<!-- jQuery y DataTables (igual que en tu ejemplo) -->
+<script src="{% static 'assets/js/jquery.min.js' %}"></script>
+<script src="{% static 'assets/js/datatable/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'assets/js/datatable/datatables/datatable.custom.js' %}"></script>
+
+<div class="page-body">
+  <div class="container-fluid">
+    <div class="page-title">
+      <div class="row">
+        <div class="col-6">
+          <h4 class="card-title mb-0">📦 Stock de Artículos (Formulario 1H)</h4>
+        </div>
+        <div class="col-6">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="">
+                <svg class="stroke-icon">
+                  <use href="../assets/svg/icon-sprite.svg#stroke-home"></use>
+                </svg></a></li>
+            <li class="breadcrumb-item">Dashboard</li>
+            <li class="breadcrumb-item active">Stock Artículos</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Container-fluid starts-->
+  <div class="container-fluid">
+    <div class="card">
+      <div class="card-body">
+        <div class="table-responsive custom-scrollbar">
+         <table class="display" id="basic-9">
+  <thead>
+    <tr>
+      <th>Artículo</th>
+      <th>Ingresado</th>
+      <th>Asignado</th>
+      <th>Departamento(s)</th> <!-- Nueva columna -->
+      <th>Disponible</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in stock_list %}
+    <tr {% if item.disponible == 0 %}class="table-danger"{% endif %}>
+      <td>{{ item.articulo }}</td>
+      <td>{{ item.ingresado }}</td>
+      <td>{{ item.asignado }}</td>
+      <td>{{ item.departamentos }}</td> <!-- Mostrar departamentos aquí -->
+      <td>
+        {% if item.disponible > 0 %}
+          <span class="badge bg-success">{{ item.disponible }}</span>
+        {% else %}
+          <span class="badge bg-danger">0</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="5">No hay artículos registrados.</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr>
+      <th>Artículo</th>
+      <th>Ingresado</th>
+      <th>Asignado</th>
+      <th>Departamento(s)</th> <!-- Pie de tabla también -->
+      <th>Disponible</th>
+    </tr>
+  </tfoot>
+</table>
+
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Container-fluid Ends-->
+</div>
+
+{% endblock %}

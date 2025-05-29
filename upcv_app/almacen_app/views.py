@@ -5,8 +5,8 @@ from django.contrib.auth.models import Group, User
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
-from .form import DetalleFacturaForm, Form1hForm, UserForm, UbicacionForm, UnidadDeMedidaForm, CategoriaForm, ProveedorForm, ArticuloForm, DepartamentoForm, SerieForm, AsignacionDetalleFacturaForm
-from .models import ContadorDetalleFactura, DetalleFactura, LineaLibre, Ubicacion, UnidadDeMedida, Categoria, Proveedor, Articulo, Departamento, Kardex, AsignacionDetalleFactura, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa, LineaReservada
+from .form import DetalleFacturaForm, Form1hForm, UserForm, UbicacionForm, UnidadDeMedidaForm, CategoriaForm, ProveedorForm, ArticuloForm, DepartamentoForm, SerieForm, AsignacionDetalleFacturaForm, UsuarioDepartamentoForm
+from .models import ContadorDetalleFactura, DetalleFactura, LineaLibre, Ubicacion, UnidadDeMedida, Categoria, Proveedor, Articulo, Departamento, Kardex, AsignacionDetalleFactura, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa, LineaReservada, UsuarioDepartamento
 from django.views.generic import CreateView
 from django.views.generic import ListView
 from django.urls import reverse_lazy
@@ -18,11 +18,111 @@ from .models import LineaLibre, ContadorDetalleFactura, LineaReservada
 from django.views.decorators.http import require_POST
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from .models import Serie
-from django.db.models import Sum
-from django.views.decorators.http import require_POST
+from django.db.models import Sum, F
+from django.contrib.auth.decorators import login_required, user_passes_test
+from collections import defaultdict
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
 import json
+
+
+def ver_stock_formulario_1h(request):
+    # Obtener stock ingresado desde Formulario 1H (DetalleFactura)
+    ingresos = DetalleFactura.objects.values('articulo__id', 'articulo__nombre').annotate(
+        total_ingresado=Sum('cantidad')
+    )
+
+    ingreso_dict = {item['articulo__id']: item for item in ingresos}
+
+    # Obtener asignaciones totales por artículo
+    asignaciones = AsignacionDetalleFactura.objects.values('articulo__id').annotate(
+        total_asignado=Sum('cantidad_asignada')
+    )
+
+    # Obtener asignaciones por artículo y destino (departamento)
+    asignaciones_departamento = AsignacionDetalleFactura.objects.values(
+        'articulo__id', 'destino__nombre'
+    ).annotate(total_asignado_dept=Sum('cantidad_asignada'))
+
+    asignaciones_dept_dict = {}
+    for asig in asignaciones_departamento:
+        art_id = asig['articulo__id']
+        depto_nombre = asig['destino__nombre']
+        cantidad = asig['total_asignado_dept']
+        if art_id not in asignaciones_dept_dict:
+            asignaciones_dept_dict[art_id] = []
+        asignaciones_dept_dict[art_id].append(f"{depto_nombre} ({cantidad})")
+
+    for item in asignaciones:
+        articulo_id = item['articulo__id']
+        if articulo_id in ingreso_dict:
+            ingreso_dict[articulo_id]['total_asignado'] = item['total_asignado']
+        else:
+            ingreso_dict[articulo_id] = {
+                'articulo__id': articulo_id,
+                'articulo__nombre': Articulo.objects.get(id=articulo_id).nombre,
+                'total_ingresado': 0,
+                'total_asignado': item['total_asignado'],
+            }
+
+    stock_list = []
+    for item in ingreso_dict.values():
+        total_ingresado = item.get('total_ingresado') or 0
+        total_asignado = item.get('total_asignado') or 0
+        disponible = total_ingresado - total_asignado
+        departamentos = ", ".join(asignaciones_dept_dict.get(item['articulo__id'], [])) or "Sin asignar"
+
+        stock_list.append({
+            'articulo': item['articulo__nombre'],
+            'ingresado': total_ingresado,
+            'asignado': total_asignado,
+            'disponible': disponible,
+            'departamentos': departamentos,
+        })
+
+    context = {
+        'stock_list': stock_list,
+    }
+    return render(request, 'almacen/stock_formulario_1h.html', context)
+
+    
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.groups.filter(name='Administrador').exists())
+def asignar_departamento_usuario(request):
+    if request.method == 'POST':
+        form = UsuarioDepartamentoForm(request.POST)
+        if form.is_valid():
+            try:
+                form.save()
+                messages.success(request, 'Departamento asignado correctamente al usuario.')
+                return redirect('almacen:asignar_departamento')
+            except:
+                messages.error(request, 'Este usuario ya está asignado a ese departamento.')
+    else:
+        form = UsuarioDepartamentoForm()
+
+    # Agrupar departamentos por usuario
+    asignaciones = UsuarioDepartamento.objects.select_related('usuario', 'departamento')
+    usuarios_con_departamentos = defaultdict(list)
+    for asignacion in asignaciones:
+        usuarios_con_departamentos[asignacion.usuario].append(asignacion.departamento)
+
+    context = {
+        'form': form,
+        'usuarios_con_departamentos': usuarios_con_departamentos.items(),
+    }
+    return render(request, 'almacen/asignar_departamento.html', context)
+
+def eliminar_asignacion(request, usuario_id, departamento_id):
+    if request.method == 'POST':
+        asignacion = get_object_or_404(UsuarioDepartamento, usuario_id=usuario_id, departamento_id=departamento_id)
+        asignacion.delete()
+        messages.success(request, 'Asignación eliminada correctamente.')
+    else:
+        messages.error(request, 'Método no permitido.')
+    return redirect('almacen:asignar_departamento')
+
 
 def lista_departamentos(request):
     departamentos = Departamento.objects.all()
@@ -33,25 +133,34 @@ def lista_departamentos(request):
 def detalle_departamento(request, pk):
     departamento = get_object_or_404(Departamento, pk=pk)
 
-    # Agrupamos por artículo y sumamos la cantidad
-    asignaciones_agrupadas = (
-        AsignacionDetalleFactura.objects
-        .filter(destino=departamento)
-        .values('articulo__nombre')
-        .annotate(total_asignado=Sum('cantidad_asignada'))
-        .order_by('articulo__nombre')
-    )
+    es_admin = request.user.groups.filter(name='Administrador').exists()
 
-    # También traemos las asignaciones individuales si las quieres mostrar aparte
-    asignaciones_detalle = AsignacionDetalleFactura.objects.filter(destino=departamento).order_by('-fecha_asignacion')
+    # Verificar si tiene acceso
+    tiene_acceso = es_admin or UsuarioDepartamento.objects.filter(usuario=request.user, departamento=departamento).exists()
+
+    asignaciones_agrupadas = []
+    asignaciones_detalle = []
+
+    if tiene_acceso:
+        # Solo cargamos datos si tiene permiso
+        asignaciones_agrupadas = (
+            AsignacionDetalleFactura.objects
+            .filter(destino=departamento)
+            .values('articulo__nombre')
+            .annotate(total_asignado=Sum('cantidad_asignada'))
+            .order_by('articulo__nombre')
+        )
+
+        asignaciones_detalle = AsignacionDetalleFactura.objects.filter(destino=departamento).order_by('-fecha_asignacion')
 
     return render(request, 'almacen/detalle_departamento.html', {
         'departamento': departamento,
         'asignaciones_agrupadas': asignaciones_agrupadas,
-        'asignaciones_detalle': asignaciones_detalle
+        'asignaciones_detalle': asignaciones_detalle,
+        'tiene_acceso': tiene_acceso
     })
-
-
+    
+    
 def crear_asignacion_detalle(request):
     if request.method == 'POST':
         form = AsignacionDetalleFacturaForm(request.POST)
@@ -85,6 +194,11 @@ def crear_asignacion_detalle(request):
         'ultima_asignacion': ultima_asignacion,
     })
     
+def buscar_articulos(request):
+    term = request.GET.get('q', '')
+    articulos = Articulo.objects.filter(nombre__icontains=term)[:10]
+    results = [{'id': art.id, 'nombre': art.nombre} for art in articulos]
+    return JsonResponse(results, safe=False)
     
     
 def serie_form_list(request, pk=None):
@@ -489,8 +603,8 @@ def signin(request):
                 print(g.name)
                 if g.name == 'Administrador':
                     return redirect('almacen:dahsboard')
-                elif g.name == 'Admin_tickets':
-                    return redirect('tickets:tickets_dahsboard_adm')
+                elif g.name == 'Departamento':
+                    return redirect('almacen:dahsboard')
                 elif g.name == 'tecnico':
                     return redirect('tickets:tickets_dahsboard')
             # Si no se encuentra el grupo adecuado, se redirige a una página por defecto
