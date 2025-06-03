@@ -1,5 +1,7 @@
 from .models import ContadorDetalleFactura, LineaLibre, LineaReservada
 
+from django.contrib.auth.decorators import user_passes_test
+
 def reservar_lineas(cantidad, form1h_instance):
     contador_global, _ = ContadorDetalleFactura.objects.get_or_create(id=1)
     lineas_reservadas = []
@@ -24,3 +26,10 @@ def reservar_lineas(cantidad, form1h_instance):
 
     contador_global.save()
     return lineas_reservadas
+
+
+
+def grupo_requerido(nombre_grupo):
+    def in_group(user):
+        return user.is_authenticated and user.groups.filter(name=nombre_grupo).exists()
+    return user_passes_test(in_group)

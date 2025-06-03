@@ -3,43 +3,71 @@ from . import views
 
 app_name = 'almacen'
 
+# Manejador global de errores (esto debe estar fuera de urlpatterns)
+handler403 = 'almacen_app.views.acceso_denegado'  # Asegúrate que el nombre de tu app sea correcto
+
 urlpatterns = [
     path('', views.home, name='home'), 
     path('dahsboard/', views.dahsboard, name='dahsboard'),
     path('signin/', views.signin, name='signin'),
     path('logout/', views.signout, name='logout'),
+
+    # Acceso denegado
+    path('no-autorizado/', views.acceso_denegado, name='acceso_denegado'),
+
+    # Usuarios
     path('usuario/crear/', views.user_create, name='user_create'),
     path('usuario/eliminar/<int:user_id>/', views.user_delete, name='user_delete'),
-    path('ubicacion/', views.crear_ubicacion, name='crear_ubicacion'),  # Vista para crear y listar ubicaciones
-    path('ubicacion/editar/<int:pk>/', views.editar_ubicacion, name='editar_ubicacion'),  # Vista para editar una ubicación
-    path('unidad/', views.crear_unidad, name='crear_unidad'),  
-    path('unidad/editar/<int:pk>/', views.editar_unidad, name='editar_unidad'), 
-    path('categoria/', views.crear_categoria, name='crear_categoria'),  # Vista para crear y listar categorías
-    path('categoria/editar/<int:pk>/', views.editar_categoria, name='editar_categoria'),  # Vista para editar una categoría
-    path('proveedor/', views.crear_proveedor, name='crear_proveedor'),  # Vista para crear y listar proveedores
-    path('proveedor/editar/<int:pk>/', views.editar_proveedor, name='editar_proveedor'),  # Vista para editar un proveedor
-    path('articulo/', views.crear_articulo, name='crear_articulo'),  # Vista para crear y listar artículos
-    path('articulo/editar/<int:pk>/', views.editar_articulo, name='editar_articulo'),  # Vista para editar un artículo
-    path('departamento/', views.crear_departamento, name='crear_departamento'),  # Vista para crear y listar departamentos
-    path('departamento/editar/<int:pk>/', views.editar_departamento, name='editar_departamento'),  # Vista para editar un departamentos
+
+    # Ubicaciones
+    path('ubicacion/', views.crear_ubicacion, name='crear_ubicacion'),
+    path('ubicacion/editar/<int:pk>/', views.editar_ubicacion, name='editar_ubicacion'),
+
+    # Unidades
+    path('unidad/', views.crear_unidad, name='crear_unidad'),
+    path('unidad/editar/<int:pk>/', views.editar_unidad, name='editar_unidad'),
+
+    # Categorías
+    path('categoria/', views.crear_categoria, name='crear_categoria'),
+    path('categoria/editar/<int:pk>/', views.editar_categoria, name='editar_categoria'),
+
+    # Proveedores
+    path('proveedor/', views.crear_proveedor, name='crear_proveedor'),
+    path('proveedor/editar/<int:pk>/', views.editar_proveedor, name='editar_proveedor'),
+
+    # Artículos
+    path('articulo/', views.crear_articulo, name='crear_articulo'),
+    path('articulo/editar/<int:pk>/', views.editar_articulo, name='editar_articulo'),
+
+    # Departamentos
+    path('departamento/', views.crear_departamento, name='crear_departamento'),
+    path('departamento/editar/<int:pk>/', views.editar_departamento, name='editar_departamento'),
+    path('departamentos/', views.lista_departamentos, name='lista_departamentos'),
+    path('departamento/<int:pk>/', views.detalle_departamento, name='detalle_departamento'),
+
+    # Asignación de usuarios a departamentos
+    path('asignar-usuario-departamento/', views.asignar_departamento_usuario, name='asignar_departamento'),
+    path('eliminar-asignacion/<int:usuario_id>/<int:departamento_id>/', views.eliminar_asignacion, name='eliminar_asignacion'),
+
+    # Formularios 1H
     path('form1h/', views.crear_form1h, name='crear_form1h'),
     path('factura/<int:form1h_id>/detalle/', views.agregar_detalle_factura, name='agregar_detalle_factura'),
     path('eliminar-detalle/<int:detalle_id>/', views.eliminar_detalle_factura, name='eliminar_detalle_factura'),
     path('almacen/editar-detalle-factura/', views.editar_detalle_factura, name='editar_detalle_factura'),
     path('almacen/obtener-detalle-factura/<int:detalle_id>/', views.obtener_detalle_factura, name='obtener_detalle_factura'),
-    path('buscar-proveedor-nit/<str:nit>/', views.buscar_proveedor_nit, name='buscar_proveedor_nit'),
-    path('buscar-proveedor-id/<int:proveedor_id>/', views.buscar_proveedor_id, name='buscar_proveedor_id'),
     path('agregar-detalle/<int:form1h_id>/', views.agregar_detalle_factura, name='agregar_detalle_factura'),
     path('confirmar-form1h/<int:form1h_id>/', views.confirmar_form1h, name='confirmar_form1h'),
+
+    # Series
     path('series/', views.serie_form_list, name='lista_series'),
     path('series/<int:pk>/editar/', views.serie_form_list, name='editar_serie'),
+
+    # Asignaciones
     path('asignacion-detalle/nueva/', views.crear_asignacion_detalle, name='crear_asignacion_detalle'),
-    path('departamentos/', views.lista_departamentos, name='lista_departamentos'),
-    path('departamento/<int:pk>/', views.detalle_departamento, name='detalle_departamento'),
-    path('asignar-usuario-departamento/', views.asignar_departamento_usuario, name='asignar_departamento'),
-    path('eliminar-asignacion/<int:usuario_id>/<int:departamento_id>/', views.eliminar_asignacion, name='eliminar_asignacion'),
+
+    # Utilidades
+    path('buscar-proveedor-nit/<str:nit>/', views.buscar_proveedor_nit, name='buscar_proveedor_nit'),
+    path('buscar-proveedor-id/<int:proveedor_id>/', views.buscar_proveedor_id, name='buscar_proveedor_id'),
     path('buscar-articulos/', views.buscar_articulos, name='buscar_articulos'),
     path('stock-formulario-1h/', views.ver_stock_formulario_1h, name='ver_stock_formulario_1h'),
-
-
 ]

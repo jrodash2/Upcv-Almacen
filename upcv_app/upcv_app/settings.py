@@ -65,6 +65,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'almacen_app.context_processors.frase_del_dia',  # Agregar el context processor personalizado
+                'almacen_app.context_processors.grupo_usuario',
             ],
         },
     },
@@ -152,3 +153,5 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # El directorio donde se almacenan
 STATICFILES_DIRS = [
     BASE_DIR / "static",  # Si tienes una carpeta "static" en el directorio raíz de tu proyecto
 ]
+
+LOGIN_URL = '/no-autorizado/'  # o una ruta válida a la que redirigir

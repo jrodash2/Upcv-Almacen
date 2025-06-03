@@ -16,3 +16,11 @@ def frase_del_dia(request):
     return {
         'frase_del_dia': frase
     }
+
+def grupo_usuario(request):
+    if not request.user.is_authenticated:
+        return {}
+    return {
+        'es_departamento': request.user.groups.filter(name='Departamento').exists(),
+        'es_administrador': request.user.groups.filter(name='Administrador').exists(),
+    }
