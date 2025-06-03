@@ -219,8 +219,9 @@
                 </li>
 {% if user.is_authenticated %}
 
-  {# Mostrar "Asignados" a Departamentos o Administradores #}
-  {% if es_departamento or es_administrador %}
+  {# Mostrar "Asignados" a Departamentos #}
+  {% if es_departamento%}
+  
     <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
       <a class="sidebar-link sidebar-title" href="#">
         <svg class="stroke-icon">
@@ -232,13 +233,49 @@
         <span>Asignados</span>
       </a>
       <ul class="sidebar-submenu">
-        <li><a href="{% url 'almacen:lista_departamentos' %}">Asignados</a></li>
+
+           <li><a href="{% url 'almacen:lista_departamentos' %}">Agisnados</a></li>
       </ul>
     </li>
   {% endif %}
 
   {# Mostrar "Configuración" solo a Administradores #}
   {% if es_administrador %}
+    <li class="sidebar-list" ><i class="fa fa-thumb-tack"> </i><a class="sidebar-link " href="{% url 'almacen:dahsboard' %}">
+                    <svg >
+                      <use href="../assets/svg/icon-sprite.svg#stroke-home"></use>
+                    </svg>
+                    <svg class="fill-icon">
+                      <use href="../assets/svg/icon-sprite.svg#fill-home"></use>
+                    </svg><span>Dashboard</span></a>
+                  
+                </li>
+                
+                <li class="sidebar-list"><i class="fa fa-thumb-tack"></i><a class="sidebar-link " href="{% url 'almacen:crear_form1h' %}">
+                  <svg class="stroke-icon">
+                    <use href="../assets/svg/icon-sprite.svg#stroke-gallery"></use>
+                  </svg>
+                  <svg class="fill-icon">
+                    <use href="{% url 'almacen:crear_form1h' %}"></use>
+                  </svg><span>Formulario 1H</span></a>
+
+              </li>
+    <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
+      <a class="sidebar-link sidebar-title" href="#">
+        <svg class="stroke-icon">
+          <use href="../assets/svg/icon-sprite.svg#stroke-gallery"></use>
+        </svg>
+        <svg class="fill-icon">
+          <use href="../assets/svg/icon-sprite.svg#fill-gallery"></use>
+        </svg>
+        <span>Asignados</span>
+      </a>
+      <ul class="sidebar-submenu">
+           <li><a href="{% url 'almacen:ver_stock_formulario_1h' %}">Stock</a></li>
+           <li><a href="{% url 'almacen:crear_asignacion_detalle' %}">Asignar</a></li>
+           <li><a href="{% url 'almacen:lista_departamentos' %}">Agisnados</a></li>
+      </ul>
+    </li>
     <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
       <a class="sidebar-link sidebar-title" href="#">
         <svg class="stroke-icon">
