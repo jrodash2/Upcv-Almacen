@@ -1,6 +1,7 @@
 {% extends 'almacen/base.html' %}
 {% load static %}
 {% block content %}
+{% load custom_filters %}
 
 <!-- jQuery y DataTables (igual que en tu ejemplo) -->
 <script src="{% static 'assets/js/jquery.min.js' %}"></script>
@@ -33,14 +34,16 @@
     <div class="card">
       <div class="card-body">
         <div class="table-responsive custom-scrollbar">
-         <table class="display" id="basic-9">
+         <!-- Agrega esto dentro de la tabla, reemplazando la sección <table> completa -->
+<table class="display" id="basic-9">
   <thead>
     <tr>
       <th>Artículo</th>
       <th>Ingresado</th>
       <th>Asignado</th>
-      <th>Departamento(s)</th> <!-- Nueva columna -->
+      <th>Departamento(s)</th>
       <th>Disponible</th>
+      <th>Acción</th> <!-- Nueva columna -->
     </tr>
   </thead>
   <tbody>
@@ -49,30 +52,117 @@
       <td>{{ item.articulo }}</td>
       <td>{{ item.ingresado }}</td>
       <td>{{ item.asignado }}</td>
-      <td>{{ item.departamentos }}</td> <!-- Mostrar departamentos aquí -->
+      <td>{{ item.departamentos }}</td>
       <td>
         {% if item.disponible > 0 %}
           <span class="badge bg-success">{{ item.disponible }}</span>
         {% else %}
-          <span class="badge bg-danger">0</span>
+          <span class="badge bg-primary">0</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if item.disponible > 0 %}
+          <!-- Botón que abre el modal -->
+       <!-- En tu tabla de artículos -->
+<button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#asignarModal"
+        data-articulo-id="{{ item.articulo_id }}"
+        data-disponible="{{ item.disponible }}">
+  Asignar
+</button>
+
+
+
         {% endif %}
       </td>
     </tr>
-    {% empty %}
-    <tr>
-      <td colspan="5">No hay artículos registrados.</td>
-    </tr>
+
+
+<!-- Modal para Crear Nueva Asignación con imagen de fondo -->
+<div class="modal fade" id="asignarModal" tabindex="-1" aria-labelledby="asignarModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content dark-sign-up">
+      <div class="modal-body social-profile text-start p-4">
+
+        <!-- Contenedor -->
+        <div class="Riho-demo-img">
+          <!-- Puntos decorativos -->
+          <ul class="dot-group pb-3 pt-0">
+            <li></li>
+            <li></li>
+            <li></li>
+          </ul>
+
+          <!-- Título -->
+          <div class="title-wrapper pb-3 modal-heading text-center">
+            <h5 class="theme-name mb-0"><span>Asignar - </span>Artículo</h5>
+            <p>Complete el formulario para asignar este artículo a un departamento.</p>
+          </div>
+
+          <!-- Imagen -->
+          <div class="overflow-hidden text-center mb-4">
+            <img class="img-fluid" src="{% static 'assets/images/logo/logo.png'%}" alt="imagen decorativa">
+          </div>
+
+          <!-- Formulario -->
+          <form method="POST" action="{% url 'almacen:crear_asignacion_detalle_articulo' %}" class="row g-3">
+            {% csrf_token %}
+            <input type="hidden" name="articulo" id="modal-articulo-id">
+
+            <!-- Mostrar Stock -->
+            <div class="col-12 text-center">
+              <p>Stock disponible: <strong id="modal-stock-disponible">0</strong></p>
+            </div>
+
+            <div class="col-md-12">
+              <label for="id_destino" class="form-label">Departamento Destino</label>
+              <select name="destino" id="id_destino" class="form-control" required>
+                {% for depto in departamentos %}
+                  <option value="{{ depto.id }}">{{ depto.nombre }}</option>
+                {% empty %}
+                  <option value="" disabled>No hay departamentos disponibles</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-12">
+              <label for="id_cantidad_asignada" class="form-label">Cantidad a Asignar</label>
+              <input type="number" name="cantidad_asignada" id="id_cantidad_asignada" class="form-control" min="1" required>
+            </div>
+
+            <div class="col-12 text-center">
+              <button type="submit" class="btn btn-primary mt-3">Asignar Artículo</button>
+            </div>
+          </form>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Script para pasar datos al modal -->
+<script>
+  const asignarModal = document.getElementById('asignarModal');
+  asignarModal.addEventListener('show.bs.modal', function (event) {
+    const button = event.relatedTarget;
+    const articuloId = button.getAttribute('data-articulo-id');
+    const disponible = button.getAttribute('data-disponible');
+
+    document.getElementById('modal-articulo-id').value = articuloId;
+    document.getElementById('modal-stock-disponible').textContent = disponible;
+
+    // Limita la cantidad asignable al stock disponible
+    const cantidadInput = document.getElementById('id_cantidad_asignada');
+    cantidadInput.max = disponible;
+    cantidadInput.value = '';  // Reset value when modal opens
+  });
+</script>
+
+
+
+
     {% endfor %}
   </tbody>
-  <tfoot>
-    <tr>
-      <th>Artículo</th>
-      <th>Ingresado</th>
-      <th>Asignado</th>
-      <th>Departamento(s)</th> <!-- Pie de tabla también -->
-      <th>Disponible</th>
-    </tr>
-  </tfoot>
 </table>
 
         </div>

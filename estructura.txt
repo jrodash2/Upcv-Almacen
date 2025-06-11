@@ -1,0 +1,1 @@
+Demasiados parámetros: '__pycache__,.git,env'

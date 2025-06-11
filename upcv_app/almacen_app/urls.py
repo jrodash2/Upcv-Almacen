@@ -64,6 +64,9 @@ urlpatterns = [
 
     # Asignaciones
     path('asignacion-detalle/nueva/', views.crear_asignacion_detalle, name='crear_asignacion_detalle'),
+    path('asignacion-detalle/nueva2/', views.crear_asignacion_detalle_articulo, name='crear_asignacion_detalle_articulo'),
+    
+    
 
     # Utilidades
     path('buscar-proveedor-nit/<str:nit>/', views.buscar_proveedor_nit, name='buscar_proveedor_nit'),

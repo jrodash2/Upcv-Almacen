@@ -8,3 +8,8 @@ def dict_get(d, key):
         return d.get(key)
     except Exception:
         return ''
+
+
+@register.filter
+def get_item(dictionary, key):
+    return dictionary.get(key)

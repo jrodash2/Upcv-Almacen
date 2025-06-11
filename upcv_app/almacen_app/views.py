@@ -28,20 +28,26 @@ from django.contrib.auth.models import Group
 from .utils import grupo_requerido
 
 
+from django.db.models import Sum
+from django.shortcuts import render
+from .models import DetalleFactura, AsignacionDetalleFactura, Articulo
+
+
+
+
 def ver_stock_formulario_1h(request):
-    # Obtener stock ingresado desde Formulario 1H (DetalleFactura)
-    ingresos = DetalleFactura.objects.values('articulo__id', 'articulo__nombre').annotate(
+    ingresos = DetalleFactura.objects.filter(
+        form1h__estado='confirmado'
+    ).values('articulo__id', 'articulo__nombre').annotate(
         total_ingresado=Sum('cantidad')
     )
 
     ingreso_dict = {item['articulo__id']: item for item in ingresos}
 
-    # Obtener asignaciones totales por artículo
     asignaciones = AsignacionDetalleFactura.objects.values('articulo__id').annotate(
         total_asignado=Sum('cantidad_asignada')
     )
 
-    # Obtener asignaciones por artículo y destino (departamento)
     asignaciones_departamento = AsignacionDetalleFactura.objects.values(
         'articulo__id', 'destino__nombre'
     ).annotate(total_asignado_dept=Sum('cantidad_asignada'))
@@ -75,6 +81,7 @@ def ver_stock_formulario_1h(request):
         departamentos = ", ".join(asignaciones_dept_dict.get(item['articulo__id'], [])) or "Sin asignar"
 
         stock_list.append({
+            'articulo_id': item['articulo__id'],
             'articulo': item['articulo__nombre'],
             'ingresado': total_ingresado,
             'asignado': total_asignado,
@@ -84,9 +91,9 @@ def ver_stock_formulario_1h(request):
 
     context = {
         'stock_list': stock_list,
+        'departamentos': Departamento.objects.all(),
     }
     return render(request, 'almacen/stock_formulario_1h.html', context)
-
     
 
 @login_required
@@ -176,7 +183,7 @@ def detalle_departamento(request, pk):
     })
     
 @login_required
-@grupo_requerido('Administrador')    
+@grupo_requerido('Administrador')
 def crear_asignacion_detalle(request):
     if request.method == 'POST':
         form = AsignacionDetalleFacturaForm(request.POST)
@@ -190,8 +197,13 @@ def crear_asignacion_detalle(request):
     else:
         form = AsignacionDetalleFacturaForm()
 
-    stock_por_articulo = DetalleFactura.objects.values('articulo').annotate(stock_total=Sum('cantidad'))
-    asignado_por_articulo = AsignacionDetalleFactura.objects.values('articulo').annotate(asignado_total=Sum('cantidad_asignada'))
+    # 👇 Estas líneas deben estar bien indentadas dentro de la función
+    stock_por_articulo = DetalleFactura.objects.filter(
+        form1h__estado='confirmado'
+    ).values('articulo').annotate(stock_total=Sum('cantidad'))
+
+    asignado_por_articulo = AsignacionDetalleFactura.objects.values('articulo').annotate(
+        asignado_total=Sum('cantidad_asignada'))
 
     stock_dict = {}
     for item in stock_por_articulo:
@@ -201,7 +213,6 @@ def crear_asignacion_detalle(request):
         stock_disponible = total_stock - (total_asignado or 0)
         stock_dict[articulo_id] = stock_disponible
 
-    # Obtener última asignación
     ultima_asignacion = AsignacionDetalleFactura.objects.order_by('-fecha_asignacion').first()
 
     return render(request, 'almacen/crear_asignacion_detalle.html', {
@@ -209,6 +220,91 @@ def crear_asignacion_detalle(request):
         'stock_dict': stock_dict,
         'ultima_asignacion': ultima_asignacion,
     })
+
+   
+@login_required
+@grupo_requerido('Administrador')
+def crear_asignacion_detalle_articulo(request):
+    if request.method == 'POST':
+        form = AsignacionDetalleFacturaForm(request.POST)
+        if form.is_valid():
+            try:
+                form.save()
+                messages.success(request, "Asignación creada correctamente.")
+                return redirect('almacen:crear_asignacion_detalle_articulo')
+            except Exception as e:
+                messages.error(request, f"Error al asignar: {e}")
+    else:
+        form = AsignacionDetalleFacturaForm()
+
+    # Calcular stock ingresado
+    ingresos = DetalleFactura.objects.filter(
+        form1h__estado='confirmado'
+    ).values('articulo__id', 'articulo__nombre').annotate(
+        total_ingresado=Sum('cantidad')
+    )
+
+    ingreso_dict = {item['articulo__id']: item for item in ingresos}
+
+    # Asignaciones totales
+    asignaciones = AsignacionDetalleFactura.objects.values('articulo__id').annotate(
+        total_asignado=Sum('cantidad_asignada')
+    )
+
+    # Asignaciones por departamento
+    asignaciones_departamento = AsignacionDetalleFactura.objects.values(
+        'articulo__id', 'destino__nombre'
+    ).annotate(total_asignado_dept=Sum('cantidad_asignada'))
+
+    asignaciones_dept_dict = {}
+    for asig in asignaciones_departamento:
+        art_id = asig['articulo__id']
+        depto_nombre = asig['destino__nombre']
+        cantidad = asig['total_asignado_dept']
+        if art_id not in asignaciones_dept_dict:
+            asignaciones_dept_dict[art_id] = []
+        asignaciones_dept_dict[art_id].append(f"{depto_nombre} ({cantidad})")
+
+    # Combinar ingresos y asignaciones
+    for item in asignaciones:
+        articulo_id = item['articulo__id']
+        if articulo_id in ingreso_dict:
+            ingreso_dict[articulo_id]['total_asignado'] = item['total_asignado']
+        else:
+            ingreso_dict[articulo_id] = {
+                'articulo__id': articulo_id,
+                'articulo__nombre': Articulo.objects.get(id=articulo_id).nombre,
+                'total_ingresado': 0,
+                'total_asignado': item['total_asignado'],
+            }
+
+    # Construir stock_list
+    stock_list = []
+    for item in ingreso_dict.values():
+        total_ingresado = item.get('total_ingresado') or 0
+        total_asignado = item.get('total_asignado') or 0
+        disponible = total_ingresado - total_asignado
+        departamentos = ", ".join(asignaciones_dept_dict.get(item['articulo__id'], [])) or "Sin asignar"
+
+        stock_list.append({
+            'articulo_id': item['articulo__id'],
+            'articulo': item['articulo__nombre'],
+            'ingresado': total_ingresado,
+            'asignado': total_asignado,
+            'disponible': disponible,
+            'departamentos': departamentos,
+        })
+
+    context = {
+    'form': form,
+    'stock_list': stock_list,
+    'departamentos': Departamento.objects.all(),  
+}
+
+
+    return render(request, 'almacen/stock_formulario_1h.html', context)
+
+
     
 def buscar_articulos(request):
     term = request.GET.get('q', '')
