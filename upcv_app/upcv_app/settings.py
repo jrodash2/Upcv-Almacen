@@ -38,8 +38,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'almacen_app',
+    
+    'almacen_app.apps.AlmacenAppConfig',  # ✅ solo esta línea
 ]
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

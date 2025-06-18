@@ -32,6 +32,38 @@ from django.db.models import Sum
 from django.shortcuts import render
 from .models import DetalleFactura, AsignacionDetalleFactura, Articulo
 
+from django.template.loader import get_template
+from django.http import HttpResponse
+from xhtml2pdf import pisa
+from weasyprint import HTML
+
+def exportar_kardex_pdf(request, articulo_id):
+    articulo = get_object_or_404(Articulo, id=articulo_id)
+    movimientos = Kardex.objects.filter(articulo=articulo).order_by('fecha')
+
+    # Renderizas la plantilla a HTML
+    html_string = render(request, 'almacen/pdf_kardex.html', {
+        'articulo': articulo,
+        'movimientos': movimientos,
+    }).content.decode('utf-8')
+
+    # Generas PDF desde el HTML
+    pdf_file = HTML(string=html_string).write_pdf()
+
+    # Construyes la respuesta para mostrar en navegador (inline)
+    response = HttpResponse(pdf_file, content_type='application/pdf')
+    response['Content-Disposition'] = 'inline; filename="kardex_{}.pdf"'.format(articulo.id)
+
+    return response
+
+
+def historial_kardex_articulo(request, articulo_id):
+    articulo = get_object_or_404(Articulo, id=articulo_id)
+    movimientos = Kardex.objects.filter(articulo=articulo).order_by('fecha', 'id')
+    return render(request, 'almacen/historial_kardex.html', {
+        'articulo': articulo,
+        'movimientos': movimientos
+    })
 
 
 

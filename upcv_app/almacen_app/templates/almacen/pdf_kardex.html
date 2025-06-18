@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Historial Kardex</title>
+  <style>
+    @page {
+      size: legal landscape;
+      margin: 1.5cm;
+    }
+
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      font-size: 9pt;
+      color: #333;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 14pt;
+      color: #1a1a1a;
+      border-bottom: 2px solid #666;
+      padding-bottom: 5px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th, td {
+      border: 1px solid #aaa;
+      padding: 6px 8px;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    th {
+      background-color: #e0e0e0;
+      font-weight: bold;
+      color: #000;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Historial de movimientos para: {{ articulo.nombre }}</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Tipo</th>
+        <th>Cantidad</th>
+        <th>Saldo Anterior</th>
+        <th>Saldo Actual</th>
+        <th>Observación</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in movimientos %}
+      <tr>
+        <td>{{ m.fecha|date:"Y-m-d H:i" }}</td>
+        <td>{{ m.get_tipo_movimiento_display }}</td>
+        <td>{{ m.cantidad }}</td>
+        <td>{{ m.saldo_anterior }}</td>
+        <td>{{ m.saldo_actual }}</td>
+        <td>{{ m.observacion }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+</body>
+</html>

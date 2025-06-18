@@ -73,4 +73,8 @@ urlpatterns = [
     path('buscar-proveedor-id/<int:proveedor_id>/', views.buscar_proveedor_id, name='buscar_proveedor_id'),
     path('buscar-articulos/', views.buscar_articulos, name='buscar_articulos'),
     path('stock-formulario-1h/', views.ver_stock_formulario_1h, name='ver_stock_formulario_1h'),
+    
+    # Kardex
+    path('kardex/<int:articulo_id>/', views.historial_kardex_articulo, name='historial_kardex'),
+    path('kardex/<int:articulo_id>/exportar/', views.exportar_kardex_pdf, name='exportar_kardex_pdf'),
 ]

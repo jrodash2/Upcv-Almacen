@@ -61,6 +61,11 @@
         {% endif %}
       </td>
       <td>
+        <a href="{% url 'almacen:historial_kardex' item.articulo_id %}">Ver historial</a>
+
+
+
+
         {% if item.disponible > 0 %}
           <!-- Botón que abre el modal -->
        <!-- En tu tabla de artículos -->
