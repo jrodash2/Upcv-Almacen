@@ -2,7 +2,7 @@
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from .models import DetalleFactura, AsignacionDetalleFactura, Kardex
+from .models import DetalleFactura, AsignacionDetalleFactura, Kardex, User, Perfil
 
 @receiver(post_save, sender=DetalleFactura)
 def crear_kardex_ingreso(sender, instance, created, **kwargs):
@@ -23,3 +23,8 @@ def crear_kardex_salida(sender, instance, created, **kwargs):
             cantidad=instance.cantidad_asignada,
             observacion=f'Salida hacia {instance.destino.nombre}'
         )
+
+@receiver(post_save, sender=User)
+def crear_perfil_usuario(sender, instance, created, **kwargs):
+    if created and not hasattr(instance, 'perfil'):
+        Perfil.objects.create(usuario=instance)

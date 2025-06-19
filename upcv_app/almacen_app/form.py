@@ -2,10 +2,79 @@ from django import forms
 from django.contrib.auth.models import User, Group
 from django.forms import CheckboxInput, DateInput
 from django.core.exceptions import ValidationError
-from .models import DetalleFactura, Ubicacion, UnidadDeMedida, Proveedor, Departamento, Categoria, Articulo, Departamento, Kardex, AsignacionDetalleFactura, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa, UsuarioDepartamento
+from .models import DetalleFactura, Ubicacion, Perfil, UnidadDeMedida, Proveedor, Departamento, Categoria, Articulo, Departamento, Kardex, AsignacionDetalleFactura, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa, UsuarioDepartamento
 
 from django.db.models import Sum, F, Value
 from django.db.models.functions import Coalesce
+
+class UserCreateForm(forms.ModelForm):
+    new_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'form-control'}),
+        required=True,
+        label="Contraseña"
+    )
+    confirm_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'form-control'}),
+        required=True,
+        label="Confirmar Contraseña"
+    )
+    group = forms.ModelChoiceField(
+        queryset=Group.objects.all(),
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    foto = forms.ImageField(
+        required=False,
+        widget=forms.ClearableFileInput(attrs={'class': 'form-control'})
+    )
+
+    class Meta:
+        model = User
+        fields = ['username', 'first_name', 'last_name', 'email']
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control'}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password = cleaned_data.get('new_password')
+        confirm = cleaned_data.get('confirm_password')
+
+        if password != confirm:
+            raise forms.ValidationError("Las contraseñas no coinciden.")
+        return cleaned_data
+    
+    
+from django import forms
+from django.contrib.auth.models import User, Group
+
+class UserEditForm(forms.ModelForm):
+    group = forms.ModelChoiceField(
+        queryset=Group.objects.all(),
+        required=False,
+        widget=forms.HiddenInput()  # Oculto pero funcional
+    )
+    foto = forms.ImageField(
+        required=False,
+        widget=forms.ClearableFileInput(attrs={'class': 'form-control'})
+    )
+
+    class Meta:
+        model = User
+        fields = ['username', 'first_name', 'last_name', 'email']
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control', 'readonly': 'readonly'}),  # <- solo lectura
+            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['username'].required = False
 
 class AsignacionDetalleFacturaForm(forms.ModelForm):
     articulo = forms.ModelChoiceField(
@@ -248,36 +317,52 @@ class UserForm(forms.ModelForm):
         label="Confirmar Contraseña"
     )
     group = forms.ModelChoiceField(queryset=Group.objects.all(), required=True, label="Grupo")
+    foto = forms.ImageField(required=False, label="Foto de perfil")  # Agregamos el campo aquí
 
     class Meta:
         model = User
-        fields = ['username', 'first_name', 'last_name', 'email']  # No incluimos 'password' aquí
+        fields = ['username', 'first_name', 'last_name', 'email']
+
+    def __init__(self, *args, **kwargs):
+        super(UserForm, self).__init__(*args, **kwargs)
+
+        for field in self.fields.values():
+            field.widget.attrs['class'] = field.widget.attrs.get('class', '') + ' form-control'
+
+        # Mostrar foto existente si está editando
+        if self.instance.pk:
+            try:
+                self.fields['foto'].initial = self.instance.perfil.foto
+            except Perfil.DoesNotExist:
+                pass
 
     def clean(self):
         cleaned_data = super().clean()
         password = cleaned_data.get("new_password")
         confirm_password = cleaned_data.get("confirm_password")
 
-        # Verificar si las contraseñas coinciden
-        if password and confirm_password:
-            if password != confirm_password:
-                raise ValidationError("Las contraseñas no coinciden.")
+        if password and confirm_password and password != confirm_password:
+            raise ValidationError("Las contraseñas no coinciden.")
         
         return cleaned_data
 
     def save(self, commit=True):
         user = super().save(commit=False)
-        
-        # Si se proporciona una nueva contraseña, la seteamos
+
         if self.cleaned_data.get("new_password"):
             user.set_password(self.cleaned_data["new_password"])
 
         if commit:
             user.save()
-            user.groups.add(self.cleaned_data['group'])
+            user.groups.set([self.cleaned_data['group']])
+            # Guardar o crear perfil
+            foto = self.cleaned_data.get('foto')
+            perfil, created = Perfil.objects.get_or_create(user=user)
+            if foto:
+                perfil.foto = foto
+                perfil.save()
 
         return user
- 
     def __init__(self, *args, **kwargs):
         super(UserForm, self).__init__(*args, **kwargs)
         
@@ -295,3 +380,12 @@ class UsuarioDepartamentoForm(forms.ModelForm):
             'usuario': forms.Select(attrs={'class': 'form-control'}),
             'departamento': forms.Select(attrs={'class': 'form-control'}),
         }
+        
+class PerfilForm(forms.ModelForm):
+    class Meta:
+        model = Perfil
+        fields = ['foto']
+        widgets = {
+            'foto': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+        }
+        

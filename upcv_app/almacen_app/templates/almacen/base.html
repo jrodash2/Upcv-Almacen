@@ -155,27 +155,40 @@
                 <div class="mode"><i class="moon" data-feather="moon"> </i></div>
               </li>
 
-              <li class="profile-nav onhover-dropdown"> 
-                <div class="media profile-media"><img class="b-r-10" src="{% static 'assets/images/dashboard/profile2.png' %}" alt="">
-                  <div class="media-body d-xxl-block d-none box-col-none">
-                    <div class="d-flex align-items-center gap-2"> <span>{{ user.first_name }} {{ user.last_name }} </span><i class="middle fa fa-angle-down"> </i></div>
-                    
+<li class="profile-nav onhover-dropdown">
+  <div class="d-flex align-items-center">
+    <div style="width: 36px; height: 36px;">
+      {% if user.perfil.foto %}
+        <img src="{{ user.perfil.foto.url }}" alt="Foto de perfil"
+             style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+      {% else %}
+        <img src="{% static 'assets/images/dashboard/profile2.png' %}" alt="Sin foto"
+             style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+      {% endif %}
+    </div>
+    <div class="d-none d-xxl-block ms-2">
+      <div class="d-flex align-items-center gap-2">
+        <span>{{ user.first_name }} {{ user.last_name }}</span>
+        <i class="middle fa fa-angle-down"></i>
+      </div>
+      <div>
+        {% for group in user.groups.all %}
+          <p class="mb-0 font-roboto small text-muted">{{ group.name }}</p>
+        {% empty %}
+          <p class="mb-0 text-muted small">Sin rol</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
 
+  <!-- Dropdown -->
+  <ul class="profile-dropdown onhover-show-div">
+    <li>
+      <a class="btn btn-pill btn-outline-primary btn-sm" href="/logout">Salir</a>
+    </li>
+  </ul>
+</li>
 
-<ul>
-  {% for group in user.groups.all %}
-    <p class="mb-0 font-roboto">{{ group.name }}</p>
-  {% empty %}
-    <li>No tiene roles.</li>
-  {% endfor %}
-</ul>
-                  </div>
-                </div>
-                <ul class="profile-dropdown onhover-show-div">
-                  
-                  <li><a class="btn btn-pill btn-outline-primary btn-sm" href="/logout">Salir</a></li>
-                </ul>
-              </li>
             </ul>
           </div>
           <script class="result-template" type="text/x-handlebars-template">

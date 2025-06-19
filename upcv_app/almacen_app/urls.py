@@ -17,6 +17,8 @@ urlpatterns = [
 
     # Usuarios
     path('usuario/crear/', views.user_create, name='user_create'),
+    path('usuario/editar/<int:user_id>/', views.user_edit, name='user_edit'),
+
     path('usuario/eliminar/<int:user_id>/', views.user_delete, name='user_delete'),
 
     # Ubicaciones

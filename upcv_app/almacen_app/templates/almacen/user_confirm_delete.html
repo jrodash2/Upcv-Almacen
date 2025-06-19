@@ -1,4 +1,4 @@
-{% extends 'tickets/base.html' %}
+{% extends 'almacen/base.html' %}
 
 {% block content %}
 <div class="page-body">
@@ -34,7 +34,7 @@
               <form method="POST">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-danger">Eliminar</button>
-                <a href="{% url 'tickets:user_create' %}" class="btn btn-secondary">Cancelar</a>
+                <a href="{% url 'almacen:user_create' %}" class="btn btn-secondary">Cancelar</a>
               </form>
             </div>
           </div>

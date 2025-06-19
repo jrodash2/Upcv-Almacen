@@ -5,8 +5,8 @@ from django.contrib.auth.models import Group, User
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
-from .form import DetalleFacturaForm, Form1hForm, UserForm, UbicacionForm, UnidadDeMedidaForm, CategoriaForm, ProveedorForm, ArticuloForm, DepartamentoForm, SerieForm, AsignacionDetalleFacturaForm, UsuarioDepartamentoForm
-from .models import ContadorDetalleFactura, DetalleFactura, LineaLibre, Ubicacion, UnidadDeMedida, Categoria, Proveedor, Articulo, Departamento, Kardex, AsignacionDetalleFactura, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa, LineaReservada, UsuarioDepartamento
+from .form import DetalleFacturaForm, Form1hForm, PerfilForm, UserCreateForm, UserEditForm, UserCreateForm, UbicacionForm, UnidadDeMedidaForm, CategoriaForm, ProveedorForm, ArticuloForm, DepartamentoForm, SerieForm, AsignacionDetalleFacturaForm, UsuarioDepartamentoForm
+from .models import ContadorDetalleFactura, DetalleFactura, LineaLibre, Perfil, Ubicacion, UnidadDeMedida, Categoria, Proveedor, Articulo, Departamento, Kardex, AsignacionDetalleFactura, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa, LineaReservada, UsuarioDepartamento
 from django.views.generic import CreateView
 from django.views.generic import ListView
 from django.urls import reverse_lazy
@@ -168,8 +168,15 @@ def eliminar_asignacion(request, usuario_id, departamento_id):
 
 @login_required
 def lista_departamentos(request):
-    departamentos = Departamento.objects.all()
     es_departamento = request.user.groups.filter(name='Departamento').exists()
+
+    if es_departamento:
+        # Obtener todos los objetos UsuarioDepartamento vinculados al usuario
+        usuario_departamentos = UsuarioDepartamento.objects.filter(usuario=request.user)
+        # Mostrar todos los departamentos asociados a esas instancias
+        departamentos = Departamento.objects.filter(usuariodepartamento__in=usuario_departamentos)
+    else:
+        departamentos = Departamento.objects.all()
 
     return render(request, 'almacen/lista_departamentos.html', {
         'departamentos': departamentos,
@@ -725,16 +732,72 @@ def editar_detalle_factura(request):
 @grupo_requerido('Administrador')
 def user_create(request):
     if request.method == 'POST':
-        form = UserForm(request.POST)
+        form = UserCreateForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()  # Guarda el usuario si el formulario es válido
-            return redirect('almacen:user_create')  # Redirige a la misma página
+            user = form.save(commit=False)
+            password = form.cleaned_data.get('new_password')
+            user.set_password(password)
+            user.save()
+
+            group = form.cleaned_data.get('group')
+            user.groups.add(group)
+
+            foto = form.cleaned_data.get('foto')
+            if foto:
+                Perfil.objects.create(user=user, foto=foto)
+
+            messages.success(request, 'Usuario creado correctamente.')
+            return redirect('almacen:user_create')
     else:
-        form = UserForm()
+        form = UserCreateForm()
 
-    users = User.objects.all()  # Obtener todos los usuarios
-    return render(request, 'almacen/user_form.html', {'form': form, 'users': users})
+    users = User.objects.all()
+    return render(request, 'almacen/user_form_create.html', {'form': form, 'users': users})
 
+@login_required
+@grupo_requerido('Administrador')
+def user_edit(request, user_id):
+    user = get_object_or_404(User, pk=user_id)
+    try:
+        perfil = user.perfil
+    except Perfil.DoesNotExist:
+        perfil = Perfil(user=user)
+
+    if request.method == 'POST':
+        form_user = UserEditForm(request.POST, request.FILES, instance=user)
+        form_perfil = PerfilForm(request.POST, request.FILES, instance=perfil)
+        if form_user.is_valid() and form_perfil.is_valid():
+            form_user.save()
+            form_perfil.save()
+            return redirect('almacen:user_create')
+    else:
+        form_user = UserEditForm(instance=user)
+        form_perfil = PerfilForm(instance=perfil)
+
+    context = {
+        'form': form_user,
+        'perfil_form': form_perfil,
+        'users': User.objects.all(),
+    }
+    return render(request, 'almacen/user_form_edit.html', context)
+
+@login_required
+def perfil_edit(request, user_id):
+    user = get_object_or_404(User, pk=user_id)
+    try:
+        perfil = user.perfil
+    except Perfil.DoesNotExist:
+        perfil = Perfil(user=user)
+    
+    if request.method == 'POST':
+        form = PerfilForm(request.POST, request.FILES, instance=perfil)
+        if form.is_valid():
+            form.save()
+            return redirect('almacen:user_edit', user_id=user.id)
+    else:
+        form = PerfilForm(instance=perfil)
+    
+    return render(request, 'almacen/perfil_edit.html', {'form': form, 'user': user})
 
 @login_required
 def user_delete(request, user_id):
