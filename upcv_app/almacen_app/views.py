@@ -5,12 +5,12 @@ from django.contrib.auth.models import Group, User
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
-from .form import DetalleFacturaForm, Form1hForm, PerfilForm, UserCreateForm, UserEditForm, UserCreateForm, UbicacionForm, UnidadDeMedidaForm, CategoriaForm, ProveedorForm, ArticuloForm, DepartamentoForm, SerieForm, AsignacionDetalleFacturaForm, UsuarioDepartamentoForm
-from .models import ContadorDetalleFactura, DetalleFactura, LineaLibre, Perfil, Ubicacion, UnidadDeMedida, Categoria, Proveedor, Articulo, Departamento, Kardex, AsignacionDetalleFactura, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa, LineaReservada, UsuarioDepartamento
+from .form import DetalleFacturaForm, DetalleRequerimientoForm, DetalleRequerimientoFormSet, Form1hForm, PerfilForm, RequerimientoForm, UserCreateForm, UserEditForm, UserCreateForm, UbicacionForm, UnidadDeMedidaForm, CategoriaForm, ProveedorForm, ArticuloForm, DepartamentoForm, SerieForm, AsignacionDetalleFacturaForm, UsuarioDepartamentoForm
+from .models import ContadorDetalleFactura, DetalleFactura, DetalleRequerimiento, LineaLibre, Perfil, Requerimiento, Ubicacion, UnidadDeMedida, Categoria, Proveedor, Articulo, Departamento, Kardex, AsignacionDetalleFactura, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa, LineaReservada, UsuarioDepartamento
 from django.views.generic import CreateView
 from django.views.generic import ListView
 from django.urls import reverse_lazy
-from django.http import HttpResponseNotAllowed, JsonResponse
+from django.http import Http404, HttpResponseNotAllowed, JsonResponse
 from django.core.exceptions import ValidationError
 from django.contrib import messages
 from .utils import reservar_lineas
@@ -26,8 +26,9 @@ from django.contrib import messages
 import json
 from django.contrib.auth.models import Group
 from .utils import grupo_requerido
+from django.views.decorators.http import require_GET
 
-
+from django.db import transaction
 from django.db.models import Sum
 from django.shortcuts import render
 from .models import DetalleFactura, AsignacionDetalleFactura, Articulo
@@ -36,6 +37,204 @@ from django.template.loader import get_template
 from django.http import HttpResponse
 from xhtml2pdf import pisa
 from weasyprint import HTML
+
+@login_required
+@transaction.atomic
+def despachar_requerimiento(request, requerimiento_id):
+    if not request.user.groups.filter(name='Administrador').exists():
+        messages.error(request, "No tienes permiso para despachar requerimientos.")
+        return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento_id)
+
+    requerimiento = get_object_or_404(Requerimiento, id=requerimiento_id)
+
+    if requerimiento.estado != 'enviado':
+        messages.warning(request, "Solo se pueden despachar requerimientos en estado 'enviado'.")
+        return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
+
+    if request.method == 'POST':
+        # Extraer cantidades ingresadas desde el formulario
+        cantidades_dict = {}
+        for key in request.POST:
+            if key.startswith('cantidades[') and key.endswith(']'):
+                detalle_id = key[11:-1]
+                try:
+                    cantidades_dict[int(detalle_id)] = int(request.POST[key])
+                except ValueError:
+                    cantidades_dict[int(detalle_id)] = 0
+
+        detalles = DetalleRequerimiento.objects.filter(requerimiento=requerimiento)
+
+        # Paso 1: Validar que haya stock suficiente para todos los detalles
+        for detalle in detalles:
+            cantidad_a_despachar = cantidades_dict.get(detalle.id, 0)
+            if cantidad_a_despachar != detalle.cantidad:
+                messages.error(request, f"Debes despachar exactamente {detalle.cantidad} unidades de {detalle.articulo.nombre}.")
+                return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
+
+            total_disponible = (
+                AsignacionDetalleFactura.objects
+                .filter(articulo=detalle.articulo, destino=requerimiento.departamento)
+                .aggregate(total=Sum('cantidad_asignada'))['total'] or 0
+            )
+
+            if cantidad_a_despachar > total_disponible:
+                messages.error(request, f"No hay suficiente stock de {detalle.articulo.nombre}. Disponible: {total_disponible}")
+                return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
+
+        # Paso 2: Descontar stock (ya validado)
+        for detalle in detalles:
+            cantidad_a_despachar = cantidades_dict.get(detalle.id, 0)
+
+            asignaciones = AsignacionDetalleFactura.objects.filter(
+                articulo=detalle.articulo,
+                destino=requerimiento.departamento
+            ).order_by('fecha_asignacion')
+
+            cantidad_restante = cantidad_a_despachar
+
+            for asignacion in asignaciones:
+                if cantidad_restante <= 0:
+                    break
+
+                if asignacion.cantidad_asignada >= cantidad_restante:
+                    asignacion.cantidad_asignada -= cantidad_restante
+                    asignacion.save()
+                    cantidad_restante = 0
+                else:
+                    cantidad_restante -= asignacion.cantidad_asignada
+                    asignacion.cantidad_asignada = 0
+                    asignacion.save()
+
+        requerimiento.estado = 'despachado'
+        requerimiento.save()
+
+        messages.success(request, "Requerimiento despachado exitosamente.")
+        return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
+
+    messages.error(request, "Método no permitido.")
+    return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
+    
+    
+@login_required
+def crear_requerimiento(request):
+    form = RequerimientoForm(request.POST or None, usuario=request.user)
+
+    # Filtrar los requerimientos según el rol del usuario
+    if request.user.groups.filter(name='Administrador').exists():
+        requerimientos = Requerimiento.objects.filter( estado__in=['enviado', 'despachado']).order_by('-fecha_creacion')
+    else:
+        requerimientos = Requerimiento.objects.filter(creado_por=request.user)
+
+    if request.method == "POST":
+        if form.is_valid():
+            nuevo = form.save(commit=False)
+            nuevo.creado_por = request.user
+            nuevo.save()
+            messages.success(request, "Requerimiento creado exitosamente.")
+            return redirect('almacen:detalle_requerimiento', requerimiento_id=nuevo.id)
+        else:
+            messages.error(request, "Por favor revisa el formulario.")
+
+    return render(request, 'almacen/crear_requerimiento.html', {
+        'form': form,
+        'requerimientos': requerimientos,
+        'mostrar_modal': request.method == "POST" and not form.is_valid(),
+    })
+
+@login_required
+def enviar_requerimiento(request, requerimiento_id):
+    requerimiento = get_object_or_404(Requerimiento, id=requerimiento_id)
+
+    if requerimiento.estado != 'confirmado':  # Evita cambiar si ya fue confirmado
+        requerimiento.estado = 'enviado'
+        requerimiento.save()
+        messages.success(request, "Requerimiento enviado correctamente.")
+    else:
+        messages.warning(request, "El requerimiento ya está confirmado y no puede ser enviado.")
+
+    return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
+
+@login_required
+def detalle_requerimiento(request, requerimiento_id):
+    requerimiento = get_object_or_404(Requerimiento, id=requerimiento_id)
+    articulos = Articulo.objects.filter(
+        asignaciondetallefactura__destino=requerimiento.departamento
+    ).distinct()
+    detalles_requerimiento = DetalleRequerimiento.objects.filter(requerimiento=requerimiento)
+
+    stock_dict_qs = (
+        AsignacionDetalleFactura.objects
+        .filter(destino=requerimiento.departamento)
+        .values('articulo')
+        .annotate(total_asignado=Sum('cantidad_asignada'))
+    )
+    stock_dict = {str(item['articulo']): item['total_asignado'] for item in stock_dict_qs}
+
+    es_admin = request.user.groups.filter(name='Administrador').exists()
+
+    if request.method == 'POST':
+        articulo_id = request.POST.get('articulo')
+        cantidad = request.POST.get('cantidad')
+        observacion = request.POST.get('observaciones')
+
+        if articulo_id and cantidad:
+            articulo = Articulo.objects.get(id=articulo_id)
+            DetalleRequerimiento.objects.create(
+                requerimiento=requerimiento,
+                articulo=articulo,
+                cantidad=int(cantidad),
+                observacion=observacion
+            )
+            messages.success(request, "Detalle agregado correctamente.")
+            return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
+        else:
+            messages.error(request, "Debe seleccionar un artículo y una cantidad válida.")
+
+    return render(request, 'almacen/detalle_requerimiento.html', {
+        'requerimiento': requerimiento,
+        'articulos': articulos,
+        'detalles_requerimiento': detalles_requerimiento,
+        'stock_dict': stock_dict,
+        'es_admin': es_admin,  # Aquí pasamos la variable al template
+    })
+
+
+@require_GET
+def detalle_requerimiento_api(request, detalle_id):
+    try:
+        detalle = DetalleRequerimiento.objects.get(id=detalle_id)
+        data = {
+            'id': detalle.id,
+            'articulo_id': detalle.articulo.id,
+            'cantidad': detalle.cantidad,
+            'observacion': detalle.observacion,  # usa el nombre real del campo en tu modelo
+        }
+        return JsonResponse(data)
+    except DetalleRequerimiento.DoesNotExist:
+        raise Http404("Detalle no encontrado")
+  
+@login_required
+def editar_detalle_requerimiento(request):
+    if request.method == 'POST':
+        detalle_id = request.POST.get('detalle_id')
+        articulo_id = request.POST.get('articulo')
+        cantidad = request.POST.get('cantidad')
+        observaciones = request.POST.get('observaciones')
+
+        try:
+            detalle = DetalleRequerimiento.objects.get(id=detalle_id)
+            articulo = Articulo.objects.get(id=articulo_id)
+            detalle.articulo = articulo
+            detalle.cantidad = int(cantidad)
+            detalle.observacion = observaciones  # o 'observaciones' según modelo
+            detalle.save()
+            messages.success(request, "Detalle actualizado correctamente.")
+        except (DetalleRequerimiento.DoesNotExist, Articulo.DoesNotExist):
+            messages.error(request, "Error al actualizar el detalle.")
+        
+        return redirect('almacen:detalle_requerimiento', requerimiento_id=detalle.requerimiento.id)
+
+    return redirect('almacen:detalle_requerimiento')  # o donde quieras    
 
 def exportar_kardex_pdf(request, articulo_id):
     articulo = get_object_or_404(Articulo, id=articulo_id)
@@ -536,6 +735,17 @@ def agregar_detalle_factura(request, form1h_id):
     })
 
 
+@require_POST
+
+def eliminar_detalle_requerimiento(request, pk):
+    if request.method == 'POST':
+        try:
+            detalle = DetalleRequerimiento.objects.get(pk=pk)
+            detalle.delete()
+            return JsonResponse({'success': True})
+        except DetalleRequerimiento.DoesNotExist:
+            return JsonResponse({'error': 'Detalle no encontrado'}, status=404)
+    return HttpResponseNotAllowed(['POST'])
 
 # Views for Departamento
 @login_required

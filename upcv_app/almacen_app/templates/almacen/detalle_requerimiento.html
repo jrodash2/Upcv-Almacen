@@ -1,0 +1,545 @@
+{% extends 'almacen/base.html' %}
+{% load static %}
+{% block content %}
+{% load custom_filters %}
+
+
+<script src="{% static 'assets/js/jquery.min.js' %}"></script>
+<script src="{% static 'assets/js/bootstrap.bundle.min.js' %}"></script>  <!-- Agregar esto -->
+<script src="{% static 'assets/js/datatable/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'assets/js/datatable/datatables/datatable.custom.js' %}"></script>
+
+<!-- resto de tu código -->
+
+
+<div class="page-body">
+  <!-- Page Sidebar Ends-->
+  <div class="page-body">
+    <!-- Container-fluid starts -->
+    
+    {% if messages %}
+      <div class="container mt-3">
+        {% for message in messages %}
+          <div class="alert alert-info dark" role="alert">
+            <p>{{ message }}</p>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    
+    <div class="container-fluid">
+      <table class="table-wrapper invoice-1" id="tabla-detalles-requerimiento">
+        <tbody>
+          <tr>
+            <td>
+              <div class="card">
+                <div class="product-box">
+                  <div class="product-img">
+                    <img class="img-fluid" src="{% static 'assets/images/logo/upcv4.jpg' %}" alt="">
+                    <div class="product-hover">
+                      <div class="m-t-15 btn-showcase">
+
+{% if requerimiento.estado == 'pendiente' %}
+  <a class="btn btn-outline-warning btn-lg"
+     href="{% url 'almacen:enviar_requerimiento' requerimiento.id %}"
+     title="Enviar Requerimiento"
+     
+    <i class="fa fa-paper-plane"></i> Enviar
+  </a>
+{% elif requerimiento.estado == 'enviado' %}
+  <a class="btn btn-outline-secondary btn-lg disabled" title="Requerimiento Enviado">
+    <i class="fa fa-paper-plane"></i> Enviado
+  </a>
+{% elif requerimiento.estado == 'despachado' %}
+  <a class="btn btn-outline-dark btn-lg disabled" title="Requerimiento Despachado">
+    <i class="fa fa-check-circle"></i> Despachado
+  </a>
+{% endif %}
+
+<!-- Botón para abrir modal de despachar -->
+{% if es_admin and requerimiento.estado == 'enviado' %}
+  <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalDespachar">
+    <i class="fa fa-truck"></i> Despachar Requerimiento
+  </button>
+{% endif %}
+
+
+
+
+
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              <table class="bill-content" style="width: 100%">
+                <tbody>
+                  <tr>
+                    <td style="width: 36%">
+                      <span style="opacity: 0.8">Departamento</span>
+                      <h4 class="card-title mb-0">
+                        {{ requerimiento.departamento.nombre }}
+                      </h4>
+                    </td>
+                    <td style="width: 21%">
+                      <span style="opacity: 0.8">Fecha de Requerimiento</span>
+                      <h6>{{ requerimiento.fecha_creacion|date:"d/m/Y" }}</h6>
+
+                    </td>
+                    <td>
+                      <span style="opacity: 0.8">Estado</span>
+                      <h6>{{ requerimiento.get_estado_display }}</h6>
+                    </td>
+                  </tr>
+                  <tr>
+<td style="width: 36%">
+  <span style="opacity: 0.8">Creado Por</span>
+  <h6>{{ requerimiento.creado_por.get_full_name|default:requerimiento.creado_por.username }}</h6>
+</td>
+
+                    <td style="width: 36%">
+                      <span style="opacity: 0.8">Numero de Requerimiento</span>
+                      <h6>{{ requerimiento.id }}</h6>
+                    </td>
+                    <td></td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              <table
+                class="order-details"
+                style="width: 100%; border-collapse: separate; border-spacing: 0 10px;"
+              >
+                <thead>
+                  <tr
+                    style="
+                      background: #007fbf;
+                      border-radius: 8px;
+                      overflow: hidden;
+                      box-shadow: 0px 10.9px 10.9px rgba(82, 77, 141, 0.04),
+                                  0px 9.5px 7.6px rgba(82, 77, 141, 0.06),
+                                  0px 5.05px 4.04px rgba(82, 77, 141, 0.048);
+                    "
+                  >
+                    <th style="padding: 18px 15px; border-top-left-radius: 8px; border-bottom-left-radius: 8px; text-align: left;">
+                      
+                      <span style="color: #fff">Artículo</span>
+                    </th>
+                    <th style="padding: 18px 15px; text-align: left;">
+                      <span style="color: #fff">Cantidad</span>
+                    </th>
+                    <th style="padding: 18px 15px; text-align: left;">
+                      <span style="color: #fff">Observaciones</span>
+                    </th>
+                    <th style="padding: 18px 15px; border-top-right-radius: 8px; border-bottom-right-radius: 8px; text-align: left;">
+                      <span style="color: #fff">Acciones</span>
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {% for detalle in detalles_requerimiento %}
+                    <tr
+                      style="
+                        box-shadow: 0px 10.9px 10.9px rgba(82, 77, 141, 0.04),
+                                    0px 9.5px 7.6px rgba(82, 77, 141, 0.06),
+                                    0px 5.05px 4.04px rgba(82, 77, 141, 0.048);
+                        border-radius: 5.5px;
+                      "
+                    >
+                      <td style="padding: 18px 15px; display: flex; align-items: center; gap: 10px;">
+                        <span
+                          style="
+                            min-width: 7px;
+                            height: 7px;
+                            border: 4px solid #006666;
+                            background: #fff;
+                            border-radius: 100%;
+                            display: inline-block;
+                          "
+                        ></span>
+
+                        <span>{{ detalle.articulo.nombre }}</span>
+                      </td>
+                      <td style="padding: 18px 15px;">
+                        <span>{{ detalle.cantidad }}</span>
+                      </td>
+                      <td style="padding: 18px 15px;">
+                        <span>{{ detalle.observaciones }}</span>
+                      </td>
+                      <td style="text-align: center; vertical-align: middle;">
+{% if requerimiento.estado != 'enviado' and requerimiento.estado != 'despachado' %}
+  <i class="fa fa-edit editar-detalle-btn fa-2x" 
+     style="cursor: pointer;" 
+     data-id="{{ detalle.id }}" 
+     data-bs-toggle="modal" 
+     data-bs-target="#editarDetalleModal"></i>
+
+  <i class="fa fa-trash-o eliminar-detalle-btn fa-2x" 
+     role="button"
+     style="cursor: pointer;" 
+     data-url="{% url 'almacen:eliminar_detalle_requerimiento' detalle.id %}"></i>
+{% endif %}
+
+                      </td>
+                    </tr>
+                  {% empty %}
+                    <tr>
+                      <td colspan="5" class="text-center" style="padding: 18px 15px;">
+                        No hay detalles agregados aún.
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </td>
+          </tr>
+
+          <tr style="width: 100%; display: flex; justify-content: space-between; margin-top: 12px;">
+            <td></td>
+            <td>
+{% if requerimiento.estado != 'enviado' and requerimiento.estado != 'despachado' %}
+  <div style="display: flex; gap: 10px;">
+    <button
+      class="btn btn-primary"
+      type="button"
+      data-bs-toggle="modal"
+      data-bs-target="#agregarDetalleModal"
+      title="Agregar Detalle"
+    >
+      Agregar Detalle
+    </button>
+  </div>
+{% endif %}
+
+            </td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Despacho -->
+<div class="modal fade" id="modalDespachar" tabindex="-1" aria-labelledby="modalDespacharLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <form method="POST" action="{% url 'almacen:despachar_requerimiento' requerimiento_id=requerimiento.id %}">
+      {% csrf_token %}
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalDespacharLabel">Despachar Requerimiento #{{ requerimiento.id }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Artículo</th>
+                <th>Cantidad requerida</th>
+                <th>Cantidad a despachar</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for detalle in detalles_requerimiento %}
+              <tr>
+                <td>{{ detalle.articulo.nombre }}</td>
+                <td>{{ detalle.cantidad }}</td>
+                <td>
+                  <input
+                    type="number"
+                    name="cantidades[{{ detalle.id }}]"
+                    min="0"
+                    max="{{ detalle.cantidad }}"
+                    value="{{ detalle.cantidad }}"
+                    class="form-control"
+                    required
+                  />
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Confirmar Despacho</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+<!-- Modal para Agregar Detalle (con estilo decorativo e imagen) -->
+<div class="modal fade" id="agregarDetalleModal" tabindex="-1" aria-labelledby="agregarDetalleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content dark-sign-up">
+      <div class="modal-body social-profile text-start p-4">
+
+        <div class="Riho-demo-img">
+
+          <!-- Decoración superior (opcional) -->
+          <ul class="dot-group pb-3 pt-0">
+            <li></li>
+            <li></li>
+            <li></li>
+          </ul>
+
+          <!-- Título -->
+          <div class="title-wrapper pb-3 modal-heading text-center">
+            <h5 class="theme-name mb-0"><span>Agregar - </span>Detalle de Requerimiento</h5>
+            <p>Complete el formulario para agregar un nuevo detalle al requerimiento.</p>
+          </div>
+
+          <!-- Imagen decorativa -->
+          <div class="overflow-hidden text-center mb-4">
+            <img class="img-fluid" src="{% static 'assets/images/logo/logo.png' %}" alt="imagen decorativa" style="max-height: 150px;">
+          </div>
+
+          <!-- Formulario -->
+          <form method="post" action="" id="formAgregarDetalle">
+            {% csrf_token %}
+            <input type="hidden" name="requerimiento" value="{{ requerimiento.id }}">
+
+            <div class="row">
+              <div class="col-md-8 mb-3">
+                <label for="id_articulo" class="form-label">Artículo</label>
+ <select class="form-control" id="id_articulo" name="articulo" required>
+  <option value="" disabled selected>Seleccione un artículo</option>
+  {% for articulo in articulos %}
+    <option value="{{ articulo.id }}"
+            data-stock="{{ stock_dict|get_item:articulo.id|default:0 }}">
+      {{ articulo.nombre }}
+    </option>
+  {% endfor %}
+</select>
+
+</select>
+<div class="col-md-4 mb-3">
+  <label class="form-label">Asignado</label>
+  <input type="text" class="form-control" id="stockAsignado" readonly value="0">
+</div>
+
+              </div>
+
+              <div class="col-md-4 mb-3">
+                <label for="id_cantidad" class="form-label">Cantidad</label>
+                <input type="number" class="form-control" id="id_cantidad" name="cantidad" min="1" required />
+              </div>
+
+              <div class="col-md-12 mb-3">
+                <label for="id_observaciones" class="form-label">Observaciones</label>
+                <textarea class="form-control" id="id_observaciones" name="observaciones" rows="3"></textarea>
+              </div>
+            </div>
+
+            <div class="text-end">
+              <button type="submit" class="btn btn-primary">
+                <i class="fa fa-save me-1"></i> Guardar Detalle
+              </button>
+            </div>
+          </form>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Modal para Editar Detalle -->
+<div class="modal fade" id="editarDetalleModal" tabindex="-1" aria-labelledby="editarDetalleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content dark-sign-up">
+      <div class="modal-body p-4">
+
+        <div class="title-wrapper pb-3 modal-heading text-center">
+          <h5 class="theme-name mb-0"><span>Editar - </span>Detalle de Requerimiento</h5>
+          <p>Modifique los campos necesarios y guarde los cambios.</p>
+        </div>
+
+        <form id="formEditarDetalle" method="post" action="{% url 'almacen:editar_detalle_requerimiento' %}">
+          {% csrf_token %}
+          <input type="hidden" id="editarDetalleId" name="detalle_id">
+
+          <div class="mb-3">
+            <label for="editarArticulo" class="form-label">Artículo</label>
+            <select class="form-control" id="editarArticulo" name="articulo" required>
+              {% for articulo in articulos %}
+                <option value="{{ articulo.id }}">{{ articulo.nombre }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="editarCantidad" class="form-label">Cantidad</label>
+            <input type="number" class="form-control" id="editarCantidad" name="cantidad" min="1" required>
+          </div>
+
+          <div class="mb-3">
+            <label for="editarObservaciones" class="form-label">Observaciones</label>
+            <textarea class="form-control" id="editarObservaciones" name="observaciones" rows="3"></textarea>
+          </div>
+
+          <div class="text-end">
+            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div> 
+
+<!-- Modal de Confirmación para eliminar detalle (actualizado con estilo e imagen) -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content dark-sign-up">
+      <div class="modal-body social-profile text-start p-4">
+
+        <!-- Contenedor con imagen, título y mensaje -->
+        <div class="Riho-demo-img">
+
+          <!-- Decoración superior (opcional) -->
+          <ul class="dot-group pb-3 pt-0">
+            <li></li>
+            <li></li>
+            <li></li>
+          </ul>
+
+          <!-- Título principal -->
+          <div class="title-wrapper pb-3 modal-heading text-center">
+            <h5 class="theme-name mb-0"><span>Confirmación - </span>Eliminar Detalle</h5>
+          </div>
+
+          <!-- Imagen decorativa -->
+          <div class="overflow-hidden text-center mb-4">
+            <img class="img-fluid" src="{% static 'assets/images/logo/logo.png' %}" alt="imagen decorativa" style="max-height: 150px;">
+          </div>
+
+          <!-- Mensaje de confirmación -->
+          <div class="text-center mb-4">
+            <p>¿Estás seguro de que deseas eliminar este detalle?</p>
+          </div>
+
+          <!-- Botones -->
+          <div class="modal-footer justify-content-center">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-danger" id="confirmDeleteButton">Eliminar</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  // Cuando se hace click en editar
+  document.querySelectorAll('.editar-detalle-btn').forEach(function(button) {
+    button.addEventListener('click', function() {
+      const detalleId = this.getAttribute('data-id');
+
+      // Usar fetch para obtener datos del detalle (puedes hacer un endpoint API que devuelva JSON con detalle)
+      fetch(`/almacen/api/detalle_requerimiento/${detalleId}/`)  // ejemplo de endpoint
+        .then(response => response.json())
+        .then(data => {
+          // Rellenar formulario en el modal
+          document.getElementById('editarDetalleId').value = data.id;
+          document.getElementById('editarArticulo').value = data.articulo_id;
+          document.getElementById('editarCantidad').value = data.cantidad;
+          document.getElementById('editarObservaciones').value = data.observaciones || '';
+
+          // Mostrar modal con Bootstrap 5
+          var editarModal = new bootstrap.Modal(document.getElementById('editarDetalleModal'));
+          editarModal.show();
+        })
+        .catch(error => {
+          console.error('Error al obtener datos del detalle:', error);
+          alert('No se pudo cargar la información del detalle.');
+        });
+    });
+  });
+});
+</script>
+
+
+<script>
+let deleteUrl = '';
+let confirmDeleteModal;
+
+document.addEventListener('DOMContentLoaded', function () {
+  const modalElement = document.getElementById('confirmDeleteModal');
+
+  if (modalElement) {
+    confirmDeleteModal = new bootstrap.Modal(modalElement);
+  } else {
+    console.error("Modal de confirmación no encontrado");
+    return;
+  }
+
+  document.querySelectorAll('.eliminar-detalle-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+      deleteUrl = this.getAttribute('data-url');
+      confirmDeleteModal.show();
+    });
+  });
+
+  const confirmButton = document.getElementById('confirmDeleteButton');
+  if (confirmButton) {
+    confirmButton.addEventListener('click', function () {
+      fetch(deleteUrl, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+          'Accept': 'application/json',
+        },
+      })
+      .then(response => {
+        if (response.ok) {
+          location.reload();
+        } else {
+          alert('Error al eliminar el detalle.');
+        }
+      })
+      .catch(() => alert('Error al procesar la solicitud.'))
+      .finally(() => {
+        confirmDeleteModal.hide();
+      });
+    });
+  } else {
+    console.error("Botón de confirmación no encontrado");
+  }
+});
+</script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const selectArticulo = document.getElementById('id_articulo');
+    const inputStockAsignado = document.getElementById('stockAsignado');
+
+    function actualizarStock() {
+      const opcionSeleccionada = selectArticulo.options[selectArticulo.selectedIndex];
+      const stock = opcionSeleccionada.getAttribute('data-stock') || 0;
+      inputStockAsignado.value = stock + ' Unidades';
+    }
+
+    // Inicializa al cargar la página
+    actualizarStock();
+
+    // Actualiza cuando cambia selección
+    selectArticulo.addEventListener('change', actualizarStock);
+  });
+</script>
+
+
+{% endblock %}

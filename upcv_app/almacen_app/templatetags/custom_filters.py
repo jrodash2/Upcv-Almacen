@@ -13,3 +13,10 @@ def dict_get(d, key):
 @register.filter
 def get_item(dictionary, key):
     return dictionary.get(key)
+
+@register.filter
+def get_item(dictionary, key):
+    try:
+        return dictionary.get(str(key))  # key convertido a string, pues stock_dict tiene claves string
+    except Exception:
+        return 0

@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User, Group
-from django.forms import CheckboxInput, DateInput
+from django.forms import CheckboxInput, DateInput, inlineformset_factory, modelformset_factory
 from django.core.exceptions import ValidationError
 from .models import DetalleFactura, Ubicacion, Perfil, UnidadDeMedida, Proveedor, Departamento, Categoria, Articulo, Departamento, Kardex, AsignacionDetalleFactura, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa, UsuarioDepartamento
 
@@ -389,3 +389,57 @@ class PerfilForm(forms.ModelForm):
             'foto': forms.ClearableFileInput(attrs={'class': 'form-control'}),
         }
         
+from django import forms
+from .models import Requerimiento, DetalleRequerimiento, AsignacionDetalleFactura
+
+class RequerimientoForm(forms.ModelForm):
+    class Meta:
+        model = Requerimiento
+        fields = ['departamento']
+
+    def __init__(self, *args, **kwargs):
+        usuario = kwargs.pop('usuario', None)
+        super().__init__(*args, **kwargs)
+
+        if usuario:
+            # Filtra los departamentos asignados al usuario
+            self.fields['departamento'].queryset = Departamento.objects.filter(
+                usuariodepartamento__usuario=usuario
+            )
+        else:
+            # En caso de que no se pase el usuario (fallback)
+            self.fields['departamento'].queryset = Departamento.objects.none()
+
+        self.fields['departamento'].widget.attrs.update({'class': 'form-control'})
+
+class DetalleRequerimientoForm(forms.ModelForm):
+    class Meta:
+        model = DetalleRequerimiento
+        fields = ['articulo', 'cantidad']
+
+    def __init__(self, *args, **kwargs):
+        departamento = kwargs.pop('departamento', None)
+        super().__init__(*args, **kwargs)
+        if departamento:
+            self.fields['articulo'].queryset = Articulo.objects.filter(
+                asignaciondetallefactura__destino=departamento
+            ).distinct()
+
+from django.forms import BaseModelFormSet
+
+class BaseDetalleRequerimientoFormSet(BaseModelFormSet):
+    def __init__(self, *args, **kwargs):
+        self.articulos_permitidos = kwargs.pop('articulos_permitidos', None)
+        super().__init__(*args, **kwargs)
+
+    def _construct_form(self, i, **kwargs):
+        kwargs['articulos_permitidos'] = self.articulos_permitidos
+        return super()._construct_form(i, **kwargs)
+
+DetalleRequerimientoFormSet = modelformset_factory(
+    DetalleRequerimiento,
+    form=DetalleRequerimientoForm,
+    formset=BaseDetalleRequerimientoFormSet,
+    extra=1,
+    can_delete=True
+)

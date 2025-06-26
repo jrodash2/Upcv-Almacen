@@ -343,3 +343,30 @@ def guardar_perfil_usuario(sender, instance, **kwargs):
     perfil = getattr(instance, 'perfil', None)
     if perfil:
         perfil.save()
+        
+        
+class Requerimiento(models.Model):
+    departamento = models.ForeignKey(Departamento, on_delete=models.CASCADE)
+    creado_por = models.ForeignKey(User, on_delete=models.CASCADE)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    estado = models.CharField(max_length=20, choices=[
+        ('pendiente', 'Pendiente'),
+        ('despachado', 'Despachado'),
+        ('rechazado', 'Rechazado'),
+        ('enviado', 'Enviado'),
+    ], default='pendiente')
+
+    def __str__(self):
+        return f"Requerimiento #{self.id} - {self.departamento.nombre}"
+
+class DetalleRequerimiento(models.Model):
+    requerimiento = models.ForeignKey(Requerimiento, related_name='detalles', on_delete=models.CASCADE)
+    articulo = models.ForeignKey(Articulo, on_delete=models.CASCADE)
+    cantidad = models.PositiveIntegerField()
+    observacion = models.TextField(blank=True, null=True)  # ✅ Campo agregado
+
+    def __str__(self):
+        return f"{self.articulo.nombre} x {self.cantidad}"
+
+        
+        

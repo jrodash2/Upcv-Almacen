@@ -1,4 +1,4 @@
-from .models import ContadorDetalleFactura, LineaLibre, LineaReservada
+from .models import ContadorDetalleFactura, LineaLibre, LineaReservada, AsignacionDetalleFactura
 
 from django.contrib.auth.decorators import user_passes_test
 
@@ -33,3 +33,11 @@ def grupo_requerido(nombre_grupo):
     def in_group(user):
         return user.is_authenticated and user.groups.filter(name=nombre_grupo).exists()
     return user_passes_test(in_group)
+
+from django.db.models import Sum
+
+def obtener_articulos_asignados(departamento):
+    asignaciones = AsignacionDetalleFactura.objects.filter(destino=departamento)
+    return asignaciones.values('articulo').annotate(
+        total_asignado=Sum('cantidad_asignada')
+    )

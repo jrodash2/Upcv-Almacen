@@ -117,8 +117,8 @@
                       <td>{{ user.email }}</td>
                       <td>{{ user.groups.all|join:", " }}</td>
                       <td>
-                        <a href="{% url 'almacen:user_delete' user.id %}" class="btn btn-primary btn-sm">Eliminar</a>
-                        <a href="{% url 'almacen:user_edit' user.id %}" class="btn btn-success btn-sm">Editar</a>
+                      
+                        <a href="{% url 'almacen:user_edit' user.id %}" class="btn btn-primary btn-sm">Editar</a>
                       </td>
                     </tr>
                     {% endfor %}

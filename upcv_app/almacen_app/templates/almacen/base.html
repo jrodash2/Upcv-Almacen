@@ -181,15 +181,33 @@
     </div>
   </div>
 
+  <style>
+.dropdown-wide {
+  min-width: 220px; /* O el ancho que prefieras */
+  padding: 10px 15px; /* Opcional, para darle espacio interno */
+  text-align: center;
+}
+.profile-dropdown li a {
+  display: block;
+  padding: 8px 12px;
+  white-space: nowrap; /* Evita que se parta el texto */
+  display: inline-block;
+  margin: 5px auto;
+}
+  </style>
   <!-- Dropdown -->
-  <ul class="profile-dropdown onhover-show-div">
-    <li>
-      <a class="btn btn-pill btn-outline-primary btn-sm" href="/logout">Salir</a>
-    </li>
-  </ul>
-</li>
+<ul class="profile-dropdown onhover-show-div dropdown-wide text-center">
+  <li>
+    {% if user.is_authenticated %}
+      <a class="d-block" href="{% url 'almacen:password_change' %}">Cambio de Contraseña</a>
+    {% endif %}
+  </li>
+  <li>
+    <a class="btn btn-pill btn-outline-primary btn-sm d-block mx-auto mt-2" href="/logout">Salir del Sistema</a>
+  </li>
+</ul>
 
-            </ul>
+
           </div>
           <script class="result-template" type="text/x-handlebars-template">
             <div class="ProfileCard u-cf">                        
@@ -234,7 +252,16 @@
 
   {# Mostrar "Asignados" a Departamentos #}
   {% if es_departamento%}
-  
+   </li>
+                              <li class="sidebar-list"><i class="fa fa-thumb-tack"></i><a class="sidebar-link " href="{% url 'almacen:crear_requerimiento' %}">
+                  <svg class="stroke-icon">
+                    <use href="../assets/svg/icon-sprite.svg#stroke-gallery"></use>
+                  </svg>
+                  <svg class="fill-icon">
+                    <use href="{% url 'almacen:crear_requerimiento' %}"></use>
+                  </svg><span>Requerimientos</span></a>
+
+              </li>
     <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
       <a class="sidebar-link sidebar-title" href="#">
         <svg class="stroke-icon">
@@ -249,7 +276,7 @@
 
            <li><a href="{% url 'almacen:lista_departamentos' %}">Agisnados</a></li>
       </ul>
-    </li>
+              
   {% endif %}
 
   {# Mostrar "Configuración" solo a Administradores #}
@@ -273,6 +300,15 @@
                   </svg><span>Formulario 1H</span></a>
 
               </li>
+                              <li class="sidebar-list"><i class="fa fa-thumb-tack"></i><a class="sidebar-link " href="{% url 'almacen:crear_requerimiento' %}">
+                  <svg class="stroke-icon">
+                    <use href="../assets/svg/icon-sprite.svg#stroke-gallery"></use>
+                  </svg>
+                  <svg class="fill-icon">
+                    <use href="{% url 'almacen:crear_requerimiento' %}"></use>
+                  </svg><span>Requerimientos</span></a>
+
+              </li>
     <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
       <a class="sidebar-link sidebar-title" href="#">
         <svg class="stroke-icon">
@@ -289,6 +325,7 @@
            <li><a href="{% url 'almacen:lista_departamentos' %}">Agisnados</a></li>
       </ul>
     </li>
+
     <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
       <a class="sidebar-link sidebar-title" href="#">
         <svg class="stroke-icon">

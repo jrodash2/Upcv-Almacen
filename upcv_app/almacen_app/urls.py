@@ -1,4 +1,5 @@
 from django.urls import path
+from django.contrib.auth import views as auth_views
 from . import views
 
 app_name = 'almacen'
@@ -79,4 +80,29 @@ urlpatterns = [
     # Kardex
     path('kardex/<int:articulo_id>/', views.historial_kardex_articulo, name='historial_kardex'),
     path('kardex/<int:articulo_id>/exportar/', views.exportar_kardex_pdf, name='exportar_kardex_pdf'),
+    
+    # Cambiar contraseña
+    path('cambiar-contraseña/', auth_views.PasswordChangeView.as_view(
+        template_name='almacen/password_change_form.html',
+        success_url='/cambiar-contraseña/hecho/'  # Redirección tras éxito
+    ), name='password_change'),
+
+    path('cambiar-contraseña/hecho/', auth_views.PasswordChangeDoneView.as_view(
+        template_name='almacen/password_change_done.html'
+    ), name='password_change_done'),
+    
+  
+    path('requerimientos/crear/', views.crear_requerimiento, name='crear_requerimiento'),
+    path('requerimientos/<int:requerimiento_id>/', views.detalle_requerimiento, name='detalle_requerimiento'),
+    path('detalle-requerimiento/eliminar/<int:pk>/', views.eliminar_detalle_requerimiento, name='eliminar_detalle_requerimiento'),
+    path('api/detalle_requerimiento/<int:detalle_id>/', views.detalle_requerimiento_api, name='detalle_requerimiento_api'),
+    path('editar_detalle_requerimiento/', views.editar_detalle_requerimiento, name='editar_detalle_requerimiento'),
+    path('enviar_requerimiento/<int:requerimiento_id>/', views.enviar_requerimiento, name='enviar_requerimiento'),
+    path('requerimientos/despachar/<int:requerimiento_id>/', views.despachar_requerimiento, name='despachar_requerimiento'),
+
+
+
+
+
+
 ]

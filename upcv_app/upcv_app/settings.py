@@ -160,3 +160,5 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # El directorio donde se almacenan
 
 
 LOGIN_URL = '/no-autorizado/'  # o una ruta válida a la que redirigir
+
+LOGOUT_ON_PASSWORD_CHANGE = True  # si usas algún middleware de seguridad extendido
