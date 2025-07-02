@@ -1,10 +1,10 @@
 {% extends 'almacen/base.html' %}
 {% load static %}
+{% load custom_filters %}
 {% block content %}
 
-<!-- Cargar jQuery -->
+<!-- jQuery y DataTables -->
 <script src="{% static 'assets/js/jquery.min.js' %}"></script>
-<!-- Cargar DataTables js -->
 <script src="{% static 'assets/js/datatable/datatables/jquery.dataTables.min.js' %}"></script>
 <script src="{% static 'assets/js/datatable/datatables/datatable.custom.js' %}"></script>
 
@@ -35,71 +35,83 @@
       <div class="edit-profile">
         <div class="row">
           <div class="col-xl-12">
+
             {% if tiene_acceso %}
-              <!-- Totales por artículo -->
-              <div class="card">
-                <div class="card-header">
-                  <h5>Totales por artículo</h5>
-                </div>
-                <div class="card-body">
-                  <div class="table-responsive custom-scrollbar">
-                    <table class="display" id="tabla-totales">
-                      <thead>
-                        <tr>
-                          <th>Artículo</th>
-                          <th>Total Asignado</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {% for item in asignaciones_agrupadas %}
-                        <tr>
-                          <td>{{ item.articulo__nombre }}</td>
-                          <td>{{ item.total_asignado }}</td>
-                        </tr>
-                        {% endfor %}
-                      </tbody>
-                    </table>
-                  </div>
+            <!-- Tabla combinada con Total Despachado -->
+            <div class="card">
+              <div class="card-header">
+                <h5>Totales por artículo con despachos</h5>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive custom-scrollbar">
+                  <table class="display" id="basic-10">
+                    <thead>
+                      <tr>
+                        <th>Artículo</th>
+                        <th>Total Asignado</th>
+                        <th>Total Despachado</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for item in asignaciones_agrupadas %}
+                      <tr>
+                        <td>{{ item.articulo__nombre }}</td>
+                        <td>{{ item.total_asignado }}</td>
+                        <td>
+  {% if despachos_dict|dict_get:item.articulo__nombre %}
+    {{ despachos_dict|dict_get:item.articulo__nombre }}
+  {% else %}
+    pendiente despachar
+  {% endif %}
+</td>
+
+
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
                 </div>
               </div>
+            </div>
 
-              <!-- Detalle de asignaciones -->
-              <div class="card mt-4">
-                <div class="card-header">
-                  <h5>Detalle de Asignaciones</h5>
-                </div>
-                <div class="card-body">
-                  <div class="table-responsive custom-scrollbar">
-                    <table class="display" id="tabla-detalle">
-                      <thead>
-                        <tr>
-                          <th>Artículo</th>
-                          <th>Cantidad Asignada</th>
-                          <th>Descripción</th>
-                          <th>Fecha</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {% for a in asignaciones_detalle %}
-                        <tr>
-                          <td>{{ a.articulo.nombre }}</td>
-                          <td>{{ a.cantidad_asignada }}</td>
-                          <td>{{ a.descripcion }}</td>
-                          <td>{{ a.fecha_asignacion|date:"d M Y H:i" }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                          <td colspan="4" class="text-center">Este departamento aún no tiene asignaciones.</td>
-                        </tr>
-                        {% endfor %}
-                      </tbody>
-                    </table>
-                  </div>
+            <!-- Detalle de asignaciones -->
+            <div class="card mt-4">
+              <div class="card-header">
+                <h5>Detalle de Asignaciones</h5>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive custom-scrollbar">
+                 <table class="display" id="basic-9">
+                    <thead>
+                      <tr>
+                        <th>Artículo</th>
+                        <th>Cantidad Asignada</th>
+                        <th>Descripción</th>
+                        <th>Fecha</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for a in asignaciones_detalle %}
+                      <tr>
+                        <td>{{ a.articulo.nombre }}</td>
+                        <td>{{ a.cantidad_asignada }}</td>
+                        <td>{{ a.descripcion }}</td>
+                        <td>{{ a.fecha_asignacion|date:"d M Y H:i" }}</td>
+                      </tr>
+                      {% empty %}
+                      <tr>
+                        <td colspan="4" class="text-center">Este departamento aún no tiene asignaciones.</td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
                 </div>
               </div>
+            </div>
 
-              <a href="{% url 'almacen:lista_departamentos' %}" class="btn btn-primary mt-3">← Volver a la lista</a>
+            <a href="{% url 'almacen:lista_departamentos' %}" class="btn btn-primary mt-3">← Volver a la lista</a>
             {% endif %}
+            
           </div>
         </div>
       </div>
@@ -117,21 +129,9 @@
     background-color: rgba(0,0,0,0.3);
     z-index: 1040;
   }
-
-
- 
 </style>
-
 <div class="blur-overlay"></div>
-
-<div
-  class="modal fade show d-block"
-  id="crearForm1hModal"
-  tabindex="-1"
-  aria-labelledby="crearForm1hModalLabel"
-  aria-hidden="true"
-  style="z-index: 1050;"
->
+<div class="modal fade show d-block" id="crearForm1hModal" tabindex="-1" aria-labelledby="crearForm1hModalLabel" aria-hidden="true" style="z-index: 1050;">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content dark-sign-up">
       <div class="modal-body social-profile">
@@ -154,5 +154,21 @@
 </div>
 {% endif %}
 
+<script>
+  $(document).ready(function() {
+    $('#tabla-totales-despachos').DataTable({
+      "language": {
+        "url": "//cdn.datatables.net/plug-ins/1.13.5/i18n/es-ES.json"
+      },
+      "order": [[0, "asc"]]
+    });
+    $('#tabla-detalle').DataTable({
+      "language": {
+        "url": "//cdn.datatables.net/plug-ins/1.13.5/i18n/es-ES.json"
+      },
+      "order": [[3, "desc"]]
+    });
+  });
+</script>
 
 {% endblock %}

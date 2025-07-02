@@ -52,7 +52,6 @@ def despachar_requerimiento(request, requerimiento_id):
         return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
 
     if request.method == 'POST':
-        # Extraer cantidades ingresadas desde el formulario
         cantidades_dict = {}
         for key in request.POST:
             if key.startswith('cantidades[') and key.endswith(']'):
@@ -64,7 +63,7 @@ def despachar_requerimiento(request, requerimiento_id):
 
         detalles = DetalleRequerimiento.objects.filter(requerimiento=requerimiento)
 
-        # Paso 1: Validar que haya stock suficiente para todos los detalles
+        # Validar stock suficiente
         for detalle in detalles:
             cantidad_a_despachar = cantidades_dict.get(detalle.id, 0)
             if cantidad_a_despachar != detalle.cantidad:
@@ -81,30 +80,16 @@ def despachar_requerimiento(request, requerimiento_id):
                 messages.error(request, f"No hay suficiente stock de {detalle.articulo.nombre}. Disponible: {total_disponible}")
                 return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
 
-        # Paso 2: Descontar stock (ya validado)
+        # (Opcional) Crear registro en Kardex
         for detalle in detalles:
-            cantidad_a_despachar = cantidades_dict.get(detalle.id, 0)
-
-            asignaciones = AsignacionDetalleFactura.objects.filter(
+            Kardex.objects.create(
                 articulo=detalle.articulo,
-                destino=requerimiento.departamento
-            ).order_by('fecha_asignacion')
+                tipo_movimiento='SALIDA',
+                cantidad=detalle.cantidad,
+                observacion=f"Despacho de requerimiento {requerimiento.id} al depto {requerimiento.departamento.nombre}"
+            )
 
-            cantidad_restante = cantidad_a_despachar
-
-            for asignacion in asignaciones:
-                if cantidad_restante <= 0:
-                    break
-
-                if asignacion.cantidad_asignada >= cantidad_restante:
-                    asignacion.cantidad_asignada -= cantidad_restante
-                    asignacion.save()
-                    cantidad_restante = 0
-                else:
-                    cantidad_restante -= asignacion.cantidad_asignada
-                    asignacion.cantidad_asignada = 0
-                    asignacion.save()
-
+        # Cambiar estado
         requerimiento.estado = 'despachado'
         requerimiento.save()
 
@@ -113,7 +98,7 @@ def despachar_requerimiento(request, requerimiento_id):
 
     messages.error(request, "Método no permitido.")
     return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
-    
+
     
 @login_required
 def crear_requerimiento(request):
@@ -265,7 +250,6 @@ def historial_kardex_articulo(request, articulo_id):
     })
 
 
-
 def ver_stock_formulario_1h(request):
     ingresos = DetalleFactura.objects.filter(
         form1h__estado='confirmado'
@@ -292,6 +276,20 @@ def ver_stock_formulario_1h(request):
             asignaciones_dept_dict[art_id] = []
         asignaciones_dept_dict[art_id].append(f"{depto_nombre} ({cantidad})")
 
+    # Prepara dict para despachos por artículo y departamento
+    kardex_salidas = Kardex.objects.filter(
+        tipo_movimiento='SALIDA',
+        fuente_asignacion__isnull=False
+    ).values(
+        'articulo__id', 'fuente_asignacion__destino__nombre'
+    ).annotate(total_despachado=Sum('cantidad'))
+
+    despachos_dict = defaultdict(lambda: defaultdict(int))
+    for k in kardex_salidas:
+        art_id = k['articulo__id']
+        depto = k['fuente_asignacion__destino__nombre'] or "Sin destino"
+        despachos_dict[art_id][depto] += k['total_despachado']
+
     for item in asignaciones:
         articulo_id = item['articulo__id']
         if articulo_id in ingreso_dict:
@@ -311,6 +309,10 @@ def ver_stock_formulario_1h(request):
         disponible = total_ingresado - total_asignado
         departamentos = ", ".join(asignaciones_dept_dict.get(item['articulo__id'], [])) or "Sin asignar"
 
+        # Agregar despachos para este artículo
+        despachos = despachos_dict.get(item['articulo__id'], {})
+        despachos_text = ", ".join(f"{d} ({c})" for d, c in despachos.items()) if despachos else "Sin despachos"
+
         stock_list.append({
             'articulo_id': item['articulo__id'],
             'articulo': item['articulo__nombre'],
@@ -318,6 +320,7 @@ def ver_stock_formulario_1h(request):
             'asignado': total_asignado,
             'disponible': disponible,
             'departamentos': departamentos,
+            'despachos': despachos_text,
         })
 
     context = {
@@ -400,6 +403,7 @@ def detalle_departamento(request, pk):
 
     asignaciones_agrupadas = []
     asignaciones_detalle = []
+    despachos_dict = {}
 
     if tiene_acceso:
         asignaciones_agrupadas = (
@@ -412,12 +416,28 @@ def detalle_departamento(request, pk):
 
         asignaciones_detalle = AsignacionDetalleFactura.objects.filter(destino=departamento).order_by('-fecha_asignacion')
 
+        # Obtener despachos (SALIDA) relacionados a asignaciones hacia este departamento
+        despachos_agrupados = (
+            Kardex.objects
+            .filter(
+                tipo_movimiento='SALIDA',
+                fuente_asignacion__destino=departamento
+            )
+            .values('articulo__nombre')
+            .annotate(total_despachado=Sum('cantidad'))
+            .order_by('articulo__nombre')
+        )
+
+        # Crear un diccionario para fácil acceso en el template
+        despachos_dict = {d['articulo__nombre']: d['total_despachado'] for d in despachos_agrupados}
+
     return render(request, 'almacen/detalle_departamento.html', {
         'departamento': departamento,
         'asignaciones_agrupadas': asignaciones_agrupadas,
         'asignaciones_detalle': asignaciones_detalle,
         'tiene_acceso': tiene_acceso,
-        'es_departamento': es_departamento,  # 👈 Este valor lo usas en el template
+        'es_departamento': es_departamento,
+        'despachos_dict': despachos_dict,
     })
     
 @login_required
