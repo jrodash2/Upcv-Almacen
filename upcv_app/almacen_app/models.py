@@ -256,6 +256,7 @@ class ContadorDetalleFactura(models.Model):
     def __str__(self):
         return f"Contador global de detalles: {self.contador}"
 
+# Modelo de Kardex (Movimientos de Inventario)
 class Kardex(models.Model):
     TIPO_MOVIMIENTO = [
         ('INGRESO', 'Ingreso'),
@@ -268,10 +269,10 @@ class Kardex(models.Model):
     saldo_anterior = models.PositiveIntegerField(default=0)
     saldo_actual = models.PositiveIntegerField(default=0)
     fecha = models.DateTimeField(auto_now_add=True)
-
+    
     fuente_factura = models.ForeignKey(DetalleFactura, null=True, blank=True, on_delete=models.SET_NULL)
     fuente_asignacion = models.ForeignKey(AsignacionDetalleFactura, null=True, blank=True, on_delete=models.SET_NULL)
-
+    
     observacion = models.TextField(null=True, blank=True)
 
     class Meta:
@@ -281,20 +282,16 @@ class Kardex(models.Model):
         return f'{self.tipo_movimiento} {self.cantidad} {self.articulo.nombre} ({self.fecha.date()})'
 
     def save(self, *args, **kwargs):
-        # Obtener el último saldo
-        ultimo_kardex = Kardex.objects.filter(articulo=self.articulo).exclude(id=self.id).order_by('-fecha', '-id').first()
+        # Calcular saldo actual
+        ultimo_kardex = Kardex.objects.filter(articulo=self.articulo).order_by('-fecha', '-id').first()
         self.saldo_anterior = ultimo_kardex.saldo_actual if ultimo_kardex else 0
 
         if self.tipo_movimiento == 'INGRESO':
             self.saldo_actual = self.saldo_anterior + self.cantidad
-
         elif self.tipo_movimiento == 'SALIDA':
-            if self.cantidad > self.saldo_anterior:
-                raise ValueError(f"No se puede registrar SALIDA de {self.cantidad} unidades; solo hay {self.saldo_anterior} en stock.")
             self.saldo_actual = self.saldo_anterior - self.cantidad
 
         super().save(*args, **kwargs)
-
 
 
 
@@ -366,7 +363,13 @@ class DetalleRequerimiento(models.Model):
     requerimiento = models.ForeignKey(Requerimiento, related_name='detalles', on_delete=models.CASCADE)
     articulo = models.ForeignKey(Articulo, on_delete=models.CASCADE)
     cantidad = models.PositiveIntegerField()
-    observacion = models.TextField(blank=True, null=True)  # ✅ Campo agregado
+    observacion = models.TextField(blank=True, null=True)
+
+    # NUEVO campo para marcar el estado del detalle
+    estado = models.CharField(max_length=20, choices=[
+        ('pendiente', 'Pendiente'),
+        ('despachado', 'Despachado'),
+    ], default='pendiente')
 
     def __str__(self):
         return f"{self.articulo.nombre} x {self.cantidad}"

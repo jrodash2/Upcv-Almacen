@@ -18,7 +18,7 @@ from .models import LineaLibre, ContadorDetalleFactura, LineaReservada
 from django.views.decorators.http import require_POST
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from .models import Serie
-from django.db.models import Sum, F
+from django.db.models import Sum, F, Value
 from django.contrib.auth.decorators import login_required, user_passes_test
 from collections import defaultdict
 from django.shortcuts import get_object_or_404, redirect
@@ -27,7 +27,7 @@ import json
 from django.contrib.auth.models import Group
 from .utils import grupo_requerido
 from django.views.decorators.http import require_GET
-
+from django.db.models.functions import Coalesce
 from django.db import transaction
 from django.db.models import Sum
 from django.shortcuts import render
@@ -63,33 +63,20 @@ def despachar_requerimiento(request, requerimiento_id):
 
         detalles = DetalleRequerimiento.objects.filter(requerimiento=requerimiento)
 
-        # Validar stock suficiente
+        # Validar cantidades (igual que antes)
         for detalle in detalles:
             cantidad_a_despachar = cantidades_dict.get(detalle.id, 0)
             if cantidad_a_despachar != detalle.cantidad:
                 messages.error(request, f"Debes despachar exactamente {detalle.cantidad} unidades de {detalle.articulo.nombre}.")
                 return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
 
-            total_disponible = (
-                AsignacionDetalleFactura.objects
-                .filter(articulo=detalle.articulo, destino=requerimiento.departamento)
-                .aggregate(total=Sum('cantidad_asignada'))['total'] or 0
-            )
+        # Aquí NO se hace ninguna modificación al stock ni Kardex
 
-            if cantidad_a_despachar > total_disponible:
-                messages.error(request, f"No hay suficiente stock de {detalle.articulo.nombre}. Disponible: {total_disponible}")
-                return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
-
-        # (Opcional) Crear registro en Kardex
+        # Solo actualizar estados
         for detalle in detalles:
-            Kardex.objects.create(
-                articulo=detalle.articulo,
-                tipo_movimiento='SALIDA',
-                cantidad=detalle.cantidad,
-                observacion=f"Despacho de requerimiento {requerimiento.id} al depto {requerimiento.departamento.nombre}"
-            )
+            detalle.estado = 'despachado'
+            detalle.save()
 
-        # Cambiar estado
         requerimiento.estado = 'despachado'
         requerimiento.save()
 
@@ -99,6 +86,7 @@ def despachar_requerimiento(request, requerimiento_id):
     messages.error(request, "Método no permitido.")
     return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
 
+    
     
 @login_required
 def crear_requerimiento(request):
@@ -142,45 +130,76 @@ def enviar_requerimiento(request, requerimiento_id):
 @login_required
 def detalle_requerimiento(request, requerimiento_id):
     requerimiento = get_object_or_404(Requerimiento, id=requerimiento_id)
-    articulos = Articulo.objects.filter(
-        asignaciondetallefactura__destino=requerimiento.departamento
-    ).distinct()
-    detalles_requerimiento = DetalleRequerimiento.objects.filter(requerimiento=requerimiento)
 
-    stock_dict_qs = (
+    # Asignaciones
+    asignaciones_qs = (
         AsignacionDetalleFactura.objects
         .filter(destino=requerimiento.departamento)
         .values('articulo')
         .annotate(total_asignado=Sum('cantidad_asignada'))
     )
-    stock_dict = {str(item['articulo']): item['total_asignado'] for item in stock_dict_qs}
+    asignaciones_dict = {item['articulo']: item['total_asignado'] for item in asignaciones_qs}
+
+    # Despachados
+    despachos_qs = (
+        DetalleRequerimiento.objects
+        .filter(requerimiento__departamento=requerimiento.departamento, requerimiento__estado='despachado')
+        .values('articulo')
+        .annotate(total_despachado=Sum('cantidad'))
+    )
+    despachos_dict = {item['articulo']: item['total_despachado'] for item in despachos_qs}
+
+    # Calcular stock disponible
+    stock_disponible = {}
+    for articulo_id, total_asignado in asignaciones_dict.items():
+        total_despachado = despachos_dict.get(articulo_id, 0)
+        disponible = total_asignado - total_despachado
+        if disponible > 0:
+            stock_disponible[articulo_id] = disponible
+
+    # 🔁 Convertir claves del stock a str para compatibilidad con Django template
+    stock_disponible = {
+        str(articulo_id): disponible
+        for articulo_id, disponible in stock_disponible.items()
+    }
+
+    # Filtrar artículos que tienen stock disponible
+    articulos = Articulo.objects.filter(id__in=stock_disponible.keys())
+
+    # Lista de detalles ya agregados al requerimiento
+    detalles_requerimiento = DetalleRequerimiento.objects.filter(requerimiento=requerimiento)
 
     es_admin = request.user.groups.filter(name='Administrador').exists()
 
     if request.method == 'POST':
         articulo_id = request.POST.get('articulo')
-        cantidad = request.POST.get('cantidad')
-        observacion = request.POST.get('observaciones')
+        cantidad = int(request.POST.get('cantidad', 0))
+        observacion = request.POST.get('observaciones', '')
 
-        if articulo_id and cantidad:
-            articulo = Articulo.objects.get(id=articulo_id)
-            DetalleRequerimiento.objects.create(
-                requerimiento=requerimiento,
-                articulo=articulo,
-                cantidad=int(cantidad),
-                observacion=observacion
-            )
-            messages.success(request, "Detalle agregado correctamente.")
-            return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
-        else:
+        if not articulo_id or cantidad <= 0:
             messages.error(request, "Debe seleccionar un artículo y una cantidad válida.")
+        else:
+            articulo = Articulo.objects.get(id=articulo_id)
+            disponible = stock_disponible.get(str(articulo.id), 0)
+
+            if cantidad > disponible:
+                messages.error(request, f"No puedes requerir más de {disponible} unidades de {articulo.nombre}.")
+            else:
+                DetalleRequerimiento.objects.create(
+                    requerimiento=requerimiento,
+                    articulo=articulo,
+                    cantidad=cantidad,
+                    observacion=observacion
+                )
+                messages.success(request, "Detalle agregado correctamente.")
+                return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
 
     return render(request, 'almacen/detalle_requerimiento.html', {
         'requerimiento': requerimiento,
         'articulos': articulos,
         'detalles_requerimiento': detalles_requerimiento,
-        'stock_dict': stock_dict,
-        'es_admin': es_admin,  # Aquí pasamos la variable al template
+        'stock_disponible': stock_disponible,
+        'es_admin': es_admin,
     })
 
 
@@ -250,6 +269,7 @@ def historial_kardex_articulo(request, articulo_id):
     })
 
 
+
 def ver_stock_formulario_1h(request):
     ingresos = DetalleFactura.objects.filter(
         form1h__estado='confirmado'
@@ -276,20 +296,6 @@ def ver_stock_formulario_1h(request):
             asignaciones_dept_dict[art_id] = []
         asignaciones_dept_dict[art_id].append(f"{depto_nombre} ({cantidad})")
 
-    # Prepara dict para despachos por artículo y departamento
-    kardex_salidas = Kardex.objects.filter(
-        tipo_movimiento='SALIDA',
-        fuente_asignacion__isnull=False
-    ).values(
-        'articulo__id', 'fuente_asignacion__destino__nombre'
-    ).annotate(total_despachado=Sum('cantidad'))
-
-    despachos_dict = defaultdict(lambda: defaultdict(int))
-    for k in kardex_salidas:
-        art_id = k['articulo__id']
-        depto = k['fuente_asignacion__destino__nombre'] or "Sin destino"
-        despachos_dict[art_id][depto] += k['total_despachado']
-
     for item in asignaciones:
         articulo_id = item['articulo__id']
         if articulo_id in ingreso_dict:
@@ -309,10 +315,6 @@ def ver_stock_formulario_1h(request):
         disponible = total_ingresado - total_asignado
         departamentos = ", ".join(asignaciones_dept_dict.get(item['articulo__id'], [])) or "Sin asignar"
 
-        # Agregar despachos para este artículo
-        despachos = despachos_dict.get(item['articulo__id'], {})
-        despachos_text = ", ".join(f"{d} ({c})" for d, c in despachos.items()) if despachos else "Sin despachos"
-
         stock_list.append({
             'articulo_id': item['articulo__id'],
             'articulo': item['articulo__nombre'],
@@ -320,7 +322,6 @@ def ver_stock_formulario_1h(request):
             'asignado': total_asignado,
             'disponible': disponible,
             'departamentos': departamentos,
-            'despachos': despachos_text,
         })
 
     context = {
@@ -392,52 +393,63 @@ def acceso_denegado(request, exception=None):
 def detalle_departamento(request, pk):
     departamento = get_object_or_404(Departamento, pk=pk)
 
-    # Verificar si el usuario es del grupo "Departamento"
     es_departamento = request.user.groups.filter(name='Departamento').exists()
-    
-    # También verificar si es administrador
     es_admin = request.user.groups.filter(name='Administrador').exists()
 
-    # Permitir acceso si es admin o si pertenece a ese departamento
     tiene_acceso = es_admin or UsuarioDepartamento.objects.filter(usuario=request.user, departamento=departamento).exists()
 
     asignaciones_agrupadas = []
     asignaciones_detalle = []
-    despachos_dict = {}
+    resumen_stock = []
 
     if tiene_acceso:
+        # Totales de asignaciones por artículo
         asignaciones_agrupadas = (
             AsignacionDetalleFactura.objects
             .filter(destino=departamento)
-            .values('articulo__nombre')
+            .values('articulo__id', 'articulo__nombre')
             .annotate(total_asignado=Sum('cantidad_asignada'))
             .order_by('articulo__nombre')
         )
 
-        asignaciones_detalle = AsignacionDetalleFactura.objects.filter(destino=departamento).order_by('-fecha_asignacion')
-
-        # Obtener despachos (SALIDA) relacionados a asignaciones hacia este departamento
-        despachos_agrupados = (
-            Kardex.objects
-            .filter(
-                tipo_movimiento='SALIDA',
-                fuente_asignacion__destino=departamento
-            )
-            .values('articulo__nombre')
+        # Totales de despachados por artículo
+        despachados = (
+            DetalleRequerimiento.objects
+            .filter(requerimiento__departamento=departamento, requerimiento__estado='despachado')
+            .values('articulo__id')
             .annotate(total_despachado=Sum('cantidad'))
-            .order_by('articulo__nombre')
         )
+        # Convertir a diccionario para lookup rápido
+        despachados_dict = {d['articulo__id']: d['total_despachado'] for d in despachados}
 
-        # Crear un diccionario para fácil acceso en el template
-        despachos_dict = {d['articulo__nombre']: d['total_despachado'] for d in despachos_agrupados}
+        # Unir asignaciones con despachos para calcular stock disponible
+        resumen_stock = []
+        for item in asignaciones_agrupadas:
+            articulo_id = item['articulo__id']
+            total_asignado = item['total_asignado']
+            total_despachado = despachados_dict.get(articulo_id, 0)
+            disponible = total_asignado - total_despachado
+
+            resumen_stock.append({
+                'nombre_articulo': item['articulo__nombre'],
+                'asignado': total_asignado,
+                'despachado': total_despachado,
+                'disponible': disponible
+            })
+
+        asignaciones_detalle = (
+            AsignacionDetalleFactura.objects
+            .filter(destino=departamento)
+            .order_by('-fecha_asignacion')
+        )
 
     return render(request, 'almacen/detalle_departamento.html', {
         'departamento': departamento,
         'asignaciones_agrupadas': asignaciones_agrupadas,
         'asignaciones_detalle': asignaciones_detalle,
+        'resumen_stock': resumen_stock,
         'tiene_acceso': tiene_acceso,
         'es_departamento': es_departamento,
-        'despachos_dict': despachos_dict,
     })
     
 @login_required

@@ -42,7 +42,6 @@
       <th>Ingresado</th>
       <th>Asignado</th>
       <th>Departamento(s)</th>
-      <th>Despachado</th>
       <th>Disponible</th>
       <th>Acción</th> <!-- Nueva columna -->
     </tr>
@@ -54,7 +53,6 @@
       <td>{{ item.ingresado }}</td>
       <td>{{ item.asignado }}</td>
       <td>{{ item.departamentos }}</td>
-      <td>{{ item.despachos }}</td>
       <td>
         {% if item.disponible > 0 %}
           <span class="badge bg-success">{{ item.disponible }}</span>

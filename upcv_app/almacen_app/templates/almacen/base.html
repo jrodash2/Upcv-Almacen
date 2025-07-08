@@ -132,7 +132,7 @@
         {% endif %}
         
              
-          </div>
+        
           </div>
           <div class="nav-right col-xxl-7 col-xl-6 col-md-7 col-8 pull-right right-header p-0 ms-auto">
             <ul class="nav-menus"> 
@@ -262,17 +262,20 @@
                   </svg><span>Requerimientos</span></a>
 
               </li>
-                 </li>
-                              <li class="sidebar-list"><i class="fa fa-thumb-tack"></i><a class="sidebar-link " href="{% url 'almacen:lista_departamentos' %}">
-                  <svg class="stroke-icon">
-                    <use href="../assets/svg/icon-sprite.svg#stroke-gallery"></use>
-                  </svg>
-                  <svg class="fill-icon">
-                    <use href="{% url 'almacen:lista_departamentos' %}"></use>
-                  </svg><span>Asignados</span></a>
+    <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
+      <a class="sidebar-link sidebar-title" href="#">
+        <svg class="stroke-icon">
+          <use href="../assets/svg/icon-sprite.svg#stroke-gallery"></use>
+        </svg>
+        <svg class="fill-icon">
+          <use href="../assets/svg/icon-sprite.svg#fill-gallery"></use>
+        </svg>
+        <span>Asignados</span>
+      </a>
+      <ul class="sidebar-submenu">
 
-              </li>
-
+           <li><a href="{% url 'almacen:lista_departamentos' %}">Agisnados</a></li>
+      </ul>
               
   {% endif %}
 

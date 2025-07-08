@@ -312,21 +312,22 @@
             <div class="row">
               <div class="col-md-8 mb-3">
                 <label for="id_articulo" class="form-label">Artículo</label>
- <select class="form-control" id="id_articulo" name="articulo" required>
+<select class="form-control" id="id_articulo" name="articulo" required>
   <option value="" disabled selected>Seleccione un artículo</option>
   {% for articulo in articulos %}
     <option value="{{ articulo.id }}"
-            data-stock="{{ stock_dict|get_item:articulo.id|default:0 }}">
-      {{ articulo.nombre }}
+            data-stock="{{ stock_disponible|get_item:articulo.id|default:0 }}">
+      {{ articulo.nombre }} (Disponible: {{ stock_disponible|get_item:articulo.id|default:0 }})
     </option>
   {% endfor %}
 </select>
 
-</select>
+
 <div class="col-md-4 mb-3">
-  <label class="form-label">Asignado</label>
+  <label class="form-label">Disponible</label>
   <input type="text" class="form-control" id="stockAsignado" readonly value="0">
 </div>
+
 
               </div>
 
@@ -353,6 +354,35 @@
     </div>
   </div>
 </div>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const articuloSelect = document.getElementById('id_articulo');
+    const stockInput = document.getElementById('stockAsignado');
+    const cantidadInput = document.getElementById('id_cantidad');
+
+    articuloSelect.addEventListener('change', function () {
+      const selectedOption = articuloSelect.options[articuloSelect.selectedIndex];
+      const stock = parseInt(selectedOption.getAttribute('data-stock')) || 0;
+      
+      stockInput.value = stock;
+      cantidadInput.max = stock;
+
+      // Reiniciar cantidad si es mayor que el nuevo stock
+      if (parseInt(cantidadInput.value) > stock) {
+        cantidadInput.value = stock;
+      }
+    });
+
+    cantidadInput.addEventListener('input', function () {
+      const max = parseInt(cantidadInput.max);
+      const val = parseInt(cantidadInput.value);
+      if (val > max) {
+        alert("No puedes ingresar más de " + max + " unidades.");
+        cantidadInput.value = max;
+      }
+    });
+  });
+</script>
 
 
 <!-- Modal para Editar Detalle -->
