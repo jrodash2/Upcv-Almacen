@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Requerimiento PDF</title>
+  <style>
+    body { font-family: sans-serif; font-size: 12px; }
+    .header, .firmas { margin-top: 30px; }
+    .firmas div { display: inline-block; width: 30%; text-align: center; margin: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #000; padding: 6px; text-align: left; }
+    th { background-color: #f0f0f0; }
+  </style>
+</head>
+<body>
+
+  <h2>Requerimiento N° {{ requerimiento.id }}</h2>
+
+  <div class="header">
+    <p><strong>Departamento:</strong> {{ requerimiento.departamento.nombre }}</p>
+    <p><strong>Creado por:</strong> {{ requerimiento.creado_por.get_full_name }}</p>
+    <p><strong>Fecha:</strong> {{ requerimiento.fecha_creacion|date:"d/m/Y" }}</p>
+    <p><strong>Estado:</strong> {{ requerimiento.get_estado_display }}</p>
+  </div>
+
+  <h3>Detalles</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Artículo</th>
+        <th>Cantidad</th>
+        <th>Observaciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for detalle in detalles_requerimiento %}
+        <tr>
+          <td>{{ detalle.articulo.nombre }}</td>
+          <td>{{ detalle.cantidad }}</td>
+          <td>{{ detalle.observaciones }}</td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="3">No hay detalles registrados.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="firmas">
+    <div>
+      _________________________<br>
+      <strong>Solicitante</strong>
+    </div>
+    <div>
+      _________________________<br>
+      <strong>Responsable de Almacén</strong>
+    </div>
+    <div>
+      _________________________<br>
+      <strong>Autorizado por</strong>
+    </div>
+  </div>
+
+</body>
+</html>

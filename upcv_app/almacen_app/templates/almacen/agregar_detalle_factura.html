@@ -43,15 +43,7 @@
         </a>
     {% endif %}
 
-    <!-- Botón Asignar (en espera de implementación) -->
-    <a class="btn btn-outline-warning btn-lg" href="{% url 'almacen:crear_asignacion_detalle' %}" title="Asignar">
-        <i class="fa fa-user-plus"></i> Asignar
-    </a>
 
-    <!-- Botón Anular (en espera de implementación) -->
-    <a class="btn btn-outline-warning btn-lg" href="#" title="Anular">
-        <i class="fa fa-times-circle"></i> Anular
-    </a>
 </div>
                     </div>
                   </div>
@@ -90,7 +82,7 @@
                   <tr>
                     <td style="width: 36%">
                       <span style="opacity: 0.8">Proveedor</span>
-                      <h6>{{ form1h_instance.proveedor_nombre }}</h6>
+                      <h6>{{ form1h_instance.proveedor }}</h6>
                     </td>
                     <td>
                       <span style="opacity: 0.8">NIT</span>
@@ -358,7 +350,8 @@
         <!-- Campo para ingresar el precio unitario -->
         <div class="col-md-6 mb-3">
             <label for="id_precio_unitario" class="form-label">Precio Unitario</label>
-            <input type="number" class="form-control" id="id_precio_unitario" name="precio_unitario" required />
+            <input type="number" class="form-control" id="id_precio_unitario" name="precio_unitario" step="0.01" required />
+
         </div>
 
         <!-- Campo para seleccionar el número de línea reservado -->

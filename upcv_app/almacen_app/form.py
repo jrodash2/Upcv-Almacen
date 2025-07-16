@@ -129,7 +129,7 @@ class DetalleFacturaForm(forms.ModelForm):
         widgets = {
             'articulo': forms.Select(attrs={'class': 'form-control'}),
             'cantidad': forms.NumberInput(attrs={'class': 'form-control'}),
-            'precio_unitario': forms.NumberInput(attrs={'class': 'form-control'}),
+            'precio_unitario': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'renglon': forms.NumberInput(attrs={'class': 'form-control'}),
             'id_linea': forms.HiddenInput(),  # Esto para no mostrarlo en el formulario
         }

@@ -99,6 +99,8 @@ urlpatterns = [
     path('editar_detalle_requerimiento/', views.editar_detalle_requerimiento, name='editar_detalle_requerimiento'),
     path('enviar_requerimiento/<int:requerimiento_id>/', views.enviar_requerimiento, name='enviar_requerimiento'),
     path('requerimientos/despachar/<int:requerimiento_id>/', views.despachar_requerimiento, name='despachar_requerimiento'),
+    path('requerimiento/<int:requerimiento_id>/pdf/', views.exportar_requerimiento_pdf, name='exportar_requerimiento_pdf'),
+
 
 
 

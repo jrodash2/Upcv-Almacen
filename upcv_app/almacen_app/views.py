@@ -32,7 +32,7 @@ from django.db import transaction
 from django.db.models import Sum
 from django.shortcuts import render
 from .models import DetalleFactura, AsignacionDetalleFactura, Articulo
-
+from django.template.loader import render_to_string
 from django.template.loader import get_template
 from django.http import HttpResponse
 from xhtml2pdf import pisa
@@ -259,6 +259,20 @@ def exportar_kardex_pdf(request, articulo_id):
 
     return response
 
+def exportar_requerimiento_pdf(request, requerimiento_id):
+    requerimiento = get_object_or_404(Requerimiento, id=requerimiento_id)
+    detalles = requerimiento.detalles.all()
+
+    html_string = render_to_string('almacen/pdf_requerimiento.html', {
+        'requerimiento': requerimiento,
+        'detalles_requerimiento': detalles,
+    })
+
+    pdf_file = HTML(string=html_string).write_pdf()
+
+    response = HttpResponse(pdf_file, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="requerimiento_{requerimiento.id}.pdf"'
+    return response
 
 def historial_kardex_articulo(request, articulo_id):
     articulo = get_object_or_404(Articulo, id=articulo_id)
