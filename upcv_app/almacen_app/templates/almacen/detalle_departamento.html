@@ -37,7 +37,7 @@
   </div>
   <div class="card-body">
     <div class="table-responsive custom-scrollbar">
-      <table class="display" id="tabla-resumen-stock">
+      <table class="display" id="basic-10">
         <thead>
           <tr>
             <th>Artículo</th>
@@ -62,37 +62,9 @@
 </div>
 
 
-    <div class="container-fluid {% if not tiene_acceso %}position-relative{% endif %}">
-      <div class="edit-profile">
-        <div class="row">
-          <div class="col-xl-12">
+   
             {% if tiene_acceso %}
-              <!-- Totales por artículo -->
-              <div class="card">
-                <div class="card-header">
-                  <h5>Totales por artículo</h5>
-                </div>
-                <div class="card-body">
-                  <div class="table-responsive custom-scrollbar">
-                    <table class="display" id="tabla-totales">
-                      <thead>
-                        <tr>
-                          <th>Artículo</th>
-                          <th>Total Asignado</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {% for item in asignaciones_agrupadas %}
-                        <tr>
-                          <td>{{ item.articulo__nombre }}</td>
-                          <td>{{ item.total_asignado }}</td>
-                        </tr>
-                        {% endfor %}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
+              
 
               <!-- Detalle de asignaciones -->
               <div class="card mt-4">
@@ -101,7 +73,7 @@
                 </div>
                 <div class="card-body">
                   <div class="table-responsive custom-scrollbar">
-                    <table class="display" id="tabla-detalle">
+                    <table class="display" id="basic-12">
                       <thead>
                         <tr>
                           <th>Artículo</th>

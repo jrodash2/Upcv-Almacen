@@ -219,9 +219,9 @@
        data-id="{{ detalle.id }}" 
        data-bs-toggle="modal" 
        data-bs-target="#editarDetalleModal"></i>
-    <i class="fa fa-trash-o eliminar-detalle-btn fa-2x" 
+    {% comment %} <i class="fa fa-trash-o eliminar-detalle-btn fa-2x" 
        style="cursor: pointer;" 
-       data-url="{% url 'almacen:eliminar_detalle_factura' detalle.id %}"></i>
+       data-url="{% url 'almacen:eliminar_detalle_factura' detalle.id %}"></i> {% endcomment %}
   {% endif %}
 </td>
 

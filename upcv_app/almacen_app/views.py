@@ -38,6 +38,7 @@ from django.http import HttpResponse
 from xhtml2pdf import pisa
 from weasyprint import HTML
 
+
 @login_required
 @transaction.atomic
 def despachar_requerimiento(request, requerimiento_id):
@@ -63,17 +64,24 @@ def despachar_requerimiento(request, requerimiento_id):
 
         detalles = DetalleRequerimiento.objects.filter(requerimiento=requerimiento)
 
-        # Validar cantidades (igual que antes)
+        # Validar cantidades
         for detalle in detalles:
             cantidad_a_despachar = cantidades_dict.get(detalle.id, 0)
             if cantidad_a_despachar != detalle.cantidad:
                 messages.error(request, f"Debes despachar exactamente {detalle.cantidad} unidades de {detalle.articulo.nombre}.")
                 return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
 
-        # Aquí NO se hace ninguna modificación al stock ni Kardex
-
-        # Solo actualizar estados
+        # Registrar salida en Kardex y actualizar estado
         for detalle in detalles:
+            cantidad_a_despachar = cantidades_dict.get(detalle.id, 0)
+
+            Kardex.objects.create(
+                articulo=detalle.articulo,
+                tipo_movimiento='SALIDA',
+                cantidad=cantidad_a_despachar,
+                observacion=f"Despacho de requerimiento #{requerimiento.id} para {requerimiento.departamento.nombre}"
+            )
+
             detalle.estado = 'despachado'
             detalle.save()
 
@@ -86,7 +94,6 @@ def despachar_requerimiento(request, requerimiento_id):
     messages.error(request, "Método no permitido.")
     return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
 
-    
     
 @login_required
 def crear_requerimiento(request):
