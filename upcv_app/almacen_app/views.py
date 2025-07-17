@@ -5,8 +5,8 @@ from django.contrib.auth.models import Group, User
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
-from .form import DetalleFacturaForm, DetalleRequerimientoForm, DetalleRequerimientoFormSet, Form1hForm, PerfilForm, RequerimientoForm, UserCreateForm, UserEditForm, UserCreateForm, UbicacionForm, UnidadDeMedidaForm, CategoriaForm, ProveedorForm, ArticuloForm, DepartamentoForm, SerieForm, AsignacionDetalleFacturaForm, UsuarioDepartamentoForm
-from .models import ContadorDetalleFactura, DetalleFactura, DetalleRequerimiento, LineaLibre, Perfil, Requerimiento, Ubicacion, UnidadDeMedida, Categoria, Proveedor, Articulo, Departamento, Kardex, AsignacionDetalleFactura, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa, LineaReservada, UsuarioDepartamento
+from .form import DetalleFacturaForm, DetalleRequerimientoForm, DetalleRequerimientoFormSet, Form1hForm, PerfilForm, RequerimientoForm, UserCreateForm, UserEditForm, UserCreateForm, UbicacionForm, UnidadDeMedidaForm, CategoriaForm, ProveedorForm, ArticuloForm, DepartamentoForm, SerieForm, AsignacionDetalleFacturaForm, UsuarioDepartamentoForm, InstitucionForm
+from .models import ContadorDetalleFactura, DetalleFactura, DetalleRequerimiento, LineaLibre, Perfil, Requerimiento, Ubicacion, UnidadDeMedida, Categoria, Proveedor, Articulo, Departamento, Kardex, AsignacionDetalleFactura, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa, LineaReservada, UsuarioDepartamento, Institucion
 from django.views.generic import CreateView
 from django.views.generic import ListView
 from django.urls import reverse_lazy
@@ -37,6 +37,22 @@ from django.template.loader import get_template
 from django.http import HttpResponse
 from xhtml2pdf import pisa
 from weasyprint import HTML
+
+
+@login_required
+def editar_institucion(request):
+    institucion = Institucion.objects.first()  # Solo debería haber una
+
+    if request.method == 'POST':
+        form = InstitucionForm(request.POST, request.FILES, instance=institucion)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Datos institucionales actualizados correctamente.")
+            return redirect('almacen:editar_institucion')  # Reemplaza con la URL real
+    else:
+        form = InstitucionForm(instance=institucion)
+
+    return render(request, 'almacen/editar_institucion.html', {'form': form})
 
 
 @login_required
@@ -269,13 +285,16 @@ def exportar_kardex_pdf(request, articulo_id):
 def exportar_requerimiento_pdf(request, requerimiento_id):
     requerimiento = get_object_or_404(Requerimiento, id=requerimiento_id)
     detalles = requerimiento.detalles.all()
+    institucion = Institucion.objects.first()  # ✅ Agregamos esto
 
     html_string = render_to_string('almacen/pdf_requerimiento.html', {
         'requerimiento': requerimiento,
         'detalles_requerimiento': detalles,
+        'institucion': institucion,  # ✅ Pasamos la instancia al template
     })
 
-    pdf_file = HTML(string=html_string).write_pdf()
+    # ✅ base_url ayuda a resolver rutas de imágenes y estáticos
+    pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf()
 
     response = HttpResponse(pdf_file, content_type='application/pdf')
     response['Content-Disposition'] = f'inline; filename="requerimiento_{requerimiento.id}.pdf"'
@@ -1090,10 +1109,12 @@ def signout(request):
 
 
 def signin(request):  
+    institucion = Institucion.objects.first()
     if request.method == 'GET':
         # Deberías instanciar el AuthenticationForm correctamente
         return render(request, 'almacen/login.html', {
-            'form': AuthenticationForm()
+            'form': AuthenticationForm(),
+            'institucion': institucion,
         })
     else:
         # Se instancia AuthenticationForm con los datos del POST para mantener el estado
@@ -1121,5 +1142,7 @@ def signin(request):
             # Si el formulario no es válido, se retorna con el error
             return render(request, 'almacen/login.html', {
                 'form': form,  # Pasamos el formulario con los errores
-                'error': 'Usuario o contraseña incorrectos'
+                'error': 'Usuario o contraseña incorrectos',
+                'institucion': institucion,
             })
+

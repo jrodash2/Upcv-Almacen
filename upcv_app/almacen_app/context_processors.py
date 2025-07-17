@@ -24,3 +24,16 @@ def grupo_usuario(request):
         'es_departamento': request.user.groups.filter(name='Departamento').exists(),
         'es_administrador': request.user.groups.filter(name='Administrador').exists(),
     }
+
+
+from .models import Institucion
+
+def datos_institucion(request):
+    try:
+        institucion = Institucion.objects.first()
+    except Institucion.DoesNotExist:
+        institucion = None
+
+    return {
+        'institucion': institucion
+    }

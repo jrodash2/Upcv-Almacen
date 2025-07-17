@@ -8,6 +8,18 @@ from django.db.models import Sum
 from django.db.models.signals import post_save
 
 
+class Institucion(models.Model):
+    nombre = models.CharField(max_length=255)
+    direccion = models.CharField(max_length=255)
+    telefono = models.CharField(max_length=20)
+    pagina_web = models.URLField(blank=True, null=True)
+    logo = models.ImageField(upload_to='logos/', blank=True, null=True)
+    logo2 = models.ImageField(upload_to='logos/', blank=True, null=True)
+
+    def __str__(self):
+        return self.nombre
+
+
 # Modelo de Proveedor
 class Proveedor(models.Model):
     nombre = models.CharField(max_length=255)                       
@@ -347,6 +359,7 @@ def guardar_perfil_usuario(sender, instance, **kwargs):
         
 class Requerimiento(models.Model):
     departamento = models.ForeignKey(Departamento, on_delete=models.CASCADE)
+    motivo = models.TextField(max_length=255, blank=True, null=True)
     creado_por = models.ForeignKey(User, on_delete=models.CASCADE)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     estado = models.CharField(max_length=20, choices=[

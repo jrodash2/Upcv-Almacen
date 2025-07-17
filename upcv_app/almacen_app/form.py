@@ -7,6 +7,43 @@ from .models import DetalleFactura, Ubicacion, Perfil, UnidadDeMedida, Proveedor
 from django.db.models import Sum, F, Value
 from django.db.models.functions import Coalesce
 
+
+
+from django import forms
+from .models import Institucion
+
+from django.core.exceptions import ValidationError
+
+class InstitucionForm(forms.ModelForm):
+    pagina_web = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+        help_text='Ingrese URL que comience con www., sin http/https.'
+    )
+
+    class Meta:
+        model = Institucion
+        fields = ['nombre', 'direccion', 'telefono', 'pagina_web', 'logo', 'logo2']
+        widgets = {
+            'nombre': forms.TextInput(attrs={'class': 'form-control'}),
+            'direccion': forms.TextInput(attrs={'class': 'form-control'}),
+            'telefono': forms.TextInput(attrs={'class': 'form-control'}),
+            # 'pagina_web': forms.URLInput(attrs={'class': 'form-control'}),  # quitamos este
+            'logo': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'logo2': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+        }
+
+    def clean_pagina_web(self):
+        url = self.cleaned_data.get('pagina_web')
+        if url:
+            if not url.startswith('www.'):
+                raise ValidationError('La URL debe comenzar con "www."')
+            # Añadimos http:// para que sea una URL válida
+            url = 'http://' + url
+        return url
+
+
+
 class UserCreateForm(forms.ModelForm):
     new_password = forms.CharField(
         widget=forms.PasswordInput(attrs={'class': 'form-control'}),
@@ -395,7 +432,7 @@ from .models import Requerimiento, DetalleRequerimiento, AsignacionDetalleFactur
 class RequerimientoForm(forms.ModelForm):
     class Meta:
         model = Requerimiento
-        fields = ['departamento']
+        fields = ['departamento', 'motivo']
 
     def __init__(self, *args, **kwargs):
         usuario = kwargs.pop('usuario', None)
@@ -411,6 +448,7 @@ class RequerimientoForm(forms.ModelForm):
             self.fields['departamento'].queryset = Departamento.objects.none()
 
         self.fields['departamento'].widget.attrs.update({'class': 'form-control'})
+        self.fields['motivo'].widget.attrs.update({'class': 'form-control'})
 
 class DetalleRequerimientoForm(forms.ModelForm):
     class Meta:

@@ -41,8 +41,19 @@
       <div class="row">
         <div class="login-card login-dark">
           <div>
-            <div><a class="logo text-start" href="#"> <img class="img-fluid for-dark" src="{% static 'assets/images/logo/logo.png' %}" alt="looginpage"><img class="img-fluid for-light" src="{% static 'assets/images/logo/upcv2.png' %}" alt="looginpage"></a> </div>
-            
+<div>
+  <a class="logo text-start" href="#">
+    {% if institucion and institucion.logo2 %}
+      <img class="img-fluid for-dark" src="{{ institucion.logo2.url }}" alt="Logo principal" style="max-height: 60px;">
+    {% endif %}
+    {% if institucion and institucion.logo %}
+      <img class="img-fluid for-light" src="{{ institucion.logo.url }}" alt="Logo secundario" style="max-height: 60px;">
+    {% else %}
+      <img class="img-fluid for-light" src="{% static 'assets/images/logo/upcv2.png' %}" alt="Logo secundario" style="max-height: 60px;">
+    {% endif %}
+  </a>
+</div>
+
             <div class="login-main"> 
               <form action="/signin/" method="POST" class="theme-form">
                   {% csrf_token %}

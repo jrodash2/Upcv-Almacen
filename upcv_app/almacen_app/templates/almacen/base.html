@@ -225,7 +225,7 @@
       <div class="page-body-wrapper">
         <!-- Page Sidebar Start-->
         <div class="sidebar-wrapper" data-layout="stroke-svg">
-          <div class="logo-wrapper"><a href=""><img class="img-fluid" src="{% static 'assets/images/logo/logo.png' %}" alt=""></a>
+          <div class="logo-wrapper"><a href=""><img class="img-fluid" src="{{ institucion.logo.url }}" alt=""></a>
             <div class="back-btn"><i class="fa fa-angle-left"> </i></div>
             <div class="toggle-sidebar"><i class="status_toggle middle sidebar-toggle" data-feather="grid"> </i></div>
           </div>
@@ -237,12 +237,12 @@
                 <li class="back-btn"><a href=""><img class="img-fluid" src="../assets/images/logo/logo-icon.png" alt=""></a>
                   <div class="mobile-back text-end"> <span>Back </span><i class="fa fa-angle-right ps-2" aria-hidden="true"></i></div>
                 </li>
-                <li class="pin-title sidebar-main-title">
+                <li class="sidebar-main-title">
                   <div> 
                     <h6></h6>
                   </div>
                 </li>
-                <li class="sidebar-main-title">
+                <li class="s">
                   <div>
                     <h6 ></h6>
                   </div>
@@ -346,6 +346,7 @@
         <li><a href="{% url 'almacen:asignar_departamento' %}">Asignar Depto.</a></li>
         <li><a href="{% url 'almacen:crear_ubicacion' %}">Ubicaciones</a></li>
         <li><a href="{% url 'almacen:lista_series' %}">Series 1H</a></li>
+        <li><a href="{% url 'almacen:editar_institucion' %}">Institución</a></li>
         <li><a href="#">Manuales</a></li>
       </ul>
     </li>
