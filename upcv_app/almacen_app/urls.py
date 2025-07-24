@@ -9,7 +9,7 @@ handler403 = 'almacen_app.views.acceso_denegado'  # Asegúrate que el nombre de 
 
 urlpatterns = [
     path('', views.home, name='home'), 
-    path('dahsboard/', views.dahsboard, name='dahsboard'),
+    path('dashboard/', views.dashboard, name='dashboard'),
     path('signin/', views.signin, name='signin'),
     path('logout/', views.signout, name='logout'),
 

@@ -281,7 +281,7 @@
 
   {# Mostrar "Configuración" solo a Administradores #}
   {% if es_administrador %}
-    <li class="sidebar-list" ><i class="fa fa-thumb-tack"> </i><a class="sidebar-link " href="{% url 'almacen:dahsboard' %}">
+    <li class="sidebar-list" ><i class="fa fa-thumb-tack"> </i><a class="sidebar-link " href="{% url 'almacen:dashboard' %}">
                     <svg >
                       <use href="../assets/svg/icon-sprite.svg#stroke-home"></use>
                     </svg>
@@ -412,6 +412,9 @@
 <script src="{% static 'assets/js/icons/icons-notify2.js' %}"></script>
 
 <script src="{% static 'assets/js/icons/icons-notify.js' %}"></script>
+
+<!-- ApexCharts (para las gráficas) -->
+<script src="{% static 'assets/js/chart/apex-chart/apex-chart.js' %}"></script>
 
 <!-- Footer SIEMPRE va fuera de .page-body -->
   <footer class="footer">

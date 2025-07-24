@@ -1,0 +1,245 @@
+{% extends 'almacen/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-body">
+  <div class="container-fluid">
+    <div class="page-title">
+      <div class="row">
+        <div class="col-6">
+          <h2>Dashboard</h2>
+        </div>
+        <div class="col-6">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+              <a href="#">
+                <svg class="stroke-icon">
+                  <use href="../assets/svg/icon-sprite.svg#stroke-home"></use>
+                </svg>
+              </a>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gráficas con ApexCharts -->
+  <div class="row" style="margin: 20px;">
+    
+    <!-- Card para el gráfico de Requerimientos por Tipo -->
+    <div class="col-xl-5 col-md-12 box-col-12">
+      <div class="card o-hidden">
+        <div class="chart-widget-top">
+          <div class="row card-body pb-0 m-0">
+            <div class="col-xl-9 col-lg-8 col-9 p-0">
+              <h6 class="mb-2">Requerimientos por Tipo</h6>
+            </div>
+          </div>
+          <div id="reqChart"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card para el gráfico de Totales de Artículos -->
+    <div class="col-xl-7 col-md-12 box-col-12">
+      <div class="card o-hidden">
+        <div class="chart-widget-top">
+          <div class="row card-body pb-0 m-0">
+            <div class="col-xl-9 col-lg-8 col-9 p-0">
+              <h6 class="mb-2">Totales de Artículos</h6>
+            </div>
+          </div>
+          <div id="totalsChart"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card para el gráfico de Requerimientos Semanales -->
+    <div class="col-xl-12 col-md-12 box-col-12">
+      <div class="card o-hidden">
+        <div class="chart-widget-top">
+          <div class="row card-body pb-0 m-0">
+            <div class="col-xl-9 col-lg-8 col-9 p-0">
+              <h6 class="mb-2">Requerimientos Semanales</h6>
+            </div>
+          </div>
+          <div id="semanalChart"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+            <div class="row">
+              <div class="col-md-12 box-col-12">
+                <div class="card o-hidden">
+                  <div class="card-header">
+                    <h4>Monthly  History</h4>
+                  </div>
+                  <div class="bar-chart-widget">
+                    <div class="bottom-content card-body">
+                      <div class="row"> 
+                        <div class="col-12">
+                          <div id="chart-widget4"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-xl-6 col-lg-12 box-col-6 xl-50">
+                <div class="card">
+                  <div class="card-header">
+                    <h4>Skill Status</h4>
+                  </div>
+                  <div class="card-body">
+                    <div class="chart-container skill-chart">
+                      <div id="circlechart"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-xl-6 col-lg-12 box-col-6 xl-50">
+                <div class="card">
+                  <div class="card-header">
+                    <div class="header-top">
+                      <h4>Order Status</h4>
+                      <div class="card-header-right-icon">
+                        <div class="dropdown"> 
+                          <button class="btn dropdown-toggle" id="dropdownMenuButtonStaus" type="button" data-bs-toggle="dropdown">Today</button>
+                          <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButtonStaus"><a class="dropdown-item" href="#">Today</a><a class="dropdown-item" href="#">Tomorrow</a><a class="dropdown-item" href="#">Yesterday</a></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="card-body"> 
+                    <div class="chart-container progress-chart">
+                      <div id="progress1"></div>
+                      <div id="progress2"></div>
+                      <div id="progress3"></div>
+                      <div id="progress4"></div>
+                      <div id="progress5">               </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+
+  <!-- Scripts de ApexCharts -->
+  <script src="{% static 'assets/js/chart/apex-chart/apex-chart.js' %}"></script>
+  <script src="{% static 'assets/js/chart/apex-chart/chart-custom.js' %}"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      // Requerimientos por Tipo - Pie Chart
+      const labelsReq = {{ labels_req|safe }};
+      const dataReq = {{ data_req|safe }};
+
+      var optionsReq = {
+        chart: {
+          type: 'pie',
+          height: 350,
+          toolbar: { show: false }
+        },
+        series: dataReq,
+        labels: labelsReq,
+        colors: ['#007bff', '#28a745', '#dc3545', '#ffc107'],
+        legend: { position: 'bottom' },
+        responsive: [{
+          breakpoint: 480,
+          options: {
+            chart: { width: 300 },
+            legend: { position: 'bottom' }
+          }
+        }]
+      };
+
+      var reqChart = new ApexCharts(document.querySelector("#reqChart"), optionsReq);
+      reqChart.render();
+
+      // Totales de Artículos - Bar Chart
+      var optionsTotals = {
+        chart: {
+          type: 'bar',
+          height: 350,
+          toolbar: { show: false }
+        },
+        series: [{
+          name: 'Cantidad',
+          data: [
+            {{ totales_articulos.activos|default:0 }},
+            {{ totales_articulos.inactivos|default:0 }},
+            {{ ingresos|default:0 }},
+            {{ salidas|default:0 }}
+          ]
+        }],
+        xaxis: {
+          categories: ['Activos', 'Inactivos', 'Entradas', 'Salidas']
+        },
+        plotOptions: {
+          bar: {
+            horizontal: false,
+            columnWidth: '55%',
+            endingShape: 'rounded'
+          }
+        },
+        colors: ['#007bff', '#6c757d', '#28a745', '#dc3545'],
+        dataLabels: { enabled: false },
+        tooltip: {
+          y: { formatter: val => val }
+        },
+        yaxis: { min: 0 }
+      };
+
+      var totalsChart = new ApexCharts(document.querySelector("#totalsChart"), optionsTotals);
+      totalsChart.render();
+
+      // Requerimientos Semanales - Line Chart
+      const semanas = {{ semanas|safe }};
+      const cantidad_sem = {{ cantidad_sem|safe }};
+
+      var optionsSemanal = {
+        chart: {
+          type: 'line',
+          height: 350,
+          toolbar: { show: false }
+        },
+        series: [{
+          name: 'Req por semana',
+          data: cantidad_sem
+        }],
+        xaxis: {
+          categories: semanas
+        },
+        stroke: {
+          curve: 'smooth'
+        },
+        fill: {
+          type: 'gradient',
+          gradient: { shadeIntensity: 1, opacityFrom: 0.7, opacityTo: 0.3, stops: [0, 90, 100] }
+        },
+        colors: ['#17a2b8'],
+        dataLabels: { enabled: false },
+        tooltip: {
+          y: { formatter: val => val }
+        },
+        yaxis: { min: 0 }
+      };
+
+      var semanalChart = new ApexCharts(document.querySelector("#semanalChart"), optionsSemanal);
+      semanalChart.render();
+    });
+  </script>
+
+  <!-- Otros scripts de la plantilla -->
+  <script src="{% static 'assets/js/jquery.min.js' %}"></script>
+  <script src="{% static 'assets/js/bootstrap/bootstrap.bundle.min.js' %}"></script>
+  <script src="{% static 'assets/js/icons/feather-icon/feather.min.js' %}"></script>
+
+
+  
+  
+{% endblock %}

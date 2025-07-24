@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+from django.forms import IntegerField
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login as auth_login, logout
 from django.contrib.auth.forms import AuthenticationForm
@@ -18,7 +20,8 @@ from .models import LineaLibre, ContadorDetalleFactura, LineaReservada
 from django.views.decorators.http import require_POST
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from .models import Serie
-from django.db.models import Sum, F, Value
+from django.db import models
+from django.db.models import Sum, F, Value, Count, Q, Case, When
 from django.contrib.auth.decorators import login_required, user_passes_test
 from collections import defaultdict
 from django.shortcuts import get_object_or_404, redirect
@@ -37,6 +40,12 @@ from django.template.loader import get_template
 from django.http import HttpResponse
 from xhtml2pdf import pisa
 from weasyprint import HTML
+from django.db.models.functions import Cast, TruncWeek
+from django.utils import timezone
+from datetime import timedelta
+
+
+
 
 
 @login_required
@@ -1145,14 +1154,54 @@ def user_delete(request, user_id):
 def home(request):
     return render(request, 'almacen/login.html')
 
-def dahsboard(request):
-    es_departamento = request.user.groups.filter(name='Departamento').exists()
-    es_administrador = request.user.groups.filter(name='Administrador').exists()
+@login_required
+def dashboard(request):
+    # Totales de artículos activos/inactivos
+    totales_articulos = Articulo.objects.aggregate(
+        activos=Count('id', filter=Q(activo=True)),
+        inactivos=Count('id', filter=Q(activo=False))
+    )
 
-    return render(request, 'almacen/dahsboard.html', {
-        'es_departamento': es_departamento,
-        'es_administrador': es_administrador
-    })
+    # Suma de Kardex: entradas/salidas
+    ingresos = Kardex.objects.filter(tipo_movimiento='INGRESO').aggregate(total=Sum('cantidad'))['total'] or 0
+    salidas = Kardex.objects.filter(tipo_movimiento='SALIDA').aggregate(total=Sum('cantidad'))['total'] or 0
+
+    # Requerimientos por estado
+    estados_orden = ['pendiente', 'despachado', 'rechazado', 'enviado']
+    req_por_estado = Requerimiento.objects.values('estado').annotate(cuenta=Count('id'))
+    req_por_estado = sorted(
+        list(req_por_estado),
+        key=lambda r: estados_orden.index(r['estado']) if r['estado'] in estados_orden else len(estados_orden)
+    )
+
+    labels_req = [r['estado'].capitalize() for r in req_por_estado]
+    data_req = [r['cuenta'] for r in req_por_estado]
+    total_reqs = sum(data_req)
+
+    # Evolución semanal de requerimientos (este mes)
+    today = timezone.now().date()
+    fecha_futura = today + timedelta(days=4)
+    stm = today.replace(day=1)
+    etm = (stm + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+
+    req_sem = Requerimiento.objects.annotate(
+        week=TruncWeek('fecha_creacion')
+    ).filter(fecha_creacion__range=(stm, etm)).values('week').annotate(cuenta=Count('id')).order_by('week')
+
+    semanas = [r['week'].strftime('%b %d') for r in req_sem]
+    cantidad_sem = [r['cuenta'] for r in req_sem]
+
+    context = {
+        'totales_articulos': totales_articulos,
+        'ingresos': ingresos,
+        'salidas': salidas,
+        'labels_req': json.dumps(labels_req),
+        'data_req': json.dumps(data_req),
+        'semanas': json.dumps(semanas),
+        'cantidad_sem': json.dumps(cantidad_sem),
+    }
+    return render(request, 'almacen/dashboard.html', context)
+
 
 
 def signout(request):
