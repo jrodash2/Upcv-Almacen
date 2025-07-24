@@ -101,6 +101,13 @@ urlpatterns = [
     path('requerimientos/despachar/<int:requerimiento_id>/', views.despachar_requerimiento, name='despachar_requerimiento'),
     path('requerimiento/<int:requerimiento_id>/pdf/', views.exportar_requerimiento_pdf, name='exportar_requerimiento_pdf'),
     path('institucion/editar/', views.editar_institucion, name='editar_institucion'),
+    
+    
+    path('programa/crear/', views.crear_programa, name='crear_programa'),
+    path('programa/editar/<int:pk>/', views.editar_programa, name='editar_programa'),
+    
+    path('dependencia/crear/', views.crear_dependencia, name='crear_dependencia'),
+    path('dependencia/editar/<int:pk>/', views.editar_dependencia, name='editar_dependencia'),
 
 
 

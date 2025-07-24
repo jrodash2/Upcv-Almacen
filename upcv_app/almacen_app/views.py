@@ -5,7 +5,7 @@ from django.contrib.auth.models import Group, User
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
-from .form import DetalleFacturaForm, DetalleRequerimientoForm, DetalleRequerimientoFormSet, Form1hForm, PerfilForm, RequerimientoForm, UserCreateForm, UserEditForm, UserCreateForm, UbicacionForm, UnidadDeMedidaForm, CategoriaForm, ProveedorForm, ArticuloForm, DepartamentoForm, SerieForm, AsignacionDetalleFacturaForm, UsuarioDepartamentoForm, InstitucionForm
+from .form import DependenciaForm, DetalleFacturaForm, DetalleRequerimientoForm, DetalleRequerimientoFormSet, Form1hForm, PerfilForm, ProgramaForm, RequerimientoForm, UserCreateForm, UserEditForm, UserCreateForm, UbicacionForm, UnidadDeMedidaForm, CategoriaForm, ProveedorForm, ArticuloForm, DepartamentoForm, SerieForm, AsignacionDetalleFacturaForm, UsuarioDepartamentoForm, InstitucionForm
 from .models import ContadorDetalleFactura, DetalleFactura, DetalleRequerimiento, LineaLibre, Perfil, Requerimiento, Ubicacion, UnidadDeMedida, Categoria, Proveedor, Articulo, Departamento, Kardex, AsignacionDetalleFactura, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa, LineaReservada, UsuarioDepartamento, Institucion
 from django.views.generic import CreateView
 from django.views.generic import ListView
@@ -926,6 +926,58 @@ def editar_unidad(request, pk):
         form = UnidadDeMedidaForm(instance=unidad)
 
     return render(request, 'almacen/crear_unidad.html', {'form': form})
+
+@login_required
+@grupo_requerido('Administrador')
+def crear_programa(request):
+    programas = Programa.objects.all()
+    form = ProgramaForm(request.POST or None)
+    if form.is_valid():
+        form.save()
+        return redirect('almacen:crear_programa')  # Ajusta a tu namespace de URLs
+    return render(request, 'almacen/crear_programa.html', {'form': form, 'programas': programas})
+
+
+@login_required
+@grupo_requerido('Administrador')
+def editar_programa(request, pk):
+    programa = get_object_or_404(Programa, pk=pk)
+    programas = Programa.objects.all()
+    if request.method == 'POST':
+        form = ProgramaForm(request.POST, instance=programa)
+        if form.is_valid():
+            form.save()
+            return redirect('almacen:crear_programa')
+    else:
+        form = ProgramaForm(instance=programa)
+    return render(request, 'almacen/crear_programa.html', {'form': form, 'programas': programas})
+
+@login_required
+@grupo_requerido('Administrador')
+def crear_dependencia(request):
+    dependencias = Dependencia.objects.all()
+    form = DependenciaForm(request.POST or None)
+    if form.is_valid():
+        form.save()
+        return redirect('almacen:crear_dependencia')
+    return render(request, 'almacen/crear_dependencia.html', {'form': form, 'dependencias': dependencias})
+
+
+@login_required
+@grupo_requerido('Administrador')
+def editar_dependencia(request, pk):
+    dependencia = get_object_or_404(Dependencia, pk=pk)
+    dependencias = Dependencia.objects.all()
+
+    if request.method == 'POST':
+        form = DependenciaForm(request.POST, instance=dependencia)
+        if form.is_valid():
+            form.save()
+            return redirect('almacen:crear_dependencia')
+    else:
+        form = DependenciaForm(instance=dependencia)
+
+    return render(request, 'almacen/crear_dependencia.html', {'form': form, 'dependencias': dependencias})
 
 @login_required
 @grupo_requerido('Administrador')

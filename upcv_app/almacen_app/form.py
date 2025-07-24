@@ -450,6 +450,38 @@ class RequerimientoForm(forms.ModelForm):
         self.fields['departamento'].widget.attrs.update({'class': 'form-control'})
         self.fields['motivo'].widget.attrs.update({'class': 'form-control'})
 
+class DependenciaForm(forms.ModelForm):
+    class Meta:
+        model = Dependencia
+        fields = ['nombre', 'descripcion', 'activo']
+        widgets = {
+            'nombre': forms.TextInput(attrs={'placeholder': 'Nombre de la dependencia', 'class': 'form-control'}),
+            'descripcion': forms.Textarea(attrs={'placeholder': 'Descripción de la dependencia', 'class': 'form-control', 'rows': 3}),
+            'activo': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(DependenciaForm, self).__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if name != 'activo':
+                field.widget.attrs['class'] = field.widget.attrs.get('class', '') + ' form-control'
+
+class ProgramaForm(forms.ModelForm):
+    class Meta:
+        model = Programa
+        fields = ['nombre', 'descripcion', 'activo']
+        widgets = {
+            'nombre': forms.TextInput(attrs={'placeholder': 'Nombre del programa', 'class': 'form-control'}),
+            'descripcion': forms.Textarea(attrs={'placeholder': 'Descripción del programa', 'class': 'form-control', 'rows': 3}),
+            'activo': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(ProgramaForm, self).__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if name != 'activo':  # No aplicar form-control al checkbox
+                field.widget.attrs['class'] = field.widget.attrs.get('class', '') + ' form-control'
+
 class DetalleRequerimientoForm(forms.ModelForm):
     class Meta:
         model = DetalleRequerimiento
