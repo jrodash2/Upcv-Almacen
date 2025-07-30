@@ -1155,7 +1155,7 @@ def home(request):
     return render(request, 'almacen/login.html')
 
 @login_required
-def dashboard(request):
+def dahsboard(request):
     # Totales de artículos activos/inactivos
     totales_articulos = Articulo.objects.aggregate(
         activos=Count('id', filter=Q(activo=True)),

@@ -4,6 +4,77 @@
 <script src="{% static 'assets/js/datatable/datatables/datatable.custom.js' %}"></script>
 
 
+<style>
+  /* Aplicamos estos estilos a las tablas */
+/* Aplicamos estos estilos a las tablas */
+/* Aplicamos estos estilos a las tablas */
+table.bill-content, 
+table.order-details {
+  width: 60%; /* Reducir el ancho de la tabla al 60% del contenedor */
+  table-layout: fixed; /* Esto asegura que la tabla no se agrande por el contenido */
+  max-width: 80%; /* La tabla no se expandirá más allá del tamaño del contenedor */
+}
+
+table.bill-content td, 
+table.order-details td, 
+table.bill-content th, 
+table.order-details th {
+  padding: 12px 10px; /* Reducir el padding para compactar las celdas */
+  word-wrap: break-word; /* Romper palabras largas para ajustarlas */
+  white-space: normal; /* Permitir que el texto se ajuste a varias líneas */
+  overflow: hidden; /* Evitar que el contenido se desborde */
+  text-overflow: ellipsis; /* Mostrar '...' si el texto es demasiado largo */
+}
+
+table.bill-content td, 
+table.order-details td {
+  max-width: 250px; /* Reducir el ancho máximo de las celdas */
+}
+
+table.bill-content th, 
+table.order-details th {
+  text-align: left;
+}
+
+/* Contenedor para las tarjetas */
+.card-container {
+  display: inline-block;
+  width: fit-content; /* Se ajusta al tamaño del contenido (imagen) */
+  margin: 15px; /* Reducir margen alrededor de la tarjeta */
+}
+
+.card {
+  display: inline-block;
+  width: 80%; /* La tarjeta se ajusta al tamaño del contenedor */
+  height: fit-content;
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+.card img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  width: 100%; /* Se asegura que la imagen ocupe todo el espacio del contenedor */
+}
+
+/* Contenedor general para las tablas y las tarjetas */
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 800px; /* Reducir el máximo tamaño del contenedor */
+  margin: 0 auto;
+}
+
+
+  
+</style>
+
 <div class="page-body">
   <!-- Page Sidebar Ends-->
   <div class="page-body">
@@ -58,7 +129,7 @@
               <table class="bill-content" style="width: 100%">
                 <tbody>
                   <tr>
-                    <td style="width: 36%">
+                    <td style="width: 40%">
                       <span style="opacity: 0.8">Serie</span>
                       {% if form1h_instance.serie %}
                       <h4 class="card-title mb-0">
@@ -70,7 +141,7 @@
                       </h4>
                       {% endif %}
                     </td>
-                    <td style="width: 21%">
+                    <td style="width: 40%">
                       <span style="opacity: 0.8">Fecha de Factura</span>
                       <h6>{{ form1h_instance.fecha_factura|date:"d/m/Y" }}</h6>
                     </td>
@@ -264,7 +335,13 @@
       >
         <td></td>
         <td>
-  {% if form1h_instance.estado != 'confirmado' %}
+  
+</td>
+
+      </tr>
+      
+      </table>
+      {% if form1h_instance.estado != 'confirmado' %}
     <!-- Contenedor para los botones -->
     <div style="display: flex; gap: 10px;">
       <!-- Botón de Agregar Detalle -->
@@ -290,11 +367,6 @@
       </button>
     </div>
   {% endif %}
-</td>
-
-      </tr>
-      
-      </table>
     </div>
   </div>
 

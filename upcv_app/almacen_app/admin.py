@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import (
     Proveedor, Departamento, Categoria, Ubicacion, UnidadDeMedida, 
     Articulo, Kardex, AsignacionDetalleFactura, Movimiento, FraseMotivacional, 
-    Serie, form1h, DetalleFactura, Dependencia, Programa, UsuarioDepartamento
+    Serie, form1h, DetalleFactura, Dependencia, Programa, UsuarioDepartamento, Requerimiento
 )
 
 
@@ -136,3 +136,17 @@ class form1hAdmin(admin.ModelAdmin):
     inlines = [DetalleFacturaInline]  # Agrega los detalles de la factura en el formulario de form1h
 
 admin.site.register(form1h, form1hAdmin)
+
+
+# Configuración para el modelo Requerimiento
+class RequerimientoAdmin(admin.ModelAdmin):
+    list_display = ('id', 'departamento', 'creado_por', 'fecha_creacion', 'estado')
+    search_fields = ('departamento__nombre', 'creado_por__username', 'estado')
+    list_filter = ('estado', 'fecha_creacion', 'departamento')
+    date_hierarchy = 'fecha_creacion'
+
+    def estado(self, obj):
+        return obj.get_estado_display()  # Muestra el estado con su representación legible
+
+admin.site.register(Requerimiento, RequerimientoAdmin)
+

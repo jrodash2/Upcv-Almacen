@@ -11,6 +11,76 @@
 
 <!-- resto de tu código -->
 
+<style>
+  /* Aplicamos estos estilos a las tablas */
+/* Aplicamos estos estilos a las tablas */
+/* Aplicamos estos estilos a las tablas */
+table.bill-content, 
+table.order-details {
+  width: 60%; /* Reducir el ancho de la tabla al 60% del contenedor */
+  table-layout: fixed; /* Esto asegura que la tabla no se agrande por el contenido */
+  max-width: 80%; /* La tabla no se expandirá más allá del tamaño del contenedor */
+}
+
+table.bill-content td, 
+table.order-details td, 
+table.bill-content th, 
+table.order-details th {
+  padding: 12px 10px; /* Reducir el padding para compactar las celdas */
+  word-wrap: break-word; /* Romper palabras largas para ajustarlas */
+  white-space: normal; /* Permitir que el texto se ajuste a varias líneas */
+  overflow: hidden; /* Evitar que el contenido se desborde */
+  text-overflow: ellipsis; /* Mostrar '...' si el texto es demasiado largo */
+}
+
+table.bill-content td, 
+table.order-details td {
+  max-width: 250px; /* Reducir el ancho máximo de las celdas */
+}
+
+table.bill-content th, 
+table.order-details th {
+  text-align: left;
+}
+
+/* Contenedor para las tarjetas */
+.card-container {
+  display: inline-block;
+  width: fit-content; /* Se ajusta al tamaño del contenido (imagen) */
+  margin: 15px; /* Reducir margen alrededor de la tarjeta */
+}
+
+.card {
+  display: inline-block;
+  width: 80%; /* La tarjeta se ajusta al tamaño del contenedor */
+  height: fit-content;
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+.card img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  width: 100%; /* Se asegura que la imagen ocupe todo el espacio del contenedor */
+}
+
+/* Contenedor general para las tablas y las tarjetas */
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 800px; /* Reducir el máximo tamaño del contenedor */
+  margin: 0 auto;
+}
+
+
+  
+</style>
 
 <div class="page-body">
   <!-- Page Sidebar Ends-->
@@ -83,29 +153,29 @@
               <table class="bill-content" style="width: 100%">
                 <tbody>
                   <tr>
-                    <td style="width: 36%">
+                    <td style="width: 130%">
                       <span style="opacity: 0.8">Departamento</span>
                       <h4 class="card-title mb-0">
                         {{ requerimiento.departamento.nombre }}
                       </h4>
                     </td>
-                    <td style="width: 21%">
+                    <td style="width: 40%">
                       <span style="opacity: 0.8">Fecha de Requerimiento</span>
                       <h6>{{ requerimiento.fecha_creacion|date:"d/m/Y" }}</h6>
 
                     </td>
-                    <td>
+                    <td style="width: 40%">
                       <span style="opacity: 0.8">Estado</span>
                       <h6>{{ requerimiento.get_estado_display }}</h6>
                     </td>
                   </tr>
                   <tr>
-<td style="width: 36%">
+<td style="width: 40%">
   <span style="opacity: 0.8">Creado Por</span>
   <h6>{{ requerimiento.creado_por.get_full_name|default:requerimiento.creado_por.username }}</h6>
 </td>
 
-                    <td style="width: 36%">
+                    <td style="width: 40%">
                       <span style="opacity: 0.8">Numero de Requerimiento</span>
                       <h6>{{ requerimiento.id }}</h6>
                     </td>
@@ -151,28 +221,12 @@
 
                 <tbody>
                   {% for detalle in detalles_requerimiento %}
-                    <tr
-                      style="
-                        box-shadow: 0px 10.9px 10.9px rgba(82, 77, 141, 0.04),
-                                    0px 9.5px 7.6px rgba(82, 77, 141, 0.06),
-                                    0px 5.05px 4.04px rgba(82, 77, 141, 0.048);
-                        border-radius: 5.5px;
-                      "
-                    >
-                      <td style="padding: 18px 15px; display: flex; align-items: center; gap: 10px;">
-                        <span
-                          style="
-                            min-width: 7px;
-                            height: 7px;
-                            border: 4px solid #006666;
-                            background: #fff;
-                            border-radius: 100%;
-                            display: inline-block;
-                          "
-                        ></span>
+                     <tr style="box-shadow: 0px 10.9px 10.9px rgba(82, 77, 141, 0.04), 0px 9.5px 7.6px rgba(82, 77, 141, 0.06), 0px 5.05px 4.04px rgba(82, 77, 141, 0.048); border-radius: 5.5px;">
+                      <td style="padding: 18px 15px; display: flex; align-items: center; gap: 10px; max-width: 100%; word-wrap: break-word; white-space: normal;">
+  <span style="min-width: 7px; height: 7px; border: 4px solid #006666; background: #fff; border-radius: 100%; display: inline-block;"></span>
+  <span style="word-wrap: break-word; white-space: normal;">{{ detalle.articulo.nombre }}</span>
+</td>
 
-                        <span>{{ detalle.articulo.nombre }}</span>
-                      </td>
                       <td style="padding: 18px 15px;">
                         <span>{{ detalle.cantidad }}</span>
                       </td>
@@ -210,7 +264,14 @@
           <tr style="width: 100%; display: flex; justify-content: space-between; margin-top: 12px;">
             <td></td>
             <td>
-{% if requerimiento.estado != 'enviado' and requerimiento.estado != 'despachado' %}
+
+
+            </td>
+          </tr>
+
+        </tbody>
+      </table>
+      {% if requerimiento.estado != 'enviado' and requerimiento.estado != 'despachado' %}
   <div style="display: flex; gap: 10px;">
     <button
       class="btn btn-primary"
@@ -223,12 +284,6 @@
     </button>
   </div>
 {% endif %}
-
-            </td>
-          </tr>
-
-        </tbody>
-      </table>
     </div>
   </div>
 </div>

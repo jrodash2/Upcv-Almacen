@@ -1,101 +1,308 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <title>Requerimiento PDF</title>
+
+
   <style>
-    body { font-family: sans-serif; font-size: 12px; }
-    .logo-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .logo-row img { height: 50px; }  /* Ajusta el tamaño del logo aquí */
-    .header, .firmas { margin-top: 30px; }
-    .firmas div { display: inline-block; width: 30%; text-align: center; margin: 20px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #000; padding: 6px; text-align: left; }
-    th { background-color: #f0f0f0; }
-    .institucion-info { display: flex; justify-content: space-between; margin-top: 40px; }
-    .institucion-info div { width: 32%; }
+    /* Fuente personalizada para todo el documento */
+    body, html {
+      font-family: 'Arial', sans-serif; /* Aquí puedes cambiar a la fuente que desees */
+    }
+
+    /* Eliminar márgenes en el body y html para reducir el espacio de la hoja */
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Establecer márgenes para la página de impresión (PDF) */
+    @page {
+      margin: 10mm;
+    }
+
+    /* Ajustar la sección principal de la página */
+    .card-body {
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Eliminar márgenes y rellenos en la tabla */
+    table {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+    }
+
+    /* Estilo de los encabezados de la tabla */
+    th, td {
+      border: 1px solid #000;
+      padding: 4px;
+      text-align: left;
+    }
+
+    /* Estilo para los logos */
+    .logo-row {
+      display: flex;
+      justify-content: center; 
+      align-items: center;
+      margin: 0;
+    }
+
+    .logo-row img {
+      max-height: 60px;
+      height: auto;
+      width: auto;
+      margin: 0 10px;
+    }
+
+    /* Estilo de los detalles de la institución */
+    .institucion-info {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+    }
+
+    .institucion-info div {
+      width: 32%;
+      font-size: 10px;
+    }
+
+    /* Ajuste de las columnas dentro de la invoice */
+    .invoice-details {
+      margin-bottom: 10px;
+      color: black;
+    }
+
+    .invoice-details p {
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Flexbox para las filas */
+    .row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .col-sm-6 {
+      flex: 1 1 45%;
+    }
+
+    @media (max-width: 768px) {
+      .col-sm-6 {
+        flex: 1 1 100%;
+      }
+    }
+
+    /* Estilo para los detalles de la tabla */
+    .small-header {
+      font-size: 9px;
+      padding: 3px;
+      text-align: center;
+    }
+
+    .descripcion-header {
+      font-size: 10px;
+      text-align: center;
+      padding: 10px;
+    }
+
+    .small-cell {
+      font-size: 10px;
+      padding: 2px;
+      text-align: center;
+    }
+
+    .descripcion-Articulo {
+      font-size: 11px;
+      white-space: normal;
+      word-wrap: break-word;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 180px;
+      text-align: center;
+    }
+
+    /* Ajuste de firma */
+    .firmas {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 30px;
+      font-size: 10px;
+    }
+
+    .firmas div {
+      width: 32%;
+      text-align: center;
+    }
   </style>
+
 </head>
 <body>
 
-  <!-- Logos arriba -->
-  <div class="logo-row">
-    <img src="{{ institucion.logo.url }}" alt="Logo 1">
-    <img src="{{ institucion.logo2.url }}" alt="Logo 2">
+<!-- Logos arriba -->
+<div class="logo-row">
+  <img src="{{ institucion.logo.url }}" alt="Logo 1">
+  <img src="{{ institucion.logo2.url }}" alt="Logo 2">
+</div>
+
+<!-- invoice Description -->
+<div class="card-body border-top pt-20 mt-30">
+  <!-- Título del Departamento -->
+  <div style="display: flex; justify-content: center; align-items: center; width: 100%; border-top: 0.3px solid #0b2a4a;">
+    <p class="text-center text-15" style="margin: 0; padding: 0; color: #0b2a4a;">
+      <strong>{{ requerimiento.departamento.nombre }}</strong>
+    </p>
   </div>
+  <br>
+
+  <div class="row">
+    <!-- Primera columna con datos de Departamento y Creado por -->
+    <div class="col-sm-6">
+      <div class="invoice-details mb-20">
+        <div class="invoice-details-inner mt-2" style="display: flex; justify-content: space-between; margin: 0; padding: 0;">
+          <p style="margin: 0; padding: 0; font-size: 12px;">
+            <strong style="color: #020202ff">Elaborado Por:</strong> {{ requerimiento.creado_por.get_full_name }}
+          </p>
+          <p style="margin: 0; padding: 0; font-size: 12px;">
+            <strong style="color: #020202ff">Fecha:</strong> {{ requerimiento.fecha_creacion|date:"d \d\e F \d\e Y" }}
+          </p>
+          <p style="margin: 0; padding: 0; font-size: 12px;">
+            <strong style="color: #020202ff">Estado:</strong> {{ requerimiento.get_estado_display }}
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Motivo (si existe) -->
+  {% if requerimiento.motivo %}
+  <div style="display: flex; justify-content: center; align-items: center; width: 100%;solid #0b2a4a; margin-top: 3px;">
+    <h6 class="mb-10 text-12 text-capitalize" style="font-size: 12px; margin: 0; padding: 0;">
+      <strong>Motivo de Solicitud del Requerimiento No. {{ requerimiento.id }}</strong>
+    </h6>
+  </div>
+  <div class="invoice-details-inner mt-2" style="margin: 0; padding: 0; ">
+    <p style="margin: 0; padding: 0; font-size: 13px; word-wrap: break-word; overflow: hidden; text-overflow: ellipsis; margin-top: 3px;">
+      {{ requerimiento.motivo }}
+    </p>
+  </div>
+  {% endif %}
+</div>
+<br>
 <style>
-  .logo-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 10px;
+    overflow: hidden;
   }
-  .logo-row img {
-    max-height: 60px;   /* Ajusta según necesites */
-    height: auto;
-    width: auto;
+  th, td {
+    padding: 12px;
+    text-align: left;
+    border: 0.51px solid #0b2a4a;
+  }
+  th {
+    background-color: #0b2a4a;
+    color: white;
+  }
+  tr:nth-child(even) {
+    background-color: #f2f2f2;
+  }
+  tr:hover {
+    background-color: #ddd;
   }
 </style>
 
-  <h2>Requerimiento N° {{ requerimiento.id }}</h2>
 
-  <div class="header">
-    <p><strong>Departamento:</strong> {{ requerimiento.departamento.nombre }}</p>
-    <p><strong>Creado por:</strong> {{ requerimiento.creado_por.get_full_name }}</p>
-    <p><strong>Fecha:</strong> {{ requerimiento.fecha_creacion|date:"d/m/Y" }}</p>
-    <p><strong>Estado:</strong> {{ requerimiento.get_estado_display }}</p>
 
-    <!-- Motivo de la solicitud -->
-    {% if requerimiento.motivo %}
-      <p><strong>Motivo:</strong> {{ requerimiento.motivo }}</p>
-    {% endif %}
-  </div>
-
-  <h3>Detalles</h3>
-  <table>
-    <thead>
-      <tr>
-        <th>Artículo</th>
-        <th>Cantidad</th>
-        <th>Observaciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for detalle in detalles_requerimiento %}
+  <!-- Detalles de la tabla con el nuevo formato -->
+  <div class="table-responsive invoice-table mb-4 ">
+    <table class="table table ">
+      <thead>
         <tr>
-          <td>{{ detalle.articulo.nombre }}</td>
-          <td>{{ detalle.cantidad }}</td>
-          <td>{{ detalle.observaciones }}</td>
+          <th class="small-header">Cantidad Solicitada</th>
+          <th class="small-header">Unidad de Medida</th>
+          <th class="descripcion-header">Descripción</th>
+          <th class="small-header">Cantidad Despachada</th>
         </tr>
-      {% empty %}
-        <tr>
-          <td colspan="3">No hay detalles registrados.</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-
-  <!-- Información de la institución abajo -->
-  <div class="institucion-info">
-    <div><strong>Dirección:</strong><br>{{ institucion.direccion }}</div>
-    <div><strong>Teléfono:</strong><br>{{ institucion.telefono }}</div>
-    <div><strong>Página web:</strong><br>{{ institucion.pagina_web }}</div>
+      </thead>
+      <tbody>
+        {% for detalle in detalles_requerimiento %}
+          <tr>
+            <td class="small-cell">{{ detalle.cantidad }}</td>
+            <td class="small-cell">{{ detalle.articulo.unidad_medida }}</td>
+            <td class="descripcion-Articulo">{{ detalle.articulo.nombre }}</td>
+            <td class="small-cell">{{ detalle.cantidad_despachada }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="4">No hay detalles registrados.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
 
-  <div class="firmas">
-    <div>
-      _________________________<br>
-      <strong>Solicitante</strong>
-    </div>
-    <div>
-      _________________________<br>
-      <strong>Responsable de Almacén</strong>
-    </div>
-    <div>
-      _________________________<br>
-      <strong>Autorizado por</strong>
-    </div>
-  </div>
+
 
 </body>
+
+
+<!-- Firmas -->
+
+
+<!-- Firmas -->
+<div class="firmas" style="text-align: center; padding-bottom: 25px; margin-right: 30px; font-size: 13px; position: fixed; bottom: 100px; width: 100%; left: 0;">
+  <div>_______________________________<br><strong>Elaborado Por</strong></div>
+  <div>_________________________________<br><strong>Jefe Departamento y/o Sección</strong></div>
+  <div>_________________________<br><strong>Recibí Conforme</strong></div>
+</div>
+
+<div class="firmas" style="text-align: center; padding-bottom: 5px; margin-right: 30px; font-size: 13px; position: fixed; bottom: 50px; width: 100%; left: 0;">
+  <div>_______________________________<br><strong>Departamento Financiero</strong></div>
+  <div>_________________________<br><strong>Vo. Bo. Coordinación</strong></div>
+  <div>_________________________<br><strong>Entrega Sección de Almacén</strong></div>
+</div>
+
+
+<!-- Información de la institución abajo -->
+<div class="institucion-info" style="display: flex; justify-content: space-between; align-items: center; width: 100%; border-top: 5px solid transparent; padding: 0.5px; position: fixed; bottom: 0; background-color: white; padding-top: 10px;">
+  
+  <!-- Línea de colores azul, blanco y azul (menos degradado) -->
+  <div style="position: absolute; top: -10px; left: 0; width: 100%; height: 5px; 
+    background: linear-gradient(to right, #0b2a4a 33%, #ffffff 33%, #ffffff 66%, #0b2a4a 66%);
+    border: 0.3px solid #000;">
+  </div>
+  
+  <div style="display: flex; align-items: center; flex: 1;">
+    <!-- Reemplaza con tu imagen de página web en formato JPG -->
+    <img src="{% static 'assets/images/globo.png' %}" style="margin-right: 8px; width: 20px; height: 20px;">
+    <span style="; font-size: 11px; font-weight: bold;">{% if institucion.pagina_web %}{{ institucion.pagina_web|slice:"7:" }}{% endif %}</span>
+  </div>
+  
+  <div style="display: flex; align-items: center; flex: 1;">
+    <!-- Reemplaza con tu imagen de teléfono antiguo en formato JPG -->
+    <img src="{% static 'assets/images/telefono.png' %}" alt="Teléfono" style="margin-right: 8px; width: 20px; height: 20px;">
+    <span style="font-size: 11px; font-weight: bold;">{{ institucion.telefono }}</span>
+  </div>
+  
+  <div style="display: flex; align-items: center; flex: 1;">
+    <!-- Reemplaza con tu imagen font-size: 13pxde ubicación en formato JPG -->
+    <img src="{% static 'assets/images/posicion.png' %}" alt="Ubicación" style="margin-right: 8px; width: 20px; height: 20px;">
+    <span style="font-size: 11px; font-weight: bold;">{{ institucion.direccion }}</span>
+  </div>
+  
+</div>
+
+
+
+
 </html>
