@@ -1085,8 +1085,15 @@ def user_create(request):
             group = form.cleaned_data.get('group')
             user.groups.add(group)
 
+            # ✅ Espera a que la señal cree el perfil automáticamente
             foto = form.cleaned_data.get('foto')
-            if foto:
+            try:
+                perfil = user.perfil  # accede al perfil creado por la señal
+                if foto:
+                    perfil.foto = foto
+                    perfil.save()
+            except Perfil.DoesNotExist:
+                # Fallback solo si la señal falló (raro)
                 Perfil.objects.create(user=user, foto=foto)
 
             messages.success(request, 'Usuario creado correctamente.')

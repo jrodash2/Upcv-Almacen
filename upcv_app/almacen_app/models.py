@@ -290,7 +290,7 @@ class Kardex(models.Model):
     class Meta:
         ordering = ['fecha', 'id']  # Orden cronológico
 
-    def __str__(self):
+    def __str__(self): 
         return f'{self.tipo_movimiento} {self.cantidad} {self.articulo.nombre} ({self.fecha.date()})'
 
     def save(self, *args, **kwargs):
@@ -345,17 +345,17 @@ class Perfil(models.Model):
     def __str__(self):
         return f'Perfil de {self.user.username}'
 
+# Señal: Crear perfil automáticamente cuando se crea un usuario
 @receiver(post_save, sender=User)
 def crear_perfil_usuario(sender, instance, created, **kwargs):
-    if created:
+    if created and not hasattr(instance, 'perfil'):
         Perfil.objects.create(user=instance)
 
+# Señal opcional: Guardar perfil cuando el usuario se guarda
 @receiver(post_save, sender=User)
 def guardar_perfil_usuario(sender, instance, **kwargs):
-    perfil = getattr(instance, 'perfil', None)
-    if perfil:
-        perfil.save()
-        
+    if hasattr(instance, 'perfil'):
+        instance.perfil.save()
         
 class Requerimiento(models.Model):
     departamento = models.ForeignKey(Departamento, on_delete=models.CASCADE)
