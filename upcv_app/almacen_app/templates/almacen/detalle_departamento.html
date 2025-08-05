@@ -1,5 +1,6 @@
 {% extends 'almacen/base.html' %}
 {% load static %}
+
 {% block content %}
 
 <!-- Cargar jQuery -->
@@ -30,85 +31,233 @@
         </div>
       </div>
     </div>
-<!-- Nuevo resumen: Asignado - Despachado = Disponible -->
-<div class="card mt-4">
-  <div class="card-header">
-    <h5>Resumen de Stock Asignado - Despachado</h5>
-  </div>
-  <div class="card-body">
-    <div class="table-responsive custom-scrollbar">
-      <table class="display" id="basic-10">
-        <thead>
-          <tr>
-            <th>Artículo</th>
-            <th>Total Asignado</th>
-            <th>Total Despachado</th>
-            <th>Disponible para Requerimientos</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for item in resumen_stock %}
-          <tr>
-            <td>{{ item.nombre_articulo }}</td>
-            <td>{{ item.asignado }}</td>
-            <td>{{ item.despachado }}</td>
-            <td>{{ item.disponible }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+
+    <!-- Nuevo resumen: Asignado - Despachado = Disponible -->
+    <div class="card mt-4">
+      <div class="card-header">
+        <h5>Resumen de Stock Asignado - Despachado</h5>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive custom-scrollbar">
+          <table class="display" id="basic-10">
+            <thead>
+              <tr>
+                <th>Artículo</th>
+                <th>Total Asignado</th>
+                <th>Total Despachado</th>
+                <th>Disponible para Requerimientos</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in resumen_stock %}
+              <tr>
+                <td>{{ item.nombre_articulo }}</td>
+                <td>{{ item.asignado }}</td>
+                <td>{{ item.despachado }}</td>
+                <td>{{ item.disponible }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
+
+    {% if tiene_acceso %}
+    <!-- Detalle de asignaciones -->
+    <div class="card mt-4">
+      <div class="card-header">
+        <h5>Detalle de Asignaciones</h5>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive custom-scrollbar">
+          <table class="display" id="basic-12">
+            <thead>
+              <tr>
+                <th>Artículo</th>
+                <th>Cantidad Asignada</th>
+                <th>Descripción</th>
+                <th>Fecha</th>
+                <th>Acción</th> <!-- Nueva columna para el botón de transferir -->
+              </tr>
+            </thead>
+            <tbody>
+              {% for a in asignaciones_detalle %}
+              <tr>
+                <td>{{ a.articulo.nombre }}</td>
+                <td>{{ a.cantidad_asignada }}</td>
+                <td>{{ a.descripcion }}</td>
+                <td>{{ a.fecha_asignacion|date:"d M Y H:i" }}</td>
+                <td>
+                  <!-- Botón para Transferir -->
+                  <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#transferirModal"
+                          data-articulo-id="{{ a.articulo.id }}" data-nombre-articulo="{{ a.articulo.nombre }}"
+                          data-cantidad="{{ a.cantidad_asignada }}">
+                    Transferir
+                  </button>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="5" class="text-center">Este departamento aún no tiene asignaciones.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- NUEVO: Historial de Transferencias -->
+    <div class="card mt-4">
+      <div class="card-header">
+        <h5>Historial de Transferencias</h5>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive custom-scrollbar">
+          <table class="display" id="basic-13">
+            <thead>
+              <tr>
+                <th>Artículo</th>
+                <th>Cantidad</th>
+                <th>Departamento Origen</th>
+                <th>Departamento Destino</th>
+                <th>Fecha</th>
+                <th>Usuario</th>
+                <th>Observación</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for transferencia in historial_transferencias %}
+              <tr>
+                <td>{{ transferencia.articulo.nombre }}</td>
+                <td>{{ transferencia.cantidad }}</td>
+                <td>{{ transferencia.departamento_origen.nombre }}</td>
+                <td>{{ transferencia.departamento_destino.nombre }}</td>
+                <td>{{ transferencia.fecha_transferencia|date:"d M Y H:i" }}</td>
+                <td>{{ transferencia.usuario.username }}</td>
+                <td>{{ transferencia.observacion|default:"-" }}</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="7" class="text-center">No hay transferencias registradas para este departamento.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <a href="{% url 'almacen:lista_departamentos' %}" class="btn btn-primary mt-3">← Volver a la lista</a>
+    {% endif %}
+
   </div>
 </div>
 
+<!-- Modal para Transferir Artículo -->
+<div class="modal fade" id="transferirModal" tabindex="-1" aria-labelledby="transferirModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content dark-sign-up">
+      <div class="modal-body social-profile text-start p-4">
 
-   
-            {% if tiene_acceso %}
-              
+        <!-- Contenedor -->
+        <div class="Riho-demo-img">
+          <!-- Puntos decorativos -->
+          <ul class="dot-group pb-3 pt-0">
+            <li></li>
+            <li></li>
+            <li></li>
+          </ul>
 
-              <!-- Detalle de asignaciones -->
-              <div class="card mt-4">
-                <div class="card-header">
-                  <h5>Detalle de Asignaciones</h5>
-                </div>
-                <div class="card-body">
-                  <div class="table-responsive custom-scrollbar">
-                    <table class="display" id="basic-12">
-                      <thead>
-                        <tr>
-                          <th>Artículo</th>
-                          <th>Cantidad Asignada</th>
-                          <th>Descripción</th>
-                          <th>Fecha</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {% for a in asignaciones_detalle %}
-                        <tr>
-                          <td>{{ a.articulo.nombre }}</td>
-                          <td>{{ a.cantidad_asignada }}</td>
-                          <td>{{ a.descripcion }}</td>
-                          <td>{{ a.fecha_asignacion|date:"d M Y H:i" }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                          <td colspan="4" class="text-center">Este departamento aún no tiene asignaciones.</td>
-                        </tr>
-                        {% endfor %}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-
-              <a href="{% url 'almacen:lista_departamentos' %}" class="btn btn-primary mt-3">← Volver a la lista</a>
-            {% endif %}
+          <!-- Título -->
+          <div class="title-wrapper pb-3 modal-heading text-center">
+            <h5 class="theme-name mb-0"><span>Transferir - </span>Artículo</h5>
+            <p>Complete el formulario para transferir este artículo a otro departamento.</p>
           </div>
+
+          <!-- Imagen -->
+          <div class="overflow-hidden text-center mb-4">
+            <img class="img-fluid" src="{% static 'assets/images/logo/logo.png'%}" alt="imagen decorativa">
+          </div>
+
+          <!-- Formulario -->
+          <form method="POST" action="{% url 'almacen:transferir_articulos' %}" class="row g-3">
+            {% csrf_token %}
+            <input type="hidden" name="articulo" id="transferir-articulo-id">
+            <input type="hidden" name="nombre_articulo" id="transferir-nombre-articulo">
+            <input type="hidden" name="departamento_origen" value="{{ departamento.id }}"> <!-- AGREGADO -->
+
+            <!-- Mostrar Stock -->
+            <div class="col-12 text-center">
+              <p>Stock disponible: <strong id="transferir-stock-disponible">0</strong></p>
+            </div>
+
+            <div class="col-md-12">
+              <label for="id_departamento_destino" class="form-label">Departamento Destino</label>
+              <select name="departamento_destino" id="id_departamento_destino" class="form-control" required>
+                <!-- Iterar sobre los departamentos pasados al contexto -->
+                {% for depto in departamentos %}
+                  <option value="{{ depto.id }}">{{ depto.nombre }}</option>
+                {% empty %}
+                  <option value="" disabled>No hay departamentos disponibles</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-12">
+              <label for="id_cantidad_transferir" class="form-label">Cantidad a Transferir</label>
+              <input type="number" name="cantidad_transferir" id="id_cantidad_transferir" class="form-control" min="1" required>
+            </div>
+
+            
+  <!-- Aquí agregas el campo de observación -->
+  <div class="col-md-12">
+    <label for="id_observacion" class="form-label">Observación</label>
+    <textarea name="observacion" id="id_observacion" class="form-control" rows="3" placeholder="Agregar una observación opcional"></textarea>
+  </div> 
+  
+            <div class="col-12 text-center">
+              <button type="submit" class="btn btn-warning mt-3">Transferir Artículo</button>
+            </div>
+          </form>
+
         </div>
       </div>
     </div>
   </div>
 </div>
+
+<!-- Script para pasar datos al modal de transferencia -->
+<script>
+  const transferirModal = document.getElementById('transferirModal');
+  transferirModal.addEventListener('show.bs.modal', function (event) {
+    const button = event.relatedTarget; // Button that triggered the modal
+    const articuloId = button.getAttribute('data-articulo-id');
+    const nombreArticulo = button.getAttribute('data-nombre-articulo');
+    const cantidad = button.getAttribute('data-cantidad');
+
+    // Establecer los valores en el modal
+    document.getElementById('transferir-articulo-id').value = articuloId;
+    document.getElementById('transferir-nombre-articulo').value = nombreArticulo;
+    document.getElementById('transferir-stock-disponible').textContent = cantidad;
+
+    // Limitar la cantidad transferible al stock disponible
+    const cantidadInput = document.getElementById('id_cantidad_transferir');
+    cantidadInput.max = cantidad;
+    cantidadInput.value = '';  // Reset value when modal opens
+  });
+</script>
+
+<script>
+  $(document).ready(function() {
+      $('#basic-10, #basic-12, #historial-transferencias').DataTable({
+          "language": {
+            "url": "//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json"
+          }
+      });
+  });
+</script>
 
 {% if not tiene_acceso %}
 <style>
@@ -120,21 +269,11 @@
     background-color: rgba(0,0,0,0.3);
     z-index: 1040;
   }
-
-
- 
 </style>
 
 <div class="blur-overlay"></div>
 
-<div
-  class="modal fade show d-block"
-  id="crearForm1hModal"
-  tabindex="-1"
-  aria-labelledby="crearForm1hModalLabel"
-  aria-hidden="true"
-  style="z-index: 1050;"
->
+<div class="modal fade show d-block" id="crearForm1hModal" tabindex="-1" aria-labelledby="crearForm1hModalLabel" aria-hidden="true" style="z-index: 1050;">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content dark-sign-up">
       <div class="modal-body social-profile">
@@ -155,7 +294,9 @@
     </div>
   </div>
 </div>
-{% endif %}
+
+</div> 
 
 
+</div> {% endif %}
 {% endblock %}

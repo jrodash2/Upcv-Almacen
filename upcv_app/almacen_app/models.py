@@ -146,7 +146,18 @@ class AsignacionDetalleFactura(models.Model):
     def __str__(self):
         return f"{self.cantidad_asignada} de {self.articulo.nombre} a {self.destino.nombre}"
 
-   
+
+class HistorialTransferencia(models.Model):
+    articulo = models.ForeignKey(Articulo, on_delete=models.CASCADE)
+    cantidad = models.PositiveIntegerField()
+    departamento_origen = models.ForeignKey(Departamento, related_name="transferencias_origen", on_delete=models.SET_NULL, null=True)
+    departamento_destino = models.ForeignKey(Departamento, related_name="transferencias_destino", on_delete=models.SET_NULL, null=True)
+    fecha_transferencia = models.DateTimeField(auto_now_add=True)
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE)
+    observacion = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Transferencia de {self.cantidad} {self.articulo.nombre} de {self.departamento_origen.nombre} a {self.departamento_destino.nombre} - {self.fecha_transferencia}"   
 
 class Serie(models.Model):
     serie = models.CharField(max_length=50)  # Serie que puede contener letras

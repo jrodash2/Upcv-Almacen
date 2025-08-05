@@ -8,7 +8,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from .form import DependenciaForm, DetalleFacturaForm, DetalleRequerimientoForm, DetalleRequerimientoFormSet, Form1hForm, PerfilForm, ProgramaForm, RequerimientoForm, UserCreateForm, UserEditForm, UserCreateForm, UbicacionForm, UnidadDeMedidaForm, CategoriaForm, ProveedorForm, ArticuloForm, DepartamentoForm, SerieForm, AsignacionDetalleFacturaForm, UsuarioDepartamentoForm, InstitucionForm
-from .models import ContadorDetalleFactura, DetalleFactura, DetalleRequerimiento, LineaLibre, Perfil, Requerimiento, Ubicacion, UnidadDeMedida, Categoria, Proveedor, Articulo, Departamento, Kardex, AsignacionDetalleFactura, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa, LineaReservada, UsuarioDepartamento, Institucion
+from .models import ContadorDetalleFactura, DetalleFactura, DetalleRequerimiento, HistorialTransferencia, LineaLibre, Perfil, Requerimiento, Ubicacion, UnidadDeMedida, Categoria, Proveedor, Articulo, Departamento, Kardex, AsignacionDetalleFactura, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa, LineaReservada, UsuarioDepartamento, Institucion
 from django.views.generic import CreateView
 from django.views.generic import ListView
 from django.urls import reverse_lazy
@@ -44,10 +44,93 @@ from django.db.models.functions import Cast, TruncWeek
 from django.utils import timezone
 from datetime import timedelta
 
+@login_required
+def transferir_articulos(request):
+    departamentos = Departamento.objects.all()
+
+    if request.method == 'POST':
+        departamento_origen_id = request.POST.get('departamento_origen')
+        articulo_id = request.POST.get('articulo')
+        cantidad_str = request.POST.get('cantidad_transferir')
+        departamento_destino_id = request.POST.get('departamento_destino')
+        observacion = request.POST.get('observacion', '').strip()  # <-- aquí
+
+        if not (departamento_origen_id and articulo_id and cantidad_str and departamento_destino_id):
+            messages.error(request, 'Faltan datos para realizar la transferencia.')
+            return redirect('almacen:lista_departamentos')
+
+        try:
+            cantidad = int(cantidad_str)
+        except ValueError:
+            messages.error(request, 'Cantidad inválida.')
+            return redirect('almacen:detalle_departamento', pk=departamento_origen_id)
+
+        departamento_origen = get_object_or_404(Departamento, id=departamento_origen_id)
+        articulo = get_object_or_404(Articulo, id=articulo_id)
+        departamento_destino = get_object_or_404(Departamento, id=departamento_destino_id)
+
+        asignacion_origen = AsignacionDetalleFactura.objects.filter(
+            articulo=articulo, destino=departamento_origen
+        ).first()
+
+        if not asignacion_origen or asignacion_origen.cantidad_asignada < cantidad:
+            messages.error(request, 'No hay suficiente cantidad en el departamento de origen.')
+            return redirect('almacen:detalle_departamento', pk=departamento_origen_id)
+
+        # Reducir cantidad en origen
+        asignacion_origen.cantidad_asignada -= cantidad
+        asignacion_origen.save()
+
+        # Incrementar cantidad en destino, o crear asignación si no existe
+        asignacion_destino, created = AsignacionDetalleFactura.objects.get_or_create(
+            articulo=articulo, destino=departamento_destino,
+            defaults={'cantidad_asignada': 0}
+        )
+        asignacion_destino.cantidad_asignada += cantidad
+        asignacion_destino.save()
+
+        # Guardar historial de transferencia con observación
+        HistorialTransferencia.objects.create(
+            articulo=articulo,
+            cantidad=cantidad,
+            departamento_origen=departamento_origen,
+            departamento_destino=departamento_destino,
+            usuario=request.user,
+            observacion=observacion
+        )
+
+        messages.success(request, f'Se transfirieron {cantidad} unidades de {articulo.nombre} de {departamento_origen.nombre} a {departamento_destino.nombre}.')
+
+        return redirect('almacen:detalle_departamento', pk=departamento_origen_id)
+
+    return redirect('almacen:lista_departamentos')
 
 
 
 
+def historial_transferencias(request):
+    # Obtén todos los registros del historial de transferencias
+    transferencias = HistorialTransferencia.objects.all().order_by('-fecha_transferencia')
+    
+    return render(request, 'almacen/historial_transferencias.html', {'transferencias': transferencias})
+
+def articulos_asignados(request, departamento_id):
+    try:
+        departamento = Departamento.objects.get(id=departamento_id)
+        articulos = AsignacionDetalleFactura.objects.filter(destino=departamento)
+
+        data = {
+            'articulos': [{
+                'id': asignacion.articulo.id,
+                'nombre': asignacion.articulo.nombre,
+                'cantidad_asignada': asignacion.cantidad_asignada
+            } for asignacion in articulos]
+        }
+        return JsonResponse(data)
+    except Departamento.DoesNotExist:
+        return JsonResponse({'error': 'Departamento no encontrado'}, status=404)
+    
+    
 @login_required
 def editar_institucion(request):
     institucion = Institucion.objects.first()  # Solo debería haber una
@@ -438,6 +521,8 @@ def lista_departamentos(request):
 def acceso_denegado(request, exception=None):
     return render(request, 'almacen/403.html', status=403)
 
+from django.db.models import Q
+
 @login_required
 def detalle_departamento(request, pk):
     departamento = get_object_or_404(Departamento, pk=pk)
@@ -450,9 +535,12 @@ def detalle_departamento(request, pk):
     asignaciones_agrupadas = []
     asignaciones_detalle = []
     resumen_stock = []
+    departamentos = []
+    historial_transferencias = []
 
     if tiene_acceso:
-        # Totales de asignaciones por artículo
+        departamentos = Departamento.objects.exclude(id=departamento.id)
+
         asignaciones_agrupadas = (
             AsignacionDetalleFactura.objects
             .filter(destino=departamento)
@@ -461,17 +549,14 @@ def detalle_departamento(request, pk):
             .order_by('articulo__nombre')
         )
 
-        # Totales de despachados por artículo
         despachados = (
             DetalleRequerimiento.objects
             .filter(requerimiento__departamento=departamento, requerimiento__estado='despachado')
             .values('articulo__id')
             .annotate(total_despachado=Sum('cantidad'))
         )
-        # Convertir a diccionario para lookup rápido
         despachados_dict = {d['articulo__id']: d['total_despachado'] for d in despachados}
 
-        # Unir asignaciones con despachos para calcular stock disponible
         resumen_stock = []
         for item in asignaciones_agrupadas:
             articulo_id = item['articulo__id']
@@ -492,6 +577,13 @@ def detalle_departamento(request, pk):
             .order_by('-fecha_asignacion')
         )
 
+        # Historial de transferencias donde el departamento es origen o destino
+        historial_transferencias = (
+            HistorialTransferencia.objects
+            .filter(Q(departamento_origen=departamento) | Q(departamento_destino=departamento))
+            .order_by('-fecha_transferencia')
+        )
+
     return render(request, 'almacen/detalle_departamento.html', {
         'departamento': departamento,
         'asignaciones_agrupadas': asignaciones_agrupadas,
@@ -499,8 +591,13 @@ def detalle_departamento(request, pk):
         'resumen_stock': resumen_stock,
         'tiene_acceso': tiene_acceso,
         'es_departamento': es_departamento,
+        'departamentos': departamentos,
+        'historial_transferencias': historial_transferencias,
     })
-    
+
+
+
+
 @login_required
 @grupo_requerido('Administrador')
 def crear_asignacion_detalle(request):

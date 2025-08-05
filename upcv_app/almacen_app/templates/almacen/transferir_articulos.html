@@ -1,0 +1,168 @@
+
+{% load static %}
+
+{% block content %}
+
+  <div class="page-body">
+    <div class="container-fluid">
+      <div class="page-title">
+        <div class="row">
+          <div class="col-6">
+            <h4 class="card-title mb-0">Transferencia de Artículos</h4>
+          </div>
+          <div class="col-6">
+            <ol class="breadcrumb">
+              <li class="breadcrumb-item"><a href="">
+                <svg class="stroke-icon">
+                  <use href="{% static 'assets/svg/icon-sprite.svg#stroke-home' %}"></use>
+                </svg></a></li>
+              <li class="breadcrumb-item">Dashboard</li>
+              <li class="breadcrumb-item active">Transferir Artículos</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container-fluid">
+      <div class="edit-profile">
+        <div class="row">
+          <div class="col-xl-12">
+            <div class="card">
+              <div class="card-body">
+                {% if messages %}
+                  <ul>
+                    {% for message in messages %}
+                      <li class="message">{{ message }}</li>
+                    {% endfor %}
+                  </ul>
+                {% endif %}
+
+                <!-- Formulario para seleccionar departamento origen -->
+                <form method="post" id="form-departamento-origen">
+                  {% csrf_token %}
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label for="departamento_origen">Departamento de Origen</label>
+                        <select class="form-control" id="departamento_origen" name="departamento_origen" required>
+                          <option value="">Seleccione un Departamento</option>
+                          {% for departamento in departamentos %}
+                            <option value="{{ departamento.id }}">{{ departamento.nombre }}</option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </form>
+
+                <!-- Lista de artículos asignados -->
+                <div id="articulos-list"></div>  <!-- Aquí se cargarán los artículos dinámicamente -->
+
+                <!-- Modal para ingresar cantidad y seleccionar departamento destino -->
+                <div class="modal fade" id="transferirModal" tabindex="-1" role="dialog" aria-labelledby="transferirModalLabel" aria-hidden="true">
+                  <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title" id="transferirModalLabel">Transferir Artículo</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                          <span aria-hidden="true">&times;</span>
+                        </button>
+                      </div>
+                      <div class="modal-body">
+                        <form method="post" id="form-transferir">
+                          {% csrf_token %}
+                          <div class="form-group">
+                            <label for="cantidad">Cantidad a transferir:</label>
+                            <input type="number" class="form-control" id="cantidad" name="cantidad" required min="1">
+                          </div>
+                          <div class="form-group">
+                            <label for="departamento_destino">Departamento Destino:</label>
+                            <select class="form-control" id="departamento_destino" name="departamento_destino" required>
+                              <option value="">Seleccione un Departamento Destino</option>
+                              {% for departamento in departamentos %}
+                                <option value="{{ departamento.id }}">{{ departamento.nombre }}</option>
+                              {% endfor %}
+                            </select>
+                          </div>
+                          <input type="hidden" id="articulo_id" name="articulo">
+                          <button type="submit" class="btn btn-primary">Realizar Transferencia</button>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Tabla de artículos asignados -->
+                <div class="mt-5">
+                  <h5>Artículos Asignados</h5>
+                  <div class="table-responsive custom-scrollbar">
+                    <table class="display" id="articulos-table">
+                      <thead>
+                        <tr>
+                          <th>Artículo</th>
+                          <th>Cantidad Asignada</th>
+                          <th>Acción</th>
+                        </tr>
+                      </thead>
+                      <tbody id="articulos-list-table">
+                        <!-- Los artículos asignados se cargarán aquí mediante JavaScript -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+{% endblock %}
+
+<script>
+  // Cargar los artículos asignados al departamento de origen
+  document.getElementById('departamento_origen').addEventListener('change', function() {
+    var departamentoId = this.value;
+
+    if (departamentoId) {
+      fetch(`/api/articulos_asignados/${departamentoId}/`)
+        .then(response => response.json())
+        .then(data => {
+          var articulosList = document.getElementById('articulos-list-table');
+          articulosList.innerHTML = ''; // Limpiar la lista de artículos
+
+          if (data.articulos.length > 0) {
+            data.articulos.forEach(function(articulo) {
+              var tr = document.createElement('tr');
+              tr.innerHTML = `
+                <td>${articulo.nombre}</td>
+                <td>${articulo.cantidad_asignada}</td>
+                <td><button class="btn btn-success btn-sm transferir-btn" data-articulo-id="${articulo.id}" data-articulo-nombre="${articulo.nombre}">Transferir</button></td>
+              `;
+              articulosList.appendChild(tr);
+            });
+            // Inicializar DataTable (si es necesario)
+            $('#articulos-table').DataTable();
+          } else {
+            articulosList.innerHTML = '<tr><td colspan="3">No hay artículos asignados a este departamento.</td></tr>';
+          }
+        });
+    } else {
+      document.getElementById('articulos-list-table').innerHTML = '';
+    }
+  });
+
+  // Mostrar el modal con la información del artículo seleccionado
+  document.addEventListener('click', function(e) {
+    if (e.target && e.target.classList.contains('transferir-btn')) {
+      var articuloId = e.target.getAttribute('data-articulo-id');
+      var articuloNombre = e.target.getAttribute('data-articulo-nombre');
+      document.getElementById('articulo_id').value = articuloId;
+      $('#transferirModal').modal('show');
+    }
+  });
+
+</script>

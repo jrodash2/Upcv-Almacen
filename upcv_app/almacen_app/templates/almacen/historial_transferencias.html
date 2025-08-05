@@ -1,0 +1,34 @@
+{% extends 'almacen/base.html' %}
+
+{% block title %}Historial de Transferencias{% endblock %}
+
+{% block content %}
+  <div class="container">
+    <h2>Historial de Transferencias</h2>
+    
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Artículo</th>
+          <th>Cantidad</th>
+          <th>Departamento Origen</th>
+          <th>Departamento Destino</th>
+          <th>Fecha</th>
+          <th>Usuario</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for transferencia in transferencias %}
+          <tr>
+            <td>{{ transferencia.articulo.nombre }}</td>
+            <td>{{ transferencia.cantidad }}</td>
+            <td>{{ transferencia.departamento_origen.nombre }}</td>
+            <td>{{ transferencia.departamento_destino.nombre }}</td>
+            <td>{{ transferencia.fecha_transferencia }}</td>
+            <td>{{ transferencia.usuario.username }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

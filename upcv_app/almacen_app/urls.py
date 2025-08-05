@@ -108,6 +108,11 @@ urlpatterns = [
     
     path('dependencia/crear/', views.crear_dependencia, name='crear_dependencia'),
     path('dependencia/editar/<int:pk>/', views.editar_dependencia, name='editar_dependencia'),
+    
+    path('transferir-articulos/', views.transferir_articulos, name='transferir_articulos'),
+    path('historial-transferencias/', views.historial_transferencias, name='historial_transferencias'),
+    path('api/articulos_asignados/<int:departamento_id>/', views.articulos_asignados, name='articulos_asignados'),
+
 
 
 
