@@ -1142,13 +1142,15 @@ def eliminar_detalle_factura(request, detalle_id):
 
 def obtener_detalle_factura(request, detalle_id):
     detalle = get_object_or_404(DetalleFactura, id=detalle_id)
-    return JsonResponse({
-        'articulo': detalle.articulo_id,
+    data = {
+        'articulo': detalle.articulo.id,
         'cantidad': detalle.cantidad,
         'precio_unitario': detalle.precio_unitario,
         'renglon': detalle.renglon,
-    })
- 
+        'fecha_vencimiento': detalle.fecha_vencimiento.strftime('%Y-%m-%d') if detalle.fecha_vencimiento else '',
+    }
+    return JsonResponse(data)
+
 @login_required
 @grupo_requerido('Administrador')    
 def editar_detalle_factura(request):
@@ -1156,14 +1158,32 @@ def editar_detalle_factura(request):
         detalle_id = request.POST.get("detalle_id")  # Obtener el ID del detalle
         detalle = get_object_or_404(DetalleFactura, id=detalle_id)  # Buscar el detalle existente
 
+        # Obtener el artículo y validar si requiere fecha de vencimiento
+        articulo_id = request.POST.get("articulo")
+        articulo = get_object_or_404(Articulo, id=articulo_id)
+
+        # Verificar si el artículo requiere fecha de vencimiento
+        if articulo.requiere_vencimiento:
+            fecha_vencimiento = request.POST.get("fecha_vencimiento")
+            if not fecha_vencimiento:  # Si no se envió la fecha de vencimiento
+                raise ValidationError("Este artículo requiere una fecha de vencimiento.")
+        else:
+            fecha_vencimiento = None  # No es necesario asignar fecha si no se requiere
+
         # Actualizar los campos del detalle
-        detalle.articulo_id = request.POST.get("articulo")
+        detalle.articulo_id = articulo_id
         detalle.cantidad = int(request.POST.get("cantidad"))  # Convertir a entero
         detalle.precio_unitario = float(request.POST.get("precio_unitario"))  # Convertir a flotante
         detalle.renglon = request.POST.get("renglon")
         detalle.precio_total = detalle.cantidad * detalle.precio_unitario  # Multiplicación correcta
+        
+        # Si se requiere fecha de vencimiento y está presente, guardarla
+        if fecha_vencimiento:
+            detalle.fecha_vencimiento = fecha_vencimiento
+        
         detalle.save()
 
+        # Redirigir después de la actualización
         return redirect('almacen:agregar_detalle_factura', form1h_id=detalle.form1h.id)
 
     return HttpResponseNotAllowed(['POST'])
@@ -1258,6 +1278,11 @@ def user_delete(request, user_id):
 def home(request):
     return render(request, 'almacen/login.html')
 
+from datetime import timedelta
+from django.utils import timezone
+from django.db.models import Count, Q, Sum
+import json
+
 @login_required
 def dahsboard(request):
     # Totales de artículos activos/inactivos
@@ -1284,7 +1309,6 @@ def dahsboard(request):
 
     # Evolución semanal de requerimientos (este mes)
     today = timezone.now().date()
-    fecha_futura = today + timedelta(days=4)
     stm = today.replace(day=1)
     etm = (stm + timedelta(days=32)).replace(day=1) - timedelta(days=1)
 
@@ -1295,6 +1319,19 @@ def dahsboard(request):
     semanas = [r['week'].strftime('%b %d') for r in req_sem]
     cantidad_sem = [r['cuenta'] for r in req_sem]
 
+    # NUEVO: Artículos por vencer (en los próximos 30 días)
+    limite = today + timedelta(days=30)
+
+    detalles_por_vencer = DetalleFactura.objects.filter(
+        articulo__requiere_vencimiento=True,
+        fecha_vencimiento__gte=today,
+        fecha_vencimiento__lte=limite,
+    ).values('fecha_vencimiento').annotate(cantidad=Count('id')).order_by('fecha_vencimiento')
+
+    fechas_vencimiento = [item['fecha_vencimiento'].strftime('%Y-%m-%d') for item in detalles_por_vencer]
+    cantidades_vencimiento = [item['cantidad'] for item in detalles_por_vencer]
+    total_por_vencer = sum(cantidades_vencimiento)
+
     context = {
         'totales_articulos': totales_articulos,
         'ingresos': ingresos,
@@ -1303,9 +1340,12 @@ def dahsboard(request):
         'data_req': json.dumps(data_req),
         'semanas': json.dumps(semanas),
         'cantidad_sem': json.dumps(cantidad_sem),
+        'total_por_vencer': total_por_vencer,
+        'fechas_vencimiento': json.dumps(fechas_vencimiento),
+        'cantidades_vencimiento': json.dumps(cantidades_vencimiento),
     }
-    return render(request, 'almacen/dashboard.html', context)
 
+    return render(request, 'almacen/dashboard.html', context)
 
 
 def signout(request):

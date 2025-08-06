@@ -65,15 +65,16 @@ class Categoria(models.Model):
         return self.nombre
     
 class Articulo(models.Model):
-
     nombre = models.CharField(max_length=255)
     categoria = models.ForeignKey(Categoria, on_delete=models.SET_NULL, null=True, blank=True)
     unidad_medida = models.ForeignKey(UnidadDeMedida, on_delete=models.SET_NULL, null=True, blank=True)
     ubicacion = models.ForeignKey(Ubicacion, on_delete=models.SET_NULL, null=True, blank=True)
-    activo = models.BooleanField(default=True) # Campo para determinar si el artículo está activo
+    activo = models.BooleanField(default=True)
+    requiere_vencimiento = models.BooleanField(default=False)  # <-- NUEVO CAMPO
 
     def __str__(self):
         return f'{self.nombre} ({self.categoria})'
+
 
 # Modelo de Departamento
 class Departamento(models.Model):
@@ -105,20 +106,28 @@ class DetalleFactura(models.Model):
     precio_total = models.DecimalField(max_digits=10, decimal_places=2)
     id_linea = models.PositiveIntegerField()
     renglon = models.PositiveIntegerField()
+    fecha_vencimiento = models.DateField(null=True, blank=True)  # <-- NUEVO CAMPO
 
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=['form1h', 'id_linea'], name='unique_linea_per_form1h')
         ]
 
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if self.articulo.requiere_vencimiento and not self.fecha_vencimiento:
+            raise ValidationError("Este artículo requiere una fecha de vencimiento.")
+        super().clean()
+
     def save(self, *args, **kwargs):
-        # Calcular el precio total por línea
         self.precio_total = self.precio_unitario * self.cantidad
+        self.full_clean()  # Asegúrate de ejecutar clean() al guardar
         super().save(*args, **kwargs)
 
     def __str__(self):
         stock_total = DetalleFactura.objects.filter(articulo=self.articulo).aggregate(models.Sum('cantidad'))['cantidad__sum'] or 0
         return f'Detalle de {self.articulo.nombre} (Stock total: {stock_total})'
+
 
 
 class AsignacionDetalleFactura(models.Model):

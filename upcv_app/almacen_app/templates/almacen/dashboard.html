@@ -57,6 +57,21 @@
       </div>
     </div>
 
+    <!-- Card para el gráfico de Artículos por Vencer -->
+<div class="col-xl-6 col-md-12 box-col-12">
+  <div class="card o-hidden">
+    <div class="chart-widget-top">
+      <div class="row card-body pb-0 m-0">
+        <div class="col-xl-9 col-lg-8 col-9 p-0">
+          <h6 class="mb-2">Artículos por Vencer (Próximos 30 días)</h6>
+          <p>Total: {{ total_por_vencer }}</p>
+        </div>
+      </div>
+      <div id="vencimientoChart"></div>
+    </div>
+  </div>
+</div>
+
     <!-- Card para el gráfico de Requerimientos Semanales -->
     <div class="col-xl-12 col-md-12 box-col-12">
       <div class="card o-hidden">
@@ -232,6 +247,43 @@
       var semanalChart = new ApexCharts(document.querySelector("#semanalChart"), optionsSemanal);
       semanalChart.render();
     });
+
+    // Artículos por Vencer - Bar Chart
+const fechasVenc = {{ fechas_vencimiento|safe }};
+const cantidadesVenc = {{ cantidades_vencimiento|safe }};
+
+var optionsVencimiento = {
+  chart: {
+    type: 'bar',
+    height: 350,
+    toolbar: { show: false }
+  },
+  series: [{
+    name: 'Cantidad',
+    data: cantidadesVenc
+  }],
+  xaxis: {
+    categories: fechasVenc,
+    title: { text: 'Fecha de Vencimiento' }
+  },
+  plotOptions: {
+    bar: {
+      horizontal: false,
+      columnWidth: '60%',
+      endingShape: 'rounded'
+    }
+  },
+  colors: ['#dc3545'],
+  dataLabels: { enabled: false },
+  tooltip: {
+    y: { formatter: val => val }
+  },
+  yaxis: { min: 0 }
+};
+
+var vencimientoChart = new ApexCharts(document.querySelector("#vencimientoChart"), optionsVencimiento);
+vencimientoChart.render();
+
   </script>
 
   <!-- Otros scripts de la plantilla -->

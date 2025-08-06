@@ -162,20 +162,32 @@ class AsignacionDetalleFacturaForm(forms.ModelForm):
 class DetalleFacturaForm(forms.ModelForm):
     class Meta:
         model = DetalleFactura
-        fields = ['articulo', 'cantidad', 'precio_unitario', 'renglon', 'id_linea']
+        fields = ['articulo', 'cantidad', 'precio_unitario', 'renglon', 'id_linea', 'fecha_vencimiento']
         widgets = {
             'articulo': forms.Select(attrs={'class': 'form-control'}),
             'cantidad': forms.NumberInput(attrs={'class': 'form-control'}),
             'precio_unitario': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'renglon': forms.NumberInput(attrs={'class': 'form-control'}),
-            'id_linea': forms.HiddenInput(),  # Esto para no mostrarlo en el formulario
+            'id_linea': forms.HiddenInput(),
+            'fecha_vencimiento': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'  # input tipo fecha en HTML5
+            }),
         }
 
     def __init__(self, *args, **kwargs):
-        form1h_instance = kwargs.pop('form1h_instance', None)  # Obtener el form1h de la vista
+        form1h_instance = kwargs.pop('form1h_instance', None)  # Obtener form1h desde la vista
         super(DetalleFacturaForm, self).__init__(*args, **kwargs)
         if form1h_instance:
             self.instance.form1h = form1h_instance  # Asignar el form1h automáticamente
+
+    def clean(self):
+        cleaned_data = super().clean()
+        articulo = cleaned_data.get('articulo')
+        fecha_vencimiento = cleaned_data.get('fecha_vencimiento')
+
+        if articulo and articulo.requiere_vencimiento and not fecha_vencimiento:
+            self.add_error('fecha_vencimiento', 'Este artículo requiere una fecha de vencimiento.')
 
 class SerieForm(forms.ModelForm):
     class Meta:
@@ -262,20 +274,21 @@ class DepartamentoForm(forms.ModelForm):
 class ArticuloForm(forms.ModelForm):
     class Meta:
         model = Articulo
-        fields = ['nombre', 'categoria', 'unidad_medida', 'ubicacion']
+        fields = ['nombre', 'categoria', 'unidad_medida', 'ubicacion', 'requiere_vencimiento']  # ✅ campo agregado
         widgets = {
-            
             'nombre': forms.TextInput(attrs={'placeholder': 'Nombre del artículo', 'class': 'form-control'}),
             'categoria': forms.Select(attrs={'class': 'form-control'}),
             'unidad_medida': forms.Select(attrs={'class': 'form-control'}),
             'ubicacion': forms.Select(attrs={'class': 'form-control'}),
-           
+            # No se necesita widget personalizado para el checkbox
         }
 
     def __init__(self, *args, **kwargs):
         super(ArticuloForm, self).__init__(*args, **kwargs)
         for field in self.fields.values():
-            field.widget.attrs['class'] = field.widget.attrs.get('class', '') + ' form-control'
+            existing_class = field.widget.attrs.get('class', '')
+            if not isinstance(field.widget, forms.CheckboxInput):  # ✅ Evita aplicar form-control al checkbox
+                field.widget.attrs['class'] = f'{existing_class} form-control'
 
 
 class ProveedorForm(forms.ModelForm):

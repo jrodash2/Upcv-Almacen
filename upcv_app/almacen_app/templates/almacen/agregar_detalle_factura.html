@@ -398,61 +398,66 @@ table.order-details th {
           </div>
 
           <!-- Formulario -->
-<form method="post" onsubmit="showSuccessMessage('¡Detalle agregado correctamente!')">
-    {% csrf_token %}
-    <input type="hidden" name="form1h" value="{{ form1h_instance.id }}" />
+          <form method="post" onsubmit="showSuccessMessage('¡Detalle agregado correctamente!')">
+            {% csrf_token %}
+            <input type="hidden" name="form1h" value="{{ form1h_instance.id }}" />
 
-    <div class="row">
-        <!-- Campo para seleccionar artículo -->
-        <div class="col-md-6 mb-3">
-            <label for="id_articulo" class="form-label">Artículo</label>
-            <select class="form-control" id="id_articulo" name="articulo" required>
-                {% for articulo in articulos %}
-                    <option value="{{ articulo.id }}">{{ articulo.nombre }}</option>
-                {% endfor %}
-            </select>
-        </div>
+            <div class="row">
+              <!-- Campo para seleccionar artículo -->
+              <div class="col-md-6 mb-3">
+                <label for="id_articulo" class="form-label">Artículo</label>
+                <select class="form-control" id="id_articulo" name="articulo" required>
+                  {% for articulo in articulos %}
+                    <option value="{{ articulo.id }}" data-requiere-vencimiento="{{ articulo.requiere_vencimiento|yesno:'true,false' }}">
+                      {{ articulo.nombre }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
 
-        <!-- Campo para ingresar la cantidad -->
-        <div class="col-md-6 mb-3">
-            <label for="id_cantidad" class="form-label">Cantidad</label>
-            <input type="number" id="id_cantidad" class="form-control" name="cantidad" required />
-        </div>
+              <!-- Campo para ingresar la cantidad -->
+              <div class="col-md-6 mb-3">
+                <label for="id_cantidad" class="form-label">Cantidad</label>
+                <input type="number" id="id_cantidad" class="form-control" name="cantidad" required />
+              </div>
 
-        <!-- Campo para ingresar el precio unitario -->
-        <div class="col-md-6 mb-3">
-            <label for="id_precio_unitario" class="form-label">Precio Unitario</label>
-            <input type="number" class="form-control" id="id_precio_unitario" name="precio_unitario" step="0.01" required />
+              <!-- Campo para ingresar el precio unitario -->
+              <div class="col-md-6 mb-3">
+                <label for="id_precio_unitario" class="form-label">Precio Unitario</label>
+                <input type="number" class="form-control" id="id_precio_unitario" name="precio_unitario" step="0.01" required />
+              </div>
 
-        </div>
-
-        <!-- Campo para seleccionar el número de línea reservado -->
-        <div class="col-md-6 mb-3">
-            <label for="detalle_numero_linea" class="form-label">Número de Línea</label>
-            <select name="detalle_numero_linea" class="form-control" required>
-                {% for linea in lineas_reservadas %}
+              <!-- Campo para seleccionar el número de línea reservado -->
+              <div class="col-md-6 mb-3">
+                <label for="detalle_numero_linea" class="form-label">Número de Línea</label>
+                <select name="detalle_numero_linea" class="form-control" required>
+                  {% for linea in lineas_reservadas %}
                     <option value="{{ linea.numero_linea }}">{{ linea.numero_linea }}</option>
-                {% endfor %}
-            </select>
-        </div>
+                  {% endfor %}
+                </select>
+              </div>
 
-        <!-- Campo visible para 'renglon' -->
-        <div class="col-md-6 mb-3">
-            <label for="renglon" class="form-label">Renglón</label>
-            <input type="number" id="renglon" class="form-control" name="renglon" value="{{ renglon_value }}" required />
-        </div>
+              <!-- Campo visible para 'renglon' -->
+              <div class="col-md-6 mb-3">
+                <label for="renglon" class="form-label">Renglón</label>
+                <input type="number" id="renglon" class="form-control" name="renglon" value="{{ renglon_value }}" required />
+              </div>
 
-        <!-- Campo oculto para 'id_linea' -->
-        <input type="hidden" name="id_linea" value="{{ id_linea_value }}">
+              <!-- Campo oculto para 'id_linea' -->
+              <input type="hidden" name="id_linea" value="{{ id_linea_value }}">
 
-    </div>
+              <!-- NUEVO: Campo para fecha de vencimiento (oculto por defecto) -->
+              <div class="col-md-6 mb-3" id="fechaVencimientoContainer" style="display:none;">
+                <label for="fecha_vencimiento" class="form-label">Fecha de Vencimiento</label>
+                <input type="date" id="fecha_vencimiento" name="fecha_vencimiento" class="form-control" />
+              </div>
 
-    <div class="text-end">
-        <button type="submit" class="btn btn-primary">Guardar Detalle</button>
-    </div>
-</form>
+            </div>
 
-
+            <div class="text-end">
+              <button type="submit" class="btn btn-primary">Guardar Detalle</button>
+            </div>
+          </form>
 
         </div>
 
@@ -479,7 +484,14 @@ table.order-details th {
                   <td>{{ articulo.unidad_medida }}</td>
                   <td>{{ articulo.ubicacion }}</td>
                   <td>
-                    <button class="btn btn-success btn-sm seleccionar-articulo" data-id="{{ articulo.id }}" data-nombre="{{ articulo.nombre }}" data-precio="{{ articulo.precio_unitario }}">Seleccionar</button>
+                    <button 
+  class="btn btn-success btn-sm seleccionar-articulo" 
+  data-id="{{ articulo.id }}" 
+  data-nombre="{{ articulo.nombre }}" 
+  data-precio="{{ articulo.precio_unitario }}" 
+  data-requiere-vencimiento="{{ articulo.requiere_vencimiento|yesno:'true,false' }}"
+>Seleccionar</button>
+
                   </td>
                 </tr>
               {% empty %}
@@ -490,11 +502,64 @@ table.order-details th {
             </tbody>
           </table>
         </div>
-        
+
       </div>
     </div>
   </div>
 </div>
+
+<script>
+  // Mostrar u ocultar campo fecha de vencimiento según artículo seleccionado
+  document.addEventListener('DOMContentLoaded', function () {
+    const selectArticulo = document.getElementById('id_articulo');
+    const fechaVencContainer = document.getElementById('fechaVencimientoContainer');
+    const fechaVencInput = document.getElementById('fecha_vencimiento');
+
+    function toggleFechaVencimiento() {
+      const selectedOption = selectArticulo.options[selectArticulo.selectedIndex];
+      const requiereVenc = selectedOption.getAttribute('data-requiere-vencimiento') === 'true';
+      if (requiereVenc) {
+        fechaVencContainer.style.display = 'block';
+        fechaVencInput.required = true;
+      } else {
+        fechaVencContainer.style.display = 'none';
+        fechaVencInput.required = false;
+        fechaVencInput.value = ''; // limpiar si antes se puso alguna fecha
+      }
+    }
+
+    // Ejecutar al cargar para setear estado correcto
+    toggleFechaVencimiento();
+
+    // Ejecutar al cambiar selección
+    selectArticulo.addEventListener('change', toggleFechaVencimiento);
+  });
+
+  document.querySelectorAll('.seleccionar-articulo').forEach(button => {
+  button.addEventListener('click', () => {
+    const articuloId = button.getAttribute('data-id');
+    const requiereVenc = button.getAttribute('data-requiere-vencimiento') === 'true';
+
+    const selectArticulo = document.getElementById('id_articulo');
+    const fechaVencContainer = document.getElementById('fechaVencimientoContainer');
+    const fechaVencInput = document.getElementById('fecha_vencimiento');
+
+    // Actualizar el select para que tenga el artículo seleccionado
+    selectArticulo.value = articuloId;
+
+    // Mostrar u ocultar fecha vencimiento según corresponda
+    if (requiereVenc) {
+      fechaVencContainer.style.display = 'block';
+      fechaVencInput.required = true;
+    } else {
+      fechaVencContainer.style.display = 'none';
+      fechaVencInput.required = false;
+      fechaVencInput.value = '';
+    }
+  });
+});
+
+</script>
 
 <!-- Modal para Crear Nuevo Artículo con imagen de fondo -->
 <div class="modal fade" id="crearArticuloModal" tabindex="-1" aria-labelledby="crearArticuloModalLabel" aria-hidden="true">
@@ -566,6 +631,12 @@ table.order-details th {
               </select>
             </div>
 
+            <!-- Nuevo campo checkbox para fecha de vencimiento -->
+            <div class="col-md-12 form-check mt-3">
+              <input type="checkbox" class="form-check-input" id="id_requiere_vencimiento" name="requiere_vencimiento" value="True" />
+              <label class="form-check-label" for="id_requiere_vencimiento">Requiere Fecha de Vencimiento</label>
+            </div>
+
             <div class="col-12 text-center">
               <button type="submit" class="btn btn-primary mt-3">Crear Artículo</button>
             </div>
@@ -576,6 +647,7 @@ table.order-details th {
     </div>
   </div>
 </div>
+
 
 
 <!-- Modal para Editar Detalle -->
@@ -612,11 +684,16 @@ table.order-details th {
             <!-- Campo Artículo -->
             <div class="mb-3">
               <label for="editarArticulo" class="form-label">Artículo</label>
-              <select class="form-control" id="editarArticulo" name="articulo">
-                {% for articulo in articulos %}
-                  <option value="{{ articulo.id }}">{{ articulo.nombre }}</option>
-                {% endfor %}
-              </select>
+             <select class="form-control" id="editarArticulo" name="articulo">
+  {% for articulo in articulos %}
+    <option 
+      value="{{ articulo.id }}"
+      data-requiere-vencimiento="{{ articulo.requiere_vencimiento|yesno:'true,false' }}"
+    >
+      {{ articulo.nombre }}
+    </option>
+  {% endfor %}
+</select>
             </div>
 
             <!-- Campo Cantidad -->
@@ -628,7 +705,8 @@ table.order-details th {
             <!-- Campo Precio Unitario -->
             <div class="mb-3">
               <label for="editarPrecio" class="form-label">Precio Unitario</label>
-              <input type="number" class="form-control" id="editarPrecio" name="precio_unitario" required>
+              <input type="number" class="form-control" id="editarPrecio" name="precio_unitario" step="0.01" required>
+
             </div>
 
             <!-- Campo Renglón -->
@@ -636,6 +714,13 @@ table.order-details th {
               <label for="editarRenglon" class="form-label">Renglón</label>
               <input type="number" class="form-control" id="editarRenglon" name="renglon" required>
             </div>
+
+<div class="mb-3" id="fechaVencimientoContainer" style="visibility: hidden; height: 70px;">
+  <label for="editarFechaVencimiento" class="form-label">Fecha de Vencimiento</label>
+  <input type="date" class="form-control" id="editarFechaVencimiento" name="fecha_vencimiento" style="visibility: hidden;">
+</div>
+
+
 
             <div class="text-end">
               <button type="submit" class="btn btn-primary">Guardar Cambios</button>
@@ -647,6 +732,68 @@ table.order-details th {
     </div>
   </div>
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const selectArticulo = document.getElementById('editarArticulo');
+    const fechaVencimientoContainer = document.getElementById('fechaVencimientoContainer');
+    const inputFechaVencimiento = document.getElementById('editarFechaVencimiento');
+
+function toggleFechaVencimiento() {
+  const selectedOption = selectArticulo.options[selectArticulo.selectedIndex];
+  const requiere = selectedOption.getAttribute('data-requiere-vencimiento') === 'true';
+
+  if (requiere) {
+    fechaVencimientoContainer.style.visibility = 'visible';
+    inputFechaVencimiento.style.visibility = 'visible';
+    inputFechaVencimiento.required = true;
+  } else {
+    fechaVencimientoContainer.style.visibility = 'hidden';
+    inputFechaVencimiento.style.visibility = 'hidden';
+    inputFechaVencimiento.required = false;
+    inputFechaVencimiento.value = '';  // **Importante limpiar valor**
+  }
+}
+
+
+
+
+    // Mostrar u ocultar cuando cambia el artículo seleccionado
+    selectArticulo.addEventListener('change', toggleFechaVencimiento);
+
+    // Cada vez que se abre el modal, verificar el campo según el artículo seleccionado
+    $('#editarDetalleModal').on('shown.bs.modal', function () {
+      toggleFechaVencimiento();
+    });
+
+    // Evento para cargar los datos en el modal (botones con clase .editar-detalle-btn y data-id)
+    document.querySelectorAll('.editar-detalle-btn').forEach(button => {
+      button.addEventListener('click', () => {
+        const detailId = button.getAttribute('data-id');
+
+        fetch(`/almacen/obtener-detalle-factura/${detailId}/`)
+          .then(response => response.json())
+          .then(data => {
+            document.getElementById('detalleId').value = detailId;
+            selectArticulo.value = data.articulo.toString();
+            document.getElementById('editarCantidad').value = data.cantidad;
+            document.getElementById('editarPrecio').value = data.precio_unitario;
+            document.getElementById('editarRenglon').value = data.renglon;
+
+            toggleFechaVencimiento();
+
+            const selectedOption = selectArticulo.options[selectArticulo.selectedIndex];
+            if (selectedOption.getAttribute('data-requiere-vencimiento') === 'true') {
+              inputFechaVencimiento.value = data.fecha_vencimiento || '';
+            } else {
+              inputFechaVencimiento.value = '';
+            }
+          })
+          .catch(console.error);
+      });
+    });
+  });
+</script>
 
 
 <!-- Modal de Confirmación con imagen y estilo -->
@@ -770,31 +917,5 @@ table.order-details th {
 </script>
 
 
-<script>
-  document.addEventListener('DOMContentLoaded', function () {
-    // Manejar clic en el botón de editar
-    document.querySelectorAll('.editar-detalle-btn').forEach(function (button) {
-      button.addEventListener('click', function () {
-        const detalleId = this.getAttribute('data-id'); // Obtener el ID del detalle
-        const url = `/almacen/obtener-detalle-factura/${detalleId}/`; // URL para obtener los datos
-
-        // Realizar una solicitud AJAX para obtener los datos del detalle
-        fetch(url)
-          .then(response => response.json())
-          .then(data => {
-            // Llenar los campos del modal con los datos obtenidos
-            document.getElementById('detalleId').value = detalleId;
-            document.getElementById('editarArticulo').value = data.articulo;
-            document.getElementById('editarCantidad').value = data.cantidad;
-            document.getElementById('editarPrecio').value = data.precio_unitario;
-            document.getElementById('editarRenglon').value = data.renglon;
-          })
-          .catch(error => {
-            console.error('Error al obtener los datos del detalle:', error);
-          });
-      });
-    });
-  });
-</script>
 
 {% endblock %}
