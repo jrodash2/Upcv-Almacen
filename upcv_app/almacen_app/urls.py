@@ -112,6 +112,8 @@ urlpatterns = [
     path('transferir-articulos/', views.transferir_articulos, name='transferir_articulos'),
     path('historial-transferencias/', views.historial_transferencias, name='historial_transferencias'),
     path('api/articulos_asignados/<int:departamento_id>/', views.articulos_asignados, name='articulos_asignados'),
+    path('articulos/por-vencer/', views.articulos_por_vencer, name='articulos_por_vencer'),
+
 
 
 

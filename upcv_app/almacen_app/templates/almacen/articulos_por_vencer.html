@@ -1,0 +1,146 @@
+{% extends 'almacen/base.html' %}
+{% load static %}
+
+{% block content %}
+
+<!-- Cargar jQuery y DataTables -->
+<script src="{% static 'assets/js/jquery.min.js' %}"></script>
+<script src="{% static 'assets/js/datatable/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'assets/js/datatable/datatables/datatable.custom.js' %}"></script>
+
+<div class="page-body">
+  <div class="container-fluid">
+    <div class="page-title">
+      <div class="row">
+        <div class="col-6">
+          <h4 class="card-title mb-0">Artículos por Vencer</h4>
+        </div>
+        <div class="col-6">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+              <a href="{% url 'almacen:dahsboard' %}">
+                <svg class="stroke-icon">
+                  <use href="{% static 'assets/svg/icon-sprite.svg#stroke-home' %}"></use>
+                </svg>
+              </a>
+            </li>
+            <li class="breadcrumb-item">Dashboard</li>
+            <li class="breadcrumb-item active">Artículos por Vencer</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Container-fluid starts-->
+  <div class="container-fluid">
+    <div class="edit-profile">
+      <div class="row">
+        <div class="col-xl-12">
+          <div class="card">
+            <div class="card-body">
+
+              <!-- Tabla: Artículos por vencer -->
+              <h5>Por vencer (del {{ today }} al {{ limite }})</h5>
+              {% if articulos_vencer %}
+              <div class="table-responsive custom-scrollbar">
+                <table class="display" id="basic-9">
+                  <thead>
+                    <tr>
+                      <th>Artículo</th>
+                      <th>Cantidad</th>
+                      <th>Precio Unitario</th>
+                      <th>Fecha de Vencimiento</th>
+                      <th>N° Factura</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for detalle in articulos_vencer %}
+                    <tr>
+                      <td>{{ detalle.articulo.nombre }}</td>
+                      <td>{{ detalle.cantidad }}</td>
+                      <td>Q{{ detalle.precio_unitario }}</td>
+                      <td>{{ detalle.fecha_vencimiento }}</td>
+                      <td>{{ detalle.form1h.numero_factura }}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <th>Artículo</th>
+                      <th>Cantidad</th>
+                      <th>Precio Unitario</th>
+                      <th>Fecha de Vencimiento</th>
+                      <th>N° Factura</th>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+              {% else %}
+              <div class="alert alert-info">
+                No hay artículos por vencer entre {{ today }} y {{ limite }}.
+              </div>
+              {% endif %}
+
+              <hr class="my-4">
+
+              <!-- Tabla: Artículos vencidos -->
+              <h5>Vencidos (antes del {{ today }})</h5>
+              {% if articulos_vencidos %}
+              <div class="table-responsive custom-scrollbar">
+                <table class="display" id="basic-10">
+                  <thead>
+                    <tr>
+                      <th>Artículo</th>
+                      <th>Cantidad</th>
+                      <th>Precio Unitario</th>
+                      <th>Fecha de Vencimiento</th>
+                      <th>N° Factura</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for detalle in articulos_vencidos %}
+                    <tr class="table-danger">
+                      <td>{{ detalle.articulo.nombre }}</td>
+                      <td>{{ detalle.cantidad }}</td>
+                      <td>Q{{ detalle.precio_unitario }}</td>
+                      <td>{{ detalle.fecha_vencimiento }}</td>
+                      <td>{{ detalle.form1h.numero_factura }}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <th>Artículo</th>
+                      <th>Cantidad</th>
+                      <th>Precio Unitario</th>
+                      <th>Fecha de Vencimiento</th>
+                      <th>N° Factura</th>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+              {% else %}
+              <div class="alert alert-success">
+                No hay artículos vencidos antes de {{ today }}.
+              </div>
+              {% endif %}
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Container-fluid Ends-->
+</div>
+
+<!-- Activar ambas tablas -->
+<script>
+  $(document).ready(function () {
+    $('#basic-9').DataTable();
+    $('#basic-10').DataTable();
+  });
+</script>
+
+{% endblock %}

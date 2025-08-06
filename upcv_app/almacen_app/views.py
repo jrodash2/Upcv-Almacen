@@ -1347,6 +1347,34 @@ def dahsboard(request):
 
     return render(request, 'almacen/dashboard.html', context)
 
+@login_required
+def articulos_por_vencer(request):
+    today = timezone.now().date()
+    limite = today + timedelta(days=30)
+
+    # Artículos por vencer en los próximos 30 días
+    articulos_vencer = DetalleFactura.objects.filter(
+        articulo__requiere_vencimiento=True,
+        fecha_vencimiento__gte=today,
+        fecha_vencimiento__lte=limite,
+        form1h__estado='confirmado'
+    ).select_related('articulo', 'form1h').order_by('fecha_vencimiento')
+
+    # Artículos vencidos (fecha anterior a hoy)
+    articulos_vencidos = DetalleFactura.objects.filter(
+        articulo__requiere_vencimiento=True,
+        fecha_vencimiento__lt=today,
+        form1h__estado='confirmado'
+    ).select_related('articulo', 'form1h').order_by('-fecha_vencimiento')
+
+    context = {
+        'articulos_vencer': articulos_vencer,
+        'articulos_vencidos': articulos_vencidos,
+        'today': today,
+        'limite': limite,
+    }
+
+    return render(request, 'almacen/articulos_por_vencer.html', context)
 
 def signout(request):
     logout(request)

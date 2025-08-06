@@ -30,7 +30,7 @@
   <div class="row" style="margin: 20px;">
     
     <!-- Card para el gráfico de Requerimientos por Tipo -->
-    <div class="col-xl-5 col-md-12 box-col-12">
+    <div class="col-xl-6 col-md-12 box-col-12">
       <div class="card o-hidden">
         <div class="chart-widget-top">
           <div class="row card-body pb-0 m-0">
@@ -43,8 +43,29 @@
       </div>
     </div>
 
+    <!-- Card para el gráfico de Artículos por Vencer -->
+<div class="col-xl-6 col-md-12 box-col-12">
+  <div class="card o-hidden">
+    <div class="chart-widget-top">
+      <div class="row card-body pb-0 m-0">
+        <div class="col-xl-12 col-lg-8 col-9 p-6">
+<div class="d-flex align-items-center justify-content-between mb-6">
+  <h6 class="mb-0">Artículos por Vencer (Próximos 30 días)</h6>
+  <a href="{% url 'almacen:articulos_por_vencer' %}" class="btn btn-warning">
+    Ver artículos por vencer
+  </a>
+</div>
+
+          <p>Total: {{ total_por_vencer }}</p>
+        </div>
+      </div>
+      <div id="vencimientoChart"></div>
+    </div>
+  </div>
+</div>
+
     <!-- Card para el gráfico de Totales de Artículos -->
-    <div class="col-xl-7 col-md-12 box-col-12">
+    <div class="col-xl-6 col-md-12 box-col-12">
       <div class="card o-hidden">
         <div class="chart-widget-top">
           <div class="row card-body pb-0 m-0">
@@ -57,23 +78,8 @@
       </div>
     </div>
 
-    <!-- Card para el gráfico de Artículos por Vencer -->
-<div class="col-xl-6 col-md-12 box-col-12">
-  <div class="card o-hidden">
-    <div class="chart-widget-top">
-      <div class="row card-body pb-0 m-0">
-        <div class="col-xl-9 col-lg-8 col-9 p-0">
-          <h6 class="mb-2">Artículos por Vencer (Próximos 30 días)</h6>
-          <p>Total: {{ total_por_vencer }}</p>
-        </div>
-      </div>
-      <div id="vencimientoChart"></div>
-    </div>
-  </div>
-</div>
-
     <!-- Card para el gráfico de Requerimientos Semanales -->
-    <div class="col-xl-12 col-md-12 box-col-12">
+    <div class="col-xl-6 col-md-12 box-col-12">
       <div class="card o-hidden">
         <div class="chart-widget-top">
           <div class="row card-body pb-0 m-0">
