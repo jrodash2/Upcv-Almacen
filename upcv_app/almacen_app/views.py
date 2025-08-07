@@ -21,7 +21,7 @@ from django.views.decorators.http import require_POST
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from .models import Serie
 from django.db import models
-from django.db.models import Sum, F, Value, Count, Q, Case, When
+from django.db.models import Sum, F, Value, Count, Q, Case, When, OuterRef, Subquery, IntegerField
 from django.contrib.auth.decorators import login_required, user_passes_test
 from collections import defaultdict
 from django.shortcuts import get_object_or_404, redirect
@@ -43,6 +43,7 @@ from weasyprint import HTML
 from django.db.models.functions import Cast, TruncWeek
 from django.utils import timezone
 from datetime import timedelta
+
 
 @login_required
 def transferir_articulos(request):
@@ -147,6 +148,8 @@ def editar_institucion(request):
     return render(request, 'almacen/editar_institucion.html', {'form': form})
 
 
+from django.db.models import F
+
 @login_required
 @transaction.atomic
 def despachar_requerimiento(request, requerimiento_id):
@@ -179,16 +182,44 @@ def despachar_requerimiento(request, requerimiento_id):
                 messages.error(request, f"Debes despachar exactamente {detalle.cantidad} unidades de {detalle.articulo.nombre}.")
                 return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
 
-        # Registrar salida en Kardex y actualizar estado
+        # Despachar cada artículo desde los lotes disponibles
         for detalle in detalles:
-            cantidad_a_despachar = cantidades_dict.get(detalle.id, 0)
+            articulo = detalle.articulo
+            cantidad_restante = detalle.cantidad
 
-            Kardex.objects.create(
-                articulo=detalle.articulo,
-                tipo_movimiento='SALIDA',
-                cantidad=cantidad_a_despachar,
-                observacion=f"Despacho de requerimiento #{requerimiento.id} para {requerimiento.departamento.nombre}"
-            )
+            # Buscar lotes disponibles (DetalleFactura) con stock > 0
+            lotes = DetalleFactura.objects.filter(
+                articulo=articulo,
+                form1h__estado='confirmado'
+            ).annotate(
+                total_salidas=Coalesce(
+                    Sum('kardex__cantidad', filter=Q(kardex__tipo_movimiento='SALIDA')),
+                    0
+                ),
+                stock_disponible=F('cantidad') - F('total_salidas')
+            ).filter(
+                stock_disponible__gt=0
+            ).order_by('fecha_vencimiento', 'id')  # FIFO
+
+            for lote in lotes:
+                if cantidad_restante <= 0:
+                    break
+
+                cantidad_despacho = min(cantidad_restante, lote.stock_disponible)
+
+                Kardex.objects.create(
+                    articulo=articulo,
+                    tipo_movimiento='SALIDA',
+                    cantidad=cantidad_despacho,
+                    fuente_factura=lote,
+                    observacion=f"Despacho de requerimiento #{requerimiento.id} para {requerimiento.departamento.nombre}"
+                )
+
+                cantidad_restante -= cantidad_despacho
+
+            if cantidad_restante > 0:
+                messages.error(request, f"No hay suficiente stock disponible para despachar {detalle.articulo.nombre}.")
+                return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
 
             detalle.estado = 'despachado'
             detalle.save()
@@ -201,6 +232,7 @@ def despachar_requerimiento(request, requerimiento_id):
 
     messages.error(request, "Método no permitido.")
     return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
+
 
     
 @login_required
@@ -1352,7 +1384,18 @@ def articulos_por_vencer(request):
     today = timezone.now().date()
     limite = today + timedelta(days=30)
 
-    # Artículos por vencer en los próximos 30 días
+    # Obtener todas las salidas agrupadas por DetalleFactura (fuente_factura)
+    salidas_dict = Kardex.objects.filter(
+        tipo_movimiento='SALIDA',
+        fuente_factura__isnull=False
+    ).values('fuente_factura').annotate(
+        total=Coalesce(Sum('cantidad'), 0)
+    )
+
+    # Convertir a diccionario para acceso rápido
+    salidas_map = {item['fuente_factura']: item['total'] for item in salidas_dict}
+
+    # Artículos por vencer
     articulos_vencer = DetalleFactura.objects.filter(
         articulo__requiere_vencimiento=True,
         fecha_vencimiento__gte=today,
@@ -1360,12 +1403,17 @@ def articulos_por_vencer(request):
         form1h__estado='confirmado'
     ).select_related('articulo', 'form1h').order_by('fecha_vencimiento')
 
-    # Artículos vencidos (fecha anterior a hoy)
+    # Artículos vencidos
     articulos_vencidos = DetalleFactura.objects.filter(
         articulo__requiere_vencimiento=True,
         fecha_vencimiento__lt=today,
         form1h__estado='confirmado'
     ).select_related('articulo', 'form1h').order_by('-fecha_vencimiento')
+
+    # Calcular el stock restante manualmente (sin Subquery)
+    for detalle in list(articulos_vencer) + list(articulos_vencidos):
+        total_salidas = salidas_map.get(detalle.pk, 0)
+        detalle.stock_restante = detalle.cantidad - total_salidas
 
     context = {
         'articulos_vencer': articulos_vencer,
@@ -1375,6 +1423,9 @@ def articulos_por_vencer(request):
     }
 
     return render(request, 'almacen/articulos_por_vencer.html', context)
+
+
+
 
 def signout(request):
     logout(request)

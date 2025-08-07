@@ -51,7 +51,7 @@
         <div class="col-xl-12 col-lg-8 col-9 p-6">
 <div class="d-flex align-items-center justify-content-between mb-6">
   <h6 class="mb-0">Artículos por Vencer (Próximos 30 días)</h6>
-  <a href="{% url 'almacen:articulos_por_vencer' %}" class="btn btn-warning">
+  <a href="{% url 'almacen:articulos_por_vencer' %}" class="btn btn-primary btn-sm">
     Ver artículos por vencer
   </a>
 </div>
@@ -93,61 +93,6 @@
     </div>
   </div>
 
-            <div class="row">
-              <div class="col-md-12 box-col-12">
-                <div class="card o-hidden">
-                  <div class="card-header">
-                    <h4>Monthly  History</h4>
-                  </div>
-                  <div class="bar-chart-widget">
-                    <div class="bottom-content card-body">
-                      <div class="row"> 
-                        <div class="col-12">
-                          <div id="chart-widget4"></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="col-xl-6 col-lg-12 box-col-6 xl-50">
-                <div class="card">
-                  <div class="card-header">
-                    <h4>Skill Status</h4>
-                  </div>
-                  <div class="card-body">
-                    <div class="chart-container skill-chart">
-                      <div id="circlechart"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="col-xl-6 col-lg-12 box-col-6 xl-50">
-                <div class="card">
-                  <div class="card-header">
-                    <div class="header-top">
-                      <h4>Order Status</h4>
-                      <div class="card-header-right-icon">
-                        <div class="dropdown"> 
-                          <button class="btn dropdown-toggle" id="dropdownMenuButtonStaus" type="button" data-bs-toggle="dropdown">Today</button>
-                          <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButtonStaus"><a class="dropdown-item" href="#">Today</a><a class="dropdown-item" href="#">Tomorrow</a><a class="dropdown-item" href="#">Yesterday</a></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="card-body"> 
-                    <div class="chart-container progress-chart">
-                      <div id="progress1"></div>
-                      <div id="progress2"></div>
-                      <div id="progress3"></div>
-                      <div id="progress4"></div>
-                      <div id="progress5">               </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
 
   <!-- Scripts de ApexCharts -->
   <script src="{% static 'assets/js/chart/apex-chart/apex-chart.js' %}"></script>
@@ -167,7 +112,7 @@
         },
         series: dataReq,
         labels: labelsReq,
-        colors: ['#007bff', '#28a745', '#dc3545', '#ffc107'],
+        colors: ['#0c4a6e', '#4cb8a4', '#1e7d94', '#f9e5b4'],
         legend: { position: 'bottom' },
         responsive: [{
           breakpoint: 480,
@@ -207,7 +152,7 @@
             endingShape: 'rounded'
           }
         },
-        colors: ['#007bff', '#6c757d', '#28a745', '#dc3545'],
+        colors: ['#0c4a6e', '#4cb8a4', '#1e7d94', '#f9e5b4'],
         dataLabels: { enabled: false },
         tooltip: {
           y: { formatter: val => val }
@@ -242,7 +187,7 @@
           type: 'gradient',
           gradient: { shadeIntensity: 1, opacityFrom: 0.7, opacityTo: 0.3, stops: [0, 90, 100] }
         },
-        colors: ['#17a2b8'],
+         colors: ['#0c4a6e', '#4cb8a4', '#1e7d94', '#f9e5b4'],
         dataLabels: { enabled: false },
         tooltip: {
           y: { formatter: val => val }
@@ -270,7 +215,7 @@ var optionsVencimiento = {
   }],
   xaxis: {
     categories: fechasVenc,
-    title: { text: 'Fecha de Vencimiento' }
+    title: { text: '' }
   },
   plotOptions: {
     bar: {
@@ -279,7 +224,7 @@ var optionsVencimiento = {
       endingShape: 'rounded'
     }
   },
-  colors: ['#dc3545'],
+   colors: ['#0c4a6e', '#4cb8a4', '#1e7d94', '#f9e5b4'],
   dataLabels: { enabled: false },
   tooltip: {
     y: { formatter: val => val }

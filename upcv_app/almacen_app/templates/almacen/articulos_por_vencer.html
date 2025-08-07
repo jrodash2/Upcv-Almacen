@@ -48,27 +48,44 @@
                   <thead>
                     <tr>
                       <th>Artículo</th>
-                      <th>Cantidad</th>
+                      <th>Cantidad Lote</th>
+                      <th>Stock Restante</th>
                       <th>Precio Unitario</th>
                       <th>Fecha de Vencimiento</th>
                       <th>N° Factura</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    {% for detalle in articulos_vencer %}
-                    <tr>
-                      <td>{{ detalle.articulo.nombre }}</td>
-                      <td>{{ detalle.cantidad }}</td>
-                      <td>Q{{ detalle.precio_unitario }}</td>
-                      <td>{{ detalle.fecha_vencimiento }}</td>
-                      <td>{{ detalle.form1h.numero_factura }}</td>
-                    </tr>
-                    {% endfor %}
-                  </tbody>
+                 <tbody>
+  {% for detalle in articulos_vencer %}
+  <tr {% if detalle.stock_restante > 0 %}class="table-warning"{% endif %}>
+    <td>
+      {{ detalle.articulo.nombre }}
+      {% if detalle.stock_restante > 0 %}
+        <span class="badge bg-warning text-dark" title="Este artículo tiene stock y está por vencer. Dar salida pronto.">
+          Con Stock - Dar salida
+        </span>
+      {% endif %}
+    </td>
+    <td>{{ detalle.cantidad }}</td>
+    <td>
+      {% if detalle.stock_restante > 0 %}
+        {{ detalle.stock_restante }}
+      {% else %}
+        <span class="text-danger">0</span>
+      {% endif %}
+    </td>
+    <td>Q{{ detalle.precio_unitario }}</td>
+    <td>{{ detalle.fecha_vencimiento }}</td>
+    <td>{{ detalle.form1h.numero_factura }}</td>
+  </tr>
+  {% endfor %}
+</tbody>
+
                   <tfoot>
                     <tr>
                       <th>Artículo</th>
-                      <th>Cantidad</th>
+                      <th>Cantidad Lote</th>
+                      <th>Stock Restante</th>
                       <th>Precio Unitario</th>
                       <th>Fecha de Vencimiento</th>
                       <th>N° Factura</th>
@@ -92,27 +109,41 @@
                   <thead>
                     <tr>
                       <th>Artículo</th>
-                      <th>Cantidad</th>
+                      <th>Cantidad Lote</th>
+                      <th>Stock Restante</th>
                       <th>Precio Unitario</th>
                       <th>Fecha de Vencimiento</th>
                       <th>N° Factura</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    {% for detalle in articulos_vencidos %}
-                    <tr class="table-danger">
-                      <td>{{ detalle.articulo.nombre }}</td>
-                      <td>{{ detalle.cantidad }}</td>
-                      <td>Q{{ detalle.precio_unitario }}</td>
-                      <td>{{ detalle.fecha_vencimiento }}</td>
-                      <td>{{ detalle.form1h.numero_factura }}</td>
-                    </tr>
-                    {% endfor %}
-                  </tbody>
+                 <tbody>
+  {% for detalle in articulos_vencidos %}
+  <tr class="table-danger {% if detalle.stock_restante == 0 %}table-warning{% endif %}">
+    <td>
+      {{ detalle.articulo.nombre }}
+     
+    </td>
+    <td>{{ detalle.cantidad }}</td>
+    <td>
+      {% if detalle.stock_restante > 0 %}
+        {{ detalle.stock_restante }}
+      {% else %}
+        <span class="text-danger">0</span>
+      {% endif %}
+    </td>
+    <td>Q{{ detalle.precio_unitario }}</td>
+    <td>{{ detalle.fecha_vencimiento }}</td>
+    <td>{{ detalle.form1h.numero_factura }}</td>
+  </tr>
+  {% endfor %}
+</tbody>
+
+
                   <tfoot>
                     <tr>
                       <th>Artículo</th>
-                      <th>Cantidad</th>
+                      <th>Cantidad Lote</th>
+                      <th>Stock Restante</th>
                       <th>Precio Unitario</th>
                       <th>Fecha de Vencimiento</th>
                       <th>N° Factura</th>
