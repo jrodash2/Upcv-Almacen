@@ -89,12 +89,14 @@
                 <td>{{ a.descripcion }}</td>
                 <td>{{ a.fecha_asignacion|date:"d M Y H:i" }}</td>
                 <td>
+                  {% if es_administrador %}
                   <!-- Botón para Transferir -->
                   <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#transferirModal"
                           data-articulo-id="{{ a.articulo.id }}" data-nombre-articulo="{{ a.articulo.nombre }}"
                           data-cantidad="{{ a.cantidad_asignada }}">
                     Transferir
                   </button>
+                   {% endif %}
                 </td>
               </tr>
               {% empty %}

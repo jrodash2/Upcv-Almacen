@@ -1,0 +1,5 @@
+{
+    "python.analysis.extraPaths": [
+        "./upcv_app/almacen_"
+    ]
+}
