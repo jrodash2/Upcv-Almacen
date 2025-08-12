@@ -1,13 +1,13 @@
-import pandas as pd
-from django.core.management.base import BaseCommand
+from django.db.models import Max
 from django.db import transaction
-from almacen_app.models import (
-    form1h, Proveedor, Articulo, DetalleFactura, Categoria, UnidadDeMedida,
-    Ubicacion, LineaLibre, Kardex, ContadorDetalleFactura
-)
 from django.utils import timezone
 from decimal import Decimal
-from django.db.models import Max
+import pandas as pd
+from almacen_app.models import (
+    form1h, Proveedor, Articulo, DetalleFactura, Categoria, UnidadDeMedida,
+    Ubicacion, LineaLibre, ContadorDetalleFactura
+)
+from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
@@ -43,7 +43,7 @@ class Command(BaseCommand):
                 fecha_ingreso=grupo['fecha_ingreso'].iloc[0],
                 orden_compra=grupo['orden_compra'].iloc[0],
                 nit_proveedor=grupo['nit_proveedor'].iloc[0],
-                proveedor_nombre=grupo['proveedor'].iloc[0],
+                proveedor_nombre=proveedor_nombre,
                 telefono_proveedor=grupo['telefono_proveedor'].iloc[0] if 'telefono_proveedor' in grupo.columns else None,
                 direccion_proveedor=grupo['direccion_proveedor'].iloc[0] if 'direccion_proveedor' in grupo.columns else None,
                 patente=grupo['patente'].iloc[0] if 'patente' in grupo.columns else None,
@@ -51,8 +51,6 @@ class Command(BaseCommand):
                 serie_id=grupo['serie_id'].iloc[0] if 'serie_id' in grupo.columns else None,
                 dependencia_id=grupo['dependencia_id'].iloc[0] if 'dependencia_id' in grupo.columns else None,
                 programa_id=grupo['programa_id'].iloc[0] if 'programa_id' in grupo.columns else None,
-
-
             )
 
             for _, row in grupo.iterrows():
@@ -90,7 +88,7 @@ class Command(BaseCommand):
                     fecha_vencimiento = None
 
                 # Crear detalle de factura
-                detalle = DetalleFactura.objects.create(
+                DetalleFactura.objects.create(
                     form1h=f1h,
                     articulo=articulo,
                     cantidad=int(row['cantidad']),
@@ -101,19 +99,8 @@ class Command(BaseCommand):
                     fecha_vencimiento=fecha_vencimiento
                 )
 
-            # Confirmar formulario
+            # Confirmar formulario (esto debería generar el ingreso automático en Kardex)
             f1h.estado = 'confirmado'
             f1h.save()
-
-            # Crear entradas en Kardex
-            for detalle in f1h.detalles.all():
-                Kardex.objects.create(
-                    articulo=detalle.articulo,
-                    tipo_movimiento='INGRESO',
-                    cantidad=detalle.cantidad,
-                    fuente_factura=detalle,
-                    fecha=timezone.now(),
-                    observacion=f'Ingreso por carga masiva, Form1H #{f1h.numero_factura}'
-                )
 
             self.stdout.write(self.style.SUCCESS(f'Factura {numero_factura} cargada y confirmada con éxito.'))

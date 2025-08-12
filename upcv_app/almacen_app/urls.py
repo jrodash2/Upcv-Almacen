@@ -1,6 +1,7 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from . import views
+from .views import libro_ingresos_pdf
 
 app_name = 'almacen'
 
@@ -113,6 +114,9 @@ urlpatterns = [
     path('historial-transferencias/', views.historial_transferencias, name='historial_transferencias'),
     path('api/articulos_asignados/<int:departamento_id>/', views.articulos_asignados, name='articulos_asignados'),
     path('articulos/por-vencer/', views.articulos_por_vencer, name='articulos_por_vencer'),
+    
+    path('libro-ingresos/pdf/', libro_ingresos_pdf, name='libro_ingresos_pdf'),
+    
 
 
 

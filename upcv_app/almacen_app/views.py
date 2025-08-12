@@ -43,7 +43,70 @@ from weasyprint import HTML
 from django.db.models.functions import Cast, TruncWeek
 from django.utils import timezone
 from datetime import timedelta
+from reportlab.lib.pagesizes import landscape, letter
+from reportlab.pdfgen import canvas
+from reportlab.lib.units import inch
+import datetime
 
+
+from datetime import datetime  
+
+def libro_ingresos_pdf(request):
+    # Filtros para fecha (si es que se aplican)
+    fecha_inicio = request.GET.get('fecha_inicio', '2025-01-01')
+    fecha_fin = request.GET.get('fecha_fin', '2025-12-31')
+
+    # Convertir las fechas usando strptime (aquí corregimos la importación)
+    fecha_inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+    fecha_fin = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
+
+    # Filtrar facturas dentro del rango de fechas
+    facturas = form1h.objects.filter(fecha_ingreso__range=(fecha_inicio, fecha_fin), estado='confirmado')
+
+    # Consultar todos los detalles de factura
+    detalles_factura = DetalleFactura.objects.filter(form1h__in=facturas).select_related('articulo')
+
+    # Agrupar detalles de factura por artículo
+    ingresos_por_articulo = detalles_factura.values('articulo__nombre').annotate(
+        total_ingresos=Sum('precio_total'), total_cantidad=Sum('cantidad')
+    ).order_by('articulo__nombre')
+
+    # Crear PDF con orientación horizontal y tamaño oficio
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'inline; filename="libro_ingresos.pdf"'
+
+    # Tamaño de página Oficio (8.5 x 14 pulgadas) en orientación horizontal
+    p = canvas.Canvas(response, pagesize=(14*inch, 8.5*inch))  # 14x8.5 pulgadas
+
+    width, height = 14*inch, 8.5*inch  # Dimensiones de la página
+
+    # Título
+    p.setFont("Helvetica-Bold", 16)
+    p.drawString(1*inch, height - 1*inch, "Libro de Ingresos")
+
+    p.setFont("Helvetica", 10)
+    p.drawString(1*inch, height - 1.3*inch, f"Fecha inicio: {fecha_inicio} - Fecha fin: {fecha_fin}")
+
+    # Tabla encabezados
+    p.drawString(1*inch, height - 1.8*inch, "Artículo")
+    p.drawString(4*inch, height - 1.8*inch, "Cantidad Total")
+    p.drawString(7*inch, height - 1.8*inch, "Monto Total")
+
+    # Dibujar los datos
+    y = height - 2*inch
+    for ingreso in ingresos_por_articulo:
+        p.drawString(1*inch, y, ingreso['articulo__nombre'])
+        p.drawString(4*inch, y, str(ingreso['total_cantidad']))
+        p.drawString(7*inch, y, f"{ingreso['total_ingresos']:.2f}")
+        y -= 0.3*inch  # Ajustar la distancia entre filas
+        if y < 1*inch:
+            p.showPage()
+            y = height - 1*inch
+
+    p.showPage()
+    p.save()
+
+    return response
 
 @login_required
 def transferir_articulos(request):
