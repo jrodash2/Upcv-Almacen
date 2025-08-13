@@ -117,6 +117,7 @@ urlpatterns = [
     path('articulos/por-vencer/', views.articulos_por_vencer, name='articulos_por_vencer'),
     
     path('libro-ingresos/pdf/', libro_ingresos_pdf, name='libro_ingresos_pdf'),
+    path('anular_requerimiento/<int:requerimiento_id>/', views.anular_requerimiento, name='anular_requerimiento'),
     
 
 

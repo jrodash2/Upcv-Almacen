@@ -83,6 +83,13 @@ table.order-details th {
 </style>
 
 <div class="page-body">
+  
+
+                {% if requerimiento.estado == 'rechazado' %}
+  <div class="alert alert-danger">
+    <strong>Motivo del rechazo:</strong> {{ motivo_rechazo }}
+  </div>
+{% endif %}
   <!-- Page Sidebar Ends-->
   <div class="page-body">
     <!-- Container-fluid starts -->
@@ -130,6 +137,13 @@ table.order-details th {
 {% if es_admin and requerimiento.estado == 'enviado' %}
   <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalDespachar">
     <i class="fa fa-truck"></i> Despachar Requerimiento
+  </button>
+{% endif %}
+
+<!-- Botón para abrir modal de anulación -->
+{% if es_admin and requerimiento.estado == 'enviado' %}
+  <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#modalAnular">
+    <i class="fa fa-times-circle"></i> Rechazar Requerimiento
   </button>
 {% endif %}
 
@@ -183,6 +197,7 @@ table.order-details th {
                   </tr>
                 </tbody>
               </table>
+
             </td>
           </tr>
 
@@ -234,7 +249,7 @@ table.order-details th {
                         <span>{{ detalle.observaciones }}</span>
                       </td>
                       <td style="text-align: center; vertical-align: middle;">
-{% if requerimiento.estado != 'enviado' and requerimiento.estado != 'despachado' %}
+{% if requerimiento.estado != 'rechazado' and requerimiento.estado != 'enviado' and requerimiento.estado != 'despachado' %}
   <i class="fa fa-edit editar-detalle-btn fa-2x" 
      style="cursor: pointer;" 
      data-id="{{ detalle.id }}" 
@@ -271,7 +286,7 @@ table.order-details th {
 
         </tbody>
       </table>
-      {% if requerimiento.estado != 'enviado' and requerimiento.estado != 'despachado' %}
+{% if requerimiento.estado != 'rechazado' and requerimiento.estado != 'enviado' and requerimiento.estado != 'despachado' %}
   <div style="display: flex; gap: 10px;">
     <button
       class="btn btn-primary"
@@ -287,6 +302,31 @@ table.order-details th {
     </div>
   </div>
 </div>
+
+<!-- Modal de Anulación -->
+<div class="modal fade" id="modalAnular" tabindex="-1" aria-labelledby="modalAnularLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <form method="POST" action="{% url 'almacen:anular_requerimiento' requerimiento_id=requerimiento.id %}">
+      {% csrf_token %}
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalAnularLabel">Anular Requerimiento #{{ requerimiento.id }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <p>¿Estás seguro de que deseas anular este requerimiento?</p>
+          <p><strong>Motivo:</strong></p>
+          <textarea name="motivo_anulacion" class="form-control" rows="4" placeholder="Escribe el motivo de la anulación..." required></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-danger">Confirmar Anulación</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
 
 <!-- Modal de Despacho -->
 <div class="modal fade" id="modalDespachar" tabindex="-1" aria-labelledby="modalDespacharLabel" aria-hidden="true">

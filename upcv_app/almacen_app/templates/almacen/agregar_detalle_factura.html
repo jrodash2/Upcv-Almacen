@@ -300,7 +300,7 @@ table.order-details th {
                       <span>Q{{ detalle.precio_total }}</span>
                     </td>
 <td style="text-align: center; vertical-align: middle;">
-  {% if form1h_instance.estado != 'confirmado' %}
+  {% if form1h_instance.estado != 'confirmado' and form1h_instance.estado != 'anulado' %}
     <i class="fa fa-edit editar-detalle-btn fa-2x" 
        style="cursor: pointer;" 
        data-id="{{ detalle.id }}" 
@@ -357,7 +357,7 @@ table.order-details th {
       </tr>
       
       </table>
-      {% if form1h_instance.estado != 'confirmado' %}
+      {% if form1h_instance.estado != 'confirmado' and form1h_instance.estado != 'anulado' %}
     <!-- Contenedor para los botones -->
     <div style="display: flex; gap: 10px;">
       <!-- Botón de Agregar Detalle -->

@@ -284,7 +284,9 @@ def despachar_requerimiento(request, requerimiento_id):
                 messages.error(request, f"No hay suficiente stock disponible para despachar {detalle.articulo.nombre}.")
                 return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
 
+            # Actualizar estado de detalle y cantidad despachada
             detalle.estado = 'despachado'
+            detalle.cantidad_despachada = detalle.cantidad - cantidad_restante  # Actualizar la cantidad despachada
             detalle.save()
 
         requerimiento.estado = 'despachado'
@@ -297,6 +299,7 @@ def despachar_requerimiento(request, requerimiento_id):
     return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
 
 
+
     
 @login_required
 def crear_requerimiento(request):
@@ -304,7 +307,7 @@ def crear_requerimiento(request):
 
     # Filtrar los requerimientos según el rol del usuario
     if request.user.groups.filter(name='Administrador').exists():
-        requerimientos = Requerimiento.objects.filter( estado__in=['enviado', 'despachado']).order_by('-fecha_creacion')
+        requerimientos = Requerimiento.objects.filter( estado__in=['enviado', 'despachado', 'rechazado']).order_by('-fecha_creacion')
     else:
         requerimientos = Requerimiento.objects.filter(creado_por=request.user)
 
@@ -381,6 +384,11 @@ def detalle_requerimiento(request, requerimiento_id):
 
     es_admin = request.user.groups.filter(name='Administrador').exists()
 
+    # Pasar motivo de rechazo al contexto si el estado es 'rechazado'
+    motivo_rechazo = None
+    if requerimiento.estado == 'rechazado':
+        motivo_rechazo = requerimiento.motivo_rechazo
+
     if request.method == 'POST':
         articulo_id = request.POST.get('articulo')
         cantidad = int(request.POST.get('cantidad', 0))
@@ -410,7 +418,9 @@ def detalle_requerimiento(request, requerimiento_id):
         'detalles_requerimiento': detalles_requerimiento,
         'stock_disponible': stock_disponible,
         'es_admin': es_admin,
+        'motivo_rechazo': motivo_rechazo,  # Agregar el motivo de rechazo al contexto
     })
+
 
 
 @require_GET
@@ -861,6 +871,34 @@ def confirmar_form1h(request, form1h_id):
         messages.warning(request, f'El formulario Serie {formulario.serie.serie} {formulario.numero_serie}  no se puede confirmar en su estado actual.')
 
     return redirect('almacen:agregar_detalle_factura', form1h_id=form1h_id)
+
+@login_required
+@transaction.atomic
+def anular_requerimiento(request, requerimiento_id):
+    if not request.user.groups.filter(name='Administrador').exists():
+        messages.error(request, "No tienes permiso para anular requerimientos.")
+        return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento_id)
+
+    requerimiento = get_object_or_404(Requerimiento, id=requerimiento_id)
+
+    if requerimiento.estado != 'enviado':
+        messages.warning(request, "Solo se pueden anular requerimientos en estado 'enviado'.")
+        return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
+
+    if request.method == 'POST':
+        motivo_anulacion = request.POST.get('motivo_anulacion')
+
+        # Cambiar el estado del requerimiento a "rechazado" y registrar el motivo de anulacion
+        requerimiento.estado = 'rechazado'
+        requerimiento.motivo_rechazo = motivo_anulacion  # Usar el nuevo campo 'motivo_rechazo'
+        requerimiento.save()
+
+        messages.success(request, "Requerimiento anulado exitosamente.")
+        return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
+
+    messages.error(request, "Método no permitido.")
+    return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
+
 
 
 @login_required

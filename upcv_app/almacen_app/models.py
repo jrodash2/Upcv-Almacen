@@ -381,6 +381,7 @@ def guardar_perfil_usuario(sender, instance, **kwargs):
 class Requerimiento(models.Model):
     departamento = models.ForeignKey(Departamento, on_delete=models.CASCADE)
     motivo = models.TextField(max_length=255, blank=True, null=True)
+    motivo_rechazo = models.TextField(max_length=255, blank=True, null=True)  # Nuevo campo
     creado_por = models.ForeignKey(User, on_delete=models.CASCADE)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     estado = models.CharField(max_length=20, choices=[
@@ -393,10 +394,12 @@ class Requerimiento(models.Model):
     def __str__(self):
         return f"Requerimiento #{self.id} - {self.departamento.nombre}"
 
+
 class DetalleRequerimiento(models.Model):
     requerimiento = models.ForeignKey(Requerimiento, related_name='detalles', on_delete=models.CASCADE)
     articulo = models.ForeignKey(Articulo, on_delete=models.CASCADE)
     cantidad = models.PositiveIntegerField()
+    cantidad_despachada = models.PositiveIntegerField(default=0)  # Nuevo campo para cantidad despachada
     observacion = models.TextField(blank=True, null=True)
 
     # NUEVO campo para marcar el estado del detalle
@@ -407,6 +410,7 @@ class DetalleRequerimiento(models.Model):
 
     def __str__(self):
         return f"{self.articulo.nombre} x {self.cantidad}"
+
 
         
         
