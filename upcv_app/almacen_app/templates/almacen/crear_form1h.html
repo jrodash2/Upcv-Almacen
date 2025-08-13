@@ -76,11 +76,14 @@
     <td>{{ registro.numero_serie_completo }}</td>
     <td>{{ registro.fecha_factura }}</td>
     <td>
-      {% if registro.estado == 'confirmado' %}
-        ✅
-      {% else %}
-        ⏳ 
-      {% endif %}
+{% if registro.estado == 'confirmado' %}
+    ✅
+{% elif registro.estado == 'anulado' %}
+    ❌
+{% else %}
+    ⏳
+{% endif %}
+
     </td>
     <td>
       <a href="{% url 'almacen:agregar_detalle_factura' registro.id %}" class="btn btn-primary btn-sm">

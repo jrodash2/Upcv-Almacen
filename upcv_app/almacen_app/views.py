@@ -863,6 +863,23 @@ def confirmar_form1h(request, form1h_id):
     return redirect('almacen:agregar_detalle_factura', form1h_id=form1h_id)
 
 
+@login_required
+@grupo_requerido('Administrador')
+@require_POST
+def anular_form1h(request, form1h_id):
+    formulario = get_object_or_404(form1h, id=form1h_id)
+
+    if formulario.estado != 'anulado':
+        formulario.estado = 'anulado'
+        formulario.save()
+        messages.success(request, f'El formulario Serie {formulario.serie.serie} {formulario.numero_serie} ha sido anulado exitosamente.')
+    else:
+        messages.info(request, f'El formulario Serie {formulario.serie.serie} {formulario.numero_serie} ya está anulado.')
+
+    # Redirige a la misma vista de agregar detalles, como con "confirmar"
+    return redirect('almacen:agregar_detalle_factura', form1h_id=form1h_id)
+
+
 def buscar_proveedor_nit(request, nit):
     try:
         proveedor = Proveedor.objects.get(nit=nit)

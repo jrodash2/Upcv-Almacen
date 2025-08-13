@@ -100,19 +100,35 @@ table.order-details th {
                     <div class="product-hover">
                       <div class="m-t-15 btn-showcase">
     
-    <!-- Botón Confirmar funcional con POST -->
-    {% if form1h_instance.estado != 'confirmado' %}
-        <form method="post" action="{% url 'almacen:confirmar_form1h' form1h_instance.id %}" style="display: inline;">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-outline-warning btn-lg" title="Confirmar">
-                <i class="fa fa-check-circle"></i> Confirmar
-            </button>
-        </form>
-    {% else %}
-        <a class="btn btn-outline-secondary btn-lg disabled" title="Formulario confirmado">
-            <i class="fa fa-check-circle"></i> Confirmado
-        </a>
-    {% endif %}
+{# Botón Confirmar #}
+{% if form1h_instance.estado == 'borrador' %}
+    <form method="post" action="{% url 'almacen:confirmar_form1h' form1h_instance.id %}" style="display: inline;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-warning btn-lg" title="Confirmar">
+            <i class="fa fa-check-circle"></i> Confirmar
+        </button>
+    </form>
+{% else %}
+    <a class="btn btn-outline-secondary btn-lg disabled" title="Formulario confirmado o anulado">
+        <i class="fa fa-check-circle"></i> Confirmar
+    </a>
+{% endif %}
+
+{# Botón Anular #}
+{% if form1h_instance.estado == 'borrador' %}
+    <form method="post" action="{% url 'almacen:anular_form1h' form1h_instance.id %}" style="display: inline;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-danger btn-lg" title="Anular"
+              
+            <i class="fa fa-ban"></i> Anular
+        </button>
+    </form>
+{% else %}
+    <a class="btn btn-outline-secondary btn-lg disabled" title="Formulario confirmado o anulado">
+        <i class="fa fa-ban"></i> Anular
+    </a>
+{% endif %}
+
 
 
 </div>

@@ -69,7 +69,8 @@ urlpatterns = [
     # Asignaciones
     path('asignacion-detalle/nueva/', views.crear_asignacion_detalle, name='crear_asignacion_detalle'),
     path('asignacion-detalle/nueva2/', views.crear_asignacion_detalle_articulo, name='crear_asignacion_detalle_articulo'),
-    
+    path('anular-form1h/<int:form1h_id>/', views.anular_form1h, name='anular_form1h'),
+
     
 
     # Utilidades

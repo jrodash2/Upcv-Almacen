@@ -221,6 +221,7 @@ class form1h(models.Model):
     ESTADO_CHOICES = [
         ('borrador', 'Borrador'),
         ('confirmado', 'Confirmado'),
+        ('anulado', 'Anulado'),               
     ]
 
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='borrador')
