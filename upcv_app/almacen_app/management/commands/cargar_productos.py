@@ -1,4 +1,3 @@
-from django.db.models import Max
 from django.db import transaction
 from decimal import Decimal
 import pandas as pd
@@ -30,6 +29,9 @@ class Command(BaseCommand):
 
         for numero_factura, grupo in facturas:
             self.stdout.write(f'Procesando factura: {numero_factura}')
+
+            # Verificar cuántos detalles hay en la factura
+            self.stdout.write(f'Número de detalles para la factura {numero_factura}: {len(grupo)}')
 
             # Verificar si ya existe un form1h con el numero_factura
             f1h = form1h.objects.filter(numero_factura=numero_factura).first()
@@ -98,17 +100,33 @@ class Command(BaseCommand):
                 cantidad = int(row.get('cantidad', 0))
                 precio_unitario = Decimal(row.get('precio_unitario', 0))
 
-                # Crear detalle factura con el numero_serie adecuado
-                DetalleFactura.objects.create(
+                # Verificar si ya existe un detalle con el mismo artículo para esta factura
+                detalle_existente = DetalleFactura.objects.filter(
                     form1h=f1h,
-                    articulo=articulo,
-                    cantidad=cantidad,
-                    precio_unitario=precio_unitario,
-                    precio_total=cantidad * precio_unitario,
-                    id_linea=articulo.id,
-                    renglon=articulo.id,
-                    fecha_vencimiento=fecha_vencimiento,  # Si es None, se pasa como None
-                )
+                    articulo=articulo
+                ).first()
+
+                if detalle_existente:
+                    # Si ya existe, actualizamos la cantidad y precio
+                    detalle_existente.cantidad += cantidad
+                    detalle_existente.precio_unitario = precio_unitario
+                    detalle_existente.precio_total = detalle_existente.cantidad * precio_unitario
+                    detalle_existente.fecha_vencimiento = fecha_vencimiento
+                    detalle_existente.save()
+                    self.stdout.write(f'Actualizado detalle para artículo {articulo.nombre}')
+                else:
+                    # Si no existe, creamos un nuevo detalle
+                    DetalleFactura.objects.create(
+                        form1h=f1h,
+                        articulo=articulo,
+                        cantidad=cantidad,
+                        precio_unitario=precio_unitario,
+                        precio_total=cantidad * precio_unitario,
+                        id_linea=articulo.id,
+                        renglon=articulo.id,
+                        fecha_vencimiento=fecha_vencimiento,  # Si es None, se pasa como None
+                    )
+                    self.stdout.write(f'Nuevo detalle creado para artículo {articulo.nombre}')
 
             # Guardar estado final en form1h
             if f1h.estado not in ['borrador', 'confirmado', 'anulado']:
@@ -116,5 +134,3 @@ class Command(BaseCommand):
             f1h.save()
 
             self.stdout.write(self.style.SUCCESS(f'Factura {numero_factura} cargada con estado "{f1h.estado}".'))
-
-# comando para cargar datos desde excel:  python manage.py cargar_productos "C:\\Users\\Julio Rodas\\Documents\\carga_masiva.xlsx"
