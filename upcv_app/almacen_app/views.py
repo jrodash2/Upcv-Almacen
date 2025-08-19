@@ -51,6 +51,29 @@ import datetime
 
 from datetime import datetime  
 
+
+@login_required
+@grupo_requerido('Administrador')
+def exportar_detalle_factura_pdf(request, form1h_id):
+    form1h_instance = get_object_or_404(form1h, id=form1h_id)
+    detalles = DetalleFactura.objects.filter(form1h=form1h_instance)
+    institucion = Institucion.objects.first()  # Opcional, si ya lo usas en otros PDF
+
+    total_factura = form1h_instance.calcular_total_factura()
+
+    html_string = render_to_string('almacen/pdf_detalle_factura.html', {
+        'form1h_instance': form1h_instance,
+        'detalles': detalles,
+        'institucion': institucion,
+        'total_factura': total_factura,
+    })
+
+    pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf()
+
+    response = HttpResponse(pdf_file, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="detalle_factura_{form1h_instance.id}.pdf"'
+    return response
+
 def libro_ingresos_pdf(request):
     # Filtros para fecha (si es que se aplican)
     fecha_inicio = request.GET.get('fecha_inicio', '2025-01-01')

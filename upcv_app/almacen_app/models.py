@@ -107,6 +107,8 @@ class DetalleFactura(models.Model):
     id_linea = models.PositiveIntegerField()
     renglon = models.PositiveIntegerField()
     fecha_vencimiento = models.DateField(null=True, blank=True)  # <-- NUEVO CAMPO
+    folio_inventario = models.CharField(max_length=50, null=True, blank=True)
+    nomenclatura = models.CharField(max_length=70, null=True, blank=True)
 
     class Meta:
         constraints = [
@@ -241,6 +243,7 @@ class form1h(models.Model):
     numero_serie = models.PositiveIntegerField(null=True, blank=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_actualizacion = models.DateTimeField(auto_now=True)
+
 
     def save(self, *args, **kwargs):
         if not self.numero_serie:

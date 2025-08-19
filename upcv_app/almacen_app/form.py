@@ -162,12 +162,14 @@ class AsignacionDetalleFacturaForm(forms.ModelForm):
 class DetalleFacturaForm(forms.ModelForm):
     class Meta:
         model = DetalleFactura
-        fields = ['articulo', 'cantidad', 'precio_unitario', 'renglon', 'id_linea', 'fecha_vencimiento']
+        fields = ['articulo', 'cantidad', 'precio_unitario', 'renglon', 'id_linea', 'fecha_vencimiento', 'folio_inventario', 'nomenclatura']
         widgets = {
             'articulo': forms.Select(attrs={'class': 'form-control'}),
             'cantidad': forms.NumberInput(attrs={'class': 'form-control'}),
             'precio_unitario': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'renglon': forms.NumberInput(attrs={'class': 'form-control'}),
+            'folio_inventario': forms.TextInput(attrs={'placeholder': 'Folio Inventario', 'class': 'form-control'}),
+            'nomenclatura': forms.TextInput(attrs={'placeholder': 'Nomenclatura de Cuentas', 'class': 'form-control'}),
             'id_linea': forms.HiddenInput(),
             'fecha_vencimiento': forms.DateInput(attrs={
                 'class': 'form-control',
@@ -247,6 +249,7 @@ class Form1hForm(forms.ModelForm):
             'orden_compra': forms.TextInput(attrs={'placeholder': 'Orden de compra', 'class': 'form-control'}),
             'patente': forms.TextInput(attrs={'placeholder': 'Patente', 'class': 'form-control'}),
             'fecha_factura': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            
         }
 
 

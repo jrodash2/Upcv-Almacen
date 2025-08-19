@@ -114,6 +114,9 @@ table.order-details th {
     </a>
 {% endif %}
 
+<a href="{% url 'almacen:exportar_detalle_factura_pdf' form1h_instance.id %}" target="_blank" class="btn btn-outline-secondary">
+  <i class="fa fa-file-pdf-o"></i> Imprimir
+</a>
 {# Botón Anular #}
 {% if form1h_instance.estado == 'borrador' %}
     <form method="post" action="{% url 'almacen:anular_form1h' form1h_instance.id %}" style="display: inline;">
@@ -442,7 +445,14 @@ table.order-details th {
                 <label for="id_precio_unitario" class="form-label">Precio Unitario</label>
                 <input type="number" class="form-control" id="id_precio_unitario" name="precio_unitario" step="0.01" required />
               </div>
-
+<div class="col-md-6 mb-3">
+                <label for="id_folio_inventario" class="form-label">Folio Inventario</label>
+                {{ form.folio_inventario }}
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="id_nomenclatura" class="form-label">Nomenclatura de Cuentas</label>
+                {{ form.nomenclatura }}
+              </div>
               <!-- Campo para seleccionar el número de línea reservado -->
               <div class="col-md-6 mb-3">
                 <label for="detalle_numero_linea" class="form-label">Número de Línea</label>

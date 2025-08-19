@@ -118,6 +118,7 @@ urlpatterns = [
     
     path('libro-ingresos/pdf/', libro_ingresos_pdf, name='libro_ingresos_pdf'),
     path('anular_requerimiento/<int:requerimiento_id>/', views.anular_requerimiento, name='anular_requerimiento'),
+    path('factura/<int:form1h_id>/exportar-pdf/', views.exportar_detalle_factura_pdf, name='exportar_detalle_factura_pdf'),
     
 
 
