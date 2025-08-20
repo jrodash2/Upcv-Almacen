@@ -8,7 +8,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from .form import DependenciaForm, DetalleFacturaForm, DetalleRequerimientoForm, DetalleRequerimientoFormSet, Form1hForm, PerfilForm, ProgramaForm, RequerimientoForm, UserCreateForm, UserEditForm, UserCreateForm, UbicacionForm, UnidadDeMedidaForm, CategoriaForm, ProveedorForm, ArticuloForm, DepartamentoForm, SerieForm, AsignacionDetalleFacturaForm, UsuarioDepartamentoForm, InstitucionForm
-from .models import ContadorDetalleFactura, DetalleFactura, DetalleRequerimiento, HistorialTransferencia, LineaLibre, Perfil, Requerimiento, Ubicacion, UnidadDeMedida, Categoria, Proveedor, Articulo, Departamento, Kardex, AsignacionDetalleFactura, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa, LineaReservada, UsuarioDepartamento, Institucion
+from .models import ContadorDetalleFactura, DetalleFactura, DetalleRequerimiento, HistorialTransferencia, InventarioDetalle, LineaLibre, Perfil, Requerimiento, Ubicacion, UnidadDeMedida, Categoria, Proveedor, Articulo, Departamento, Kardex, AsignacionDetalleFactura, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa, LineaReservada, UsuarioDepartamento, Institucion
 from django.views.generic import CreateView
 from django.views.generic import ListView
 from django.urls import reverse_lazy
@@ -1011,7 +1011,6 @@ def crear_form1h(request):
         'form1h_list': form1h_list
     })
 
-
 @login_required
 @grupo_requerido('Administrador')
 def agregar_detalle_factura(request, form1h_id):
@@ -1038,6 +1037,10 @@ def agregar_detalle_factura(request, form1h_id):
         numero_linea = request.POST.get('detalle_numero_linea')
         renglon = request.POST.get('renglon')
 
+        # Obtener listas de folio y nomenclatura
+        folios = request.POST.getlist('folio_inventario[]')
+        nomenclaturas = request.POST.getlist('nomenclatura[]')
+
         # Clonar POST y añadir el id_linea que necesita el form
         post_data = request.POST.copy()
         post_data['id_linea'] = numero_linea  # Esto se inyecta en el form
@@ -1057,6 +1060,15 @@ def agregar_detalle_factura(request, form1h_id):
                 )
 
                 detalle.save()
+
+                # Guardar InventarioDetalle solo si folios o nomenclaturas existen
+                for folio, nomen in zip(folios, nomenclaturas):
+                    if folio.strip() or nomen.strip():
+                        InventarioDetalle.objects.create(
+                            detalle_factura=detalle,
+                            folio_inventario=folio.strip(),
+                            nomenclatura=nomen.strip()
+                        )
 
                 # Marcar la línea como no disponible
                 linea_reservada.disponible = False
@@ -1086,8 +1098,9 @@ def agregar_detalle_factura(request, form1h_id):
     })
 
 
-@require_POST
 
+
+@require_POST
 def eliminar_detalle_requerimiento(request, pk):
     if request.method == 'POST':
         try:

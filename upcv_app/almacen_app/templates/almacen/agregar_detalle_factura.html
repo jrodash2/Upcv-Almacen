@@ -389,7 +389,6 @@ table.order-details th {
     </div>
   </div>
 
-
 <!-- Modal para seleccionar artículo con imagen de fondo -->
 <div class="modal fade" id="detalleFacturaModal" tabindex="-1" aria-labelledby="detalleFacturaModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg">
@@ -427,7 +426,10 @@ table.order-details th {
                 <label for="id_articulo" class="form-label">Artículo</label>
                 <select class="form-control" id="id_articulo" name="articulo" required>
                   {% for articulo in articulos %}
-                    <option value="{{ articulo.id }}" data-requiere-vencimiento="{{ articulo.requiere_vencimiento|yesno:'true,false' }}">
+                    <option 
+                      value="{{ articulo.id }}"
+                      data-requiere-vencimiento="{{ articulo.requiere_vencimiento|yesno:'true,false' }}"
+                      data-requiere-inventario="{{ articulo.requiere_inventario_individual|yesno:'true,false' }}">
                       {{ articulo.nombre }}
                     </option>
                   {% endfor %}
@@ -445,15 +447,17 @@ table.order-details th {
                 <label for="id_precio_unitario" class="form-label">Precio Unitario</label>
                 <input type="number" class="form-control" id="id_precio_unitario" name="precio_unitario" step="0.01" required />
               </div>
-<div class="col-md-6 mb-3">
-                <label for="id_folio_inventario" class="form-label">Folio Inventario</label>
-                {{ form.folio_inventario }}
+
+              <!-- NUEVO: Campos dinámicos de Inventario -->
+              <div class="col-md-12 mb-3" id="inventarioFields" style="display: none;">
+                <label class="form-label">Detalle de Inventario (Folio y Nomenclatura)</label>
+                <div id="inventarioRows">
+                  <!-- Filas agregadas dinámicamente aquí -->
+                </div>
+                <button type="button" id="addInventarioRow" class="btn btn-sm btn-primary mt-2">+ Agregar fila</button>
               </div>
-              <div class="col-md-6 mb-3">
-                <label for="id_nomenclatura" class="form-label">Nomenclatura de Cuentas</label>
-                {{ form.nomenclatura }}
-              </div>
-              <!-- Campo para seleccionar el número de línea reservado -->
+
+              <!-- Línea reservada -->
               <div class="col-md-6 mb-3">
                 <label for="detalle_numero_linea" class="form-label">Número de Línea</label>
                 <select name="detalle_numero_linea" class="form-control" required>
@@ -463,7 +467,7 @@ table.order-details th {
                 </select>
               </div>
 
-              <!-- Campo visible para 'renglon' -->
+              <!-- Renglón -->
               <div class="col-md-6 mb-3">
                 <label for="renglon" class="form-label">Renglón</label>
                 <input type="number" id="renglon" class="form-control" name="renglon" value="{{ renglon_value }}" required />
@@ -472,7 +476,7 @@ table.order-details th {
               <!-- Campo oculto para 'id_linea' -->
               <input type="hidden" name="id_linea" value="{{ id_linea_value }}">
 
-              <!-- NUEVO: Campo para fecha de vencimiento (oculto por defecto) -->
+              <!-- Fecha de vencimiento -->
               <div class="col-md-6 mb-3" id="fechaVencimientoContainer" style="display:none;">
                 <label for="fecha_vencimiento" class="form-label">Fecha de Vencimiento</label>
                 <input type="date" id="fecha_vencimiento" name="fecha_vencimiento" class="form-control" />
@@ -511,13 +515,13 @@ table.order-details th {
                   <td>{{ articulo.ubicacion }}</td>
                   <td>
                     <button 
-  class="btn btn-success btn-sm seleccionar-articulo" 
-  data-id="{{ articulo.id }}" 
-  data-nombre="{{ articulo.nombre }}" 
-  data-precio="{{ articulo.precio_unitario }}" 
-  data-requiere-vencimiento="{{ articulo.requiere_vencimiento|yesno:'true,false' }}"
->Seleccionar</button>
-
+                      class="btn btn-success btn-sm seleccionar-articulo" 
+                      data-id="{{ articulo.id }}" 
+                      data-nombre="{{ articulo.nombre }}" 
+                      data-precio="{{ articulo.precio_unitario }}" 
+                      data-requiere-vencimiento="{{ articulo.requiere_vencimiento|yesno:'true,false' }}">
+                      Seleccionar
+                    </button>
                   </td>
                 </tr>
               {% empty %}
@@ -534,7 +538,83 @@ table.order-details th {
   </div>
 </div>
 
+<!-- Script para controlar visibilidad y filas dinámicas -->
 <script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const selectArticulo = document.getElementById('id_articulo');
+    const inventarioFields = document.getElementById('inventarioFields');
+    const inventarioRows = document.getElementById('inventarioRows');
+    const addInventarioBtn = document.getElementById('addInventarioRow');
+    const fechaVencContainer = document.getElementById('fechaVencimientoContainer');
+    const fechaVencInput = document.getElementById('fecha_vencimiento');
+
+    function toggleFields() {
+      const selected = selectArticulo.options[selectArticulo.selectedIndex];
+      const requiereInventario = selected.getAttribute('data-requiere-inventario') === 'true';
+      const requiereVencimiento = selected.getAttribute('data-requiere-vencimiento') === 'true';
+
+      inventarioFields.style.display = requiereInventario ? 'block' : 'none';
+      fechaVencContainer.style.display = requiereVencimiento ? 'block' : 'none';
+      fechaVencInput.required = requiereVencimiento;
+
+      if (!requiereInventario) {
+        inventarioRows.innerHTML = ''; // Limpiar filas si no se requiere inventario
+      } else if (inventarioRows.children.length === 0) {
+        addInventarioRow(); // Agregar fila inicial si está visible y vacío
+      }
+    }
+
+    function addInventarioRow() {
+      const row = document.createElement('div');
+      row.className = 'row inventario-row mb-2';
+
+      row.innerHTML = `
+        <div class="col-md-6">
+          <input type="text" name="folio_inventario[]" class="form-control" placeholder="Folio Inventario" required>
+        </div>
+        <div class="col-md-5">
+          <input type="text" name="nomenclatura[]" class="form-control" placeholder="Nomenclatura" required>
+        </div>
+        <div class="col-md-1">
+          <button type="button" class="btn btn-danger btn-sm remove-row-btn" title="Quitar fila">&times;</button>
+        </div>
+      `;
+
+      inventarioRows.appendChild(row);
+
+      // Evento para eliminar fila
+      row.querySelector('.remove-row-btn').addEventListener('click', () => {
+        row.remove();
+      });
+    }
+
+    addInventarioBtn.addEventListener('click', addInventarioRow);
+    selectArticulo.addEventListener('change', toggleFields);
+    toggleFields(); // Inicializar al cargar
+  });
+</script>
+
+<script>
+
+const articuloSelect = document.getElementById('id_articulo');
+const inventarioFieldsContainer = document.getElementById('inventarioFields');
+
+function toggleInventarioFields() {
+  const selectedOption = articuloSelect.options[articuloSelect.selectedIndex];
+  const requiereInventario = selectedOption.getAttribute('data-requiere-inventario') === 'true';
+
+  if (requiereInventario) {
+    inventarioFieldsContainer.style.display = 'block';
+  } else {
+    inventarioFieldsContainer.style.display = 'none';
+    // Opcional: borrar inputs
+  }
+}
+
+articuloSelect.addEventListener('change', toggleInventarioFields);
+document.addEventListener('DOMContentLoaded', toggleInventarioFields);
+
+
   // Mostrar u ocultar campo fecha de vencimiento según artículo seleccionado
   document.addEventListener('DOMContentLoaded', function () {
     const selectArticulo = document.getElementById('id_articulo');

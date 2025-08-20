@@ -13,42 +13,61 @@
 </head>
 <body>
 
-
-
     <p><strong>Dependencia:</strong> {{ form1h_instance.dependencia }}</p>
     <p><strong>Programa:</strong> {{ form1h_instance.programa }}</p>
     <p><strong>Proveedor:</strong> {{ form1h_instance.proveedor }}</p>
     <p><strong>Fecha:</strong> {{ form1h_instance.fecha_factura }}</p>
     <p><strong>Orden de Compra:</strong> {{ form1h_instance.orden_compra }}</p>
 
- 
     <table>
-        <thead>
-            <tr>
-                <th>Cantidad</th>
-                <th>Detalle</th>
-                <th>Renglón</th>
-                <th>Folio Almacén</th>
-                <th>Precio Unidad</th>
-                <th>Valor Total</th>
-                <th>Folio Inventario</th>
-                <th>Nomenclatura</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for d in detalles %}
-            <tr>
+      <thead>
+        <tr>
+          <th>Cantidad</th>
+          <th>Detalle</th>
+          <th>Renglón</th>
+          <th>Precio Unidad</th>
+          <th>Valor Total</th>
+          <th>Folio Inventario</th>
+          <th>Nomenclatura</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for d in detalles %}
+          {% with inventarios=d.inventarios.all %}
+            {% if inventarios|length > 0 %}
+              <!-- Primera fila con detalle completo y primer inventario -->
+              <tr>
+                <td rowspan="{{ inventarios|length }}">{{ d.cantidad }}</td>
+                <td rowspan="{{ inventarios|length }}">{{ d.articulo.nombre }}</td>
+                <td rowspan="{{ inventarios|length }}">{{ d.renglon }}</td>
+                <td rowspan="{{ inventarios|length }}">Q{{ d.precio_unitario }}</td>
+                <td rowspan="{{ inventarios|length }}">Q{{ d.precio_total }}</td>
+                <td>{{ inventarios.0.folio_inventario }}</td>
+                <td>{{ inventarios.0.nomenclatura }}</td>
+              </tr>
+              <!-- Filas adicionales para inventarios restantes -->
+              {% for inventario in inventarios|slice:"1:" %}
+                <tr>
+                  <td>{{ inventario.folio_inventario }}</td>
+                  <td>{{ inventario.nomenclatura }}</td>
+                </tr>
+              {% endfor %}
+            {% else %}
+              <!-- Sin inventarios -->
+              <tr>
                 <td>{{ d.cantidad }}</td>
                 <td>{{ d.articulo.nombre }}</td>
                 <td>{{ d.renglon }}</td>
-                <td>{{ d.numero_linea }}</td>
                 <td>Q{{ d.precio_unitario }}</td>
-                <td>Q{{ d.total }}</td>
-                <td>{{ d.folio_inventario }}</td>
-                <td>{{ d.nomenclatura }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
+                <td>Q{{ d.precio_total }}</td>
+                <td>-</td>
+                <td>-</td>
+              </tr>
+            {% endif %}
+          {% endwith %}
+        {% endfor %}
+      </tbody>
     </table>
+
 </body>
 </html>

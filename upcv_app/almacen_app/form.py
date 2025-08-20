@@ -277,7 +277,7 @@ class DepartamentoForm(forms.ModelForm):
 class ArticuloForm(forms.ModelForm):
     class Meta:
         model = Articulo
-        fields = ['nombre', 'categoria', 'unidad_medida', 'ubicacion', 'requiere_vencimiento']  # ✅ campo agregado
+        fields = ['nombre', 'categoria', 'unidad_medida', 'ubicacion', 'requiere_vencimiento', 'requiere_inventario_individual']  # ✅ campo agregado
         widgets = {
             'nombre': forms.TextInput(attrs={'placeholder': 'Nombre del artículo', 'class': 'form-control'}),
             'categoria': forms.Select(attrs={'class': 'form-control'}),

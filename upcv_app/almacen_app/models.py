@@ -71,6 +71,7 @@ class Articulo(models.Model):
     ubicacion = models.ForeignKey(Ubicacion, on_delete=models.SET_NULL, null=True, blank=True)
     activo = models.BooleanField(default=True)
     requiere_vencimiento = models.BooleanField(default=False)  # <-- NUEVO CAMPO
+    requiere_inventario_individual = models.BooleanField(default=False)
 
     def __str__(self):
         return f'{self.nombre} ({self.categoria})'
@@ -97,6 +98,14 @@ class UsuarioDepartamento(models.Model):
 
     def __str__(self):
         return f'{self.usuario.username} - {self.departamento.nombre}' 
+ 
+
+class InventarioDetalle(models.Model):
+    detalle_factura = models.ForeignKey('DetalleFactura', on_delete=models.CASCADE, related_name='inventarios')
+    folio_inventario = models.CharField(max_length=30)
+    nomenclatura = models.CharField(max_length=10)
+
+ 
  
 class DetalleFactura(models.Model):
     form1h = models.ForeignKey('form1h', related_name='detalles', on_delete=models.CASCADE)
