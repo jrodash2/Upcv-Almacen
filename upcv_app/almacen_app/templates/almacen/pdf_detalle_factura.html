@@ -25,6 +25,7 @@
           <th>Cantidad</th>
           <th>Detalle</th>
           <th>Renglón</th>
+          <th>Folio Almacén</th>
           <th>Precio Unidad</th>
           <th>Valor Total</th>
           <th>Folio Inventario</th>
@@ -40,6 +41,7 @@
                 <td rowspan="{{ inventarios|length }}">{{ d.cantidad }}</td>
                 <td rowspan="{{ inventarios|length }}">{{ d.articulo.nombre }}</td>
                 <td rowspan="{{ inventarios|length }}">{{ d.renglon }}</td>
+                <td rowspan="{{ inventarios|length }}">{{ d.numero_linea }}</td>
                 <td rowspan="{{ inventarios|length }}">Q{{ d.precio_unitario }}</td>
                 <td rowspan="{{ inventarios|length }}">Q{{ d.precio_total }}</td>
                 <td>{{ inventarios.0.folio_inventario }}</td>
@@ -58,6 +60,7 @@
                 <td>{{ d.cantidad }}</td>
                 <td>{{ d.articulo.nombre }}</td>
                 <td>{{ d.renglon }}</td>
+                <td>{{ d.numero_linea }}</td>
                 <td>Q{{ d.precio_unitario }}</td>
                 <td>Q{{ d.precio_total }}</td>
                 <td>-</td>

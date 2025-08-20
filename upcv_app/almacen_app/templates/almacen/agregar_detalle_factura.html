@@ -514,14 +514,16 @@ table.order-details th {
                   <td>{{ articulo.unidad_medida }}</td>
                   <td>{{ articulo.ubicacion }}</td>
                   <td>
-                    <button 
-                      class="btn btn-success btn-sm seleccionar-articulo" 
-                      data-id="{{ articulo.id }}" 
-                      data-nombre="{{ articulo.nombre }}" 
-                      data-precio="{{ articulo.precio_unitario }}" 
-                      data-requiere-vencimiento="{{ articulo.requiere_vencimiento|yesno:'true,false' }}">
-                      Seleccionar
-                    </button>
+                   <button 
+  class="btn btn-success btn-sm seleccionar-articulo" 
+  data-id="{{ articulo.id }}" 
+  data-nombre="{{ articulo.nombre }}" 
+  data-precio="{{ articulo.precio_unitario }}" 
+  data-requiere-vencimiento="{{ articulo.requiere_vencimiento|yesno:'true,false' }}"
+  data-requiere-inventario="{{ articulo.requiere_inventario_individual|yesno:'true,false' }}">
+  Seleccionar
+</button>
+
                   </td>
                 </tr>
               {% empty %}
@@ -641,29 +643,26 @@ document.addEventListener('DOMContentLoaded', toggleInventarioFields);
     selectArticulo.addEventListener('change', toggleFechaVencimiento);
   });
 
-  document.querySelectorAll('.seleccionar-articulo').forEach(button => {
+
+document.querySelectorAll('.seleccionar-articulo').forEach(button => {
   button.addEventListener('click', () => {
     const articuloId = button.getAttribute('data-id');
-    const requiereVenc = button.getAttribute('data-requiere-vencimiento') === 'true';
 
     const selectArticulo = document.getElementById('id_articulo');
     const fechaVencContainer = document.getElementById('fechaVencimientoContainer');
     const fechaVencInput = document.getElementById('fecha_vencimiento');
-
-    // Actualizar el select para que tenga el artículo seleccionado
+    const inventarioFields = document.getElementById('inventarioFields');
+    const inventarioRows = document.getElementById('inventarioRows');
+    
+    // Seleccionar el artículo en el <select>
     selectArticulo.value = articuloId;
 
-    // Mostrar u ocultar fecha vencimiento según corresponda
-    if (requiereVenc) {
-      fechaVencContainer.style.display = 'block';
-      fechaVencInput.required = true;
-    } else {
-      fechaVencContainer.style.display = 'none';
-      fechaVencInput.required = false;
-      fechaVencInput.value = '';
-    }
+    // Disparar el evento change para activar los scripts dinámicos
+    selectArticulo.dispatchEvent(new Event('change'));
   });
 });
+
+
 
 </script>
 
