@@ -249,7 +249,7 @@ table.order-details th {
                         <span>{{ detalle.observaciones }}</span>
                       </td>
                       <td style="text-align: center; vertical-align: middle;">
-{% if requerimiento.estado != 'rechazado' and requerimiento.estado != 'enviado' and requerimiento.estado != 'despachado' %}
+{% if requerimiento.estado != 'rechazado' and requerimiento.estado != 'enviado' and requerimiento.estado != 'despachado' and requerimiento.estado != 'parcial' %}
   <i class="fa fa-edit editar-detalle-btn fa-2x" 
      style="cursor: pointer;" 
      data-id="{{ detalle.id }}" 
@@ -286,7 +286,7 @@ table.order-details th {
 
         </tbody>
       </table>
-{% if requerimiento.estado != 'rechazado' and requerimiento.estado != 'enviado' and requerimiento.estado != 'despachado' %}
+{% if requerimiento.estado != 'rechazado' and requerimiento.estado != 'enviado' and requerimiento.estado != 'despachado' and requerimiento.estado != 'parcial' %}
   <div style="display: flex; gap: 10px;">
     <button
       class="btn btn-primary"

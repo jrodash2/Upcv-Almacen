@@ -173,9 +173,12 @@
           <p style="margin: 0; padding: 0; font-size: 12px;">
             <strong style="color: #020202ff">Fecha:</strong> {{ requerimiento.fecha_creacion|date:"d \d\e F \d\e Y" }}
           </p>
+          {% if requerimiento.estado != 'pendiente' %}
           <p style="margin: 0; padding: 0; font-size: 12px;">
+             
             <strong style="color: #020202ff">Estado:</strong> {{ requerimiento.get_estado_display }}
           </p>
+             {% endif %}
         </div>
       </div>
     </div>
@@ -236,12 +239,17 @@
       </thead>
       <tbody>
         {% for detalle in detalles_requerimiento %}
-          <tr>
-            <td class="small-cell">{{ detalle.cantidad }}</td>
-            <td class="small-cell">{{ detalle.articulo.unidad_medida }}</td>
-            <td class="descripcion-Articulo">{{ detalle.articulo.nombre }}</td>
-            <td class="small-cell">{{ detalle.cantidad_despachada }}</td>
-          </tr>
+         <tr>
+  <td class="small-cell">{{ detalle.cantidad }}</td>
+  <td class="small-cell">{{ detalle.articulo.unidad_medida }}</td>
+  <td class="descripcion-Articulo">{{ detalle.articulo.nombre }}</td>
+  <td class="small-cell">
+    {% if requerimiento.estado != 'pendiente' %}
+      {{ detalle.cantidad_despachada }}
+    {% endif %}
+  </td>
+</tr>
+
         {% empty %}
           <tr>
             <td colspan="4">No hay detalles registrados.</td>
