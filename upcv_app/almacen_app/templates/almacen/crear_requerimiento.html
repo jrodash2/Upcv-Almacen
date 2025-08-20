@@ -83,6 +83,8 @@
   ❌ Rechazado
 {% elif req.estado == 'enviado' %}
   📤 Enviado
+{% elif req.estado == 'parcial' %}
+  🟡 Parcial
 {% else %}
   ⏳ Pendiente
 {% endif %}

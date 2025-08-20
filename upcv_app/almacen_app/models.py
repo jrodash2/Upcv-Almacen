@@ -400,6 +400,7 @@ class Requerimiento(models.Model):
         ('pendiente', 'Pendiente'),
         ('despachado', 'Despachado'),
         ('rechazado', 'Rechazado'),
+        ('parcial', 'Parcial'),
         ('enviado', 'Enviado'),
     ], default='pendiente')
 
@@ -417,6 +418,7 @@ class DetalleRequerimiento(models.Model):
     # NUEVO campo para marcar el estado del detalle
     estado = models.CharField(max_length=20, choices=[
         ('pendiente', 'Pendiente'),
+        ('parcial', 'Parcial'),
         ('despachado', 'Despachado'),
     ], default='pendiente')
 

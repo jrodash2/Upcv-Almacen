@@ -261,19 +261,25 @@ def despachar_requerimiento(request, requerimiento_id):
 
         detalles = DetalleRequerimiento.objects.filter(requerimiento=requerimiento)
 
-        # Validar cantidades
         for detalle in detalles:
             cantidad_a_despachar = cantidades_dict.get(detalle.id, 0)
-            if cantidad_a_despachar != detalle.cantidad:
-                messages.error(request, f"Debes despachar exactamente {detalle.cantidad} unidades de {detalle.articulo.nombre}.")
+
+            # Validación: no se puede despachar más de lo solicitado
+            if cantidad_a_despachar > detalle.cantidad:
+                messages.error(request, f"No puedes despachar más de lo solicitado para {detalle.articulo.nombre}.")
                 return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
 
-        # Despachar cada artículo desde los lotes disponibles
+            # Validación: no despachar cantidades negativas
+            if cantidad_a_despachar < 0:
+                messages.error(request, f"La cantidad a despachar para {detalle.articulo.nombre} no puede ser negativa.")
+                return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
+
+        # Despacho desde los lotes disponibles
         for detalle in detalles:
             articulo = detalle.articulo
-            cantidad_restante = detalle.cantidad
+            cantidad_a_despachar = cantidades_dict.get(detalle.id, 0)
+            cantidad_restante = cantidad_a_despachar
 
-            # Buscar lotes disponibles (DetalleFactura) con stock > 0
             lotes = DetalleFactura.objects.filter(
                 articulo=articulo,
                 form1h__estado='confirmado'
@@ -307,12 +313,16 @@ def despachar_requerimiento(request, requerimiento_id):
                 messages.error(request, f"No hay suficiente stock disponible para despachar {detalle.articulo.nombre}.")
                 return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
 
-            # Actualizar estado de detalle y cantidad despachada
-            detalle.estado = 'despachado'
-            detalle.cantidad_despachada = detalle.cantidad - cantidad_restante  # Actualizar la cantidad despachada
+            # Actualizar el detalle
+            detalle.cantidad_despachada = cantidad_a_despachar
+            detalle.estado = 'despachado' if cantidad_a_despachar == detalle.cantidad else 'parcial'
             detalle.save()
 
-        requerimiento.estado = 'despachado'
+        # Verificar si todos los detalles fueron despachados completamente
+        if all(d.estado == 'despachado' for d in detalles):
+            requerimiento.estado = 'despachado'
+        else:
+            requerimiento.estado = 'parcial'
         requerimiento.save()
 
         messages.success(request, "Requerimiento despachado exitosamente.")
@@ -320,8 +330,6 @@ def despachar_requerimiento(request, requerimiento_id):
 
     messages.error(request, "Método no permitido.")
     return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
-
-
 
     
 @login_required
@@ -379,9 +387,9 @@ def detalle_requerimiento(request, requerimiento_id):
     # Despachados
     despachos_qs = (
         DetalleRequerimiento.objects
-        .filter(requerimiento__departamento=requerimiento.departamento, requerimiento__estado='despachado')
+        .filter(requerimiento__departamento=requerimiento.departamento)
         .values('articulo')
-        .annotate(total_despachado=Sum('cantidad'))
+        .annotate(total_despachado=Sum('cantidad_despachada'))
     )
     despachos_dict = {item['articulo']: item['total_despachado'] for item in despachos_qs}
 
@@ -679,9 +687,9 @@ def detalle_departamento(request, pk):
 
         despachados = (
             DetalleRequerimiento.objects
-            .filter(requerimiento__departamento=departamento, requerimiento__estado='despachado')
+            .filter(requerimiento__departamento=departamento)
             .values('articulo__id')
-            .annotate(total_despachado=Sum('cantidad'))
+            .annotate(total_despachado=Sum('cantidad_despachada'))
         )
         despachados_dict = {d['articulo__id']: d['total_despachado'] for d in despachados}
 
@@ -1611,7 +1619,7 @@ def signin(request):
                 if g.name == 'Administrador':
                     return redirect('almacen:dahsboard')
                 elif g.name == 'Departamento':
-                    return redirect('almacen:dahsboard')
+                    return redirect('almacen:crear_requerimiento')
                 elif g.name == 'tecnico':
                     return redirect('tickets:tickets_dahsboard')
             # Si no se encuentra el grupo adecuado, se redirige a una página por defecto

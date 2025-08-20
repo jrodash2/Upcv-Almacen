@@ -253,7 +253,7 @@
   {# Mostrar "Asignados" a Departamentos #}
   {% if es_departamento%}
    </li>
-                              <li class="sidebar-list"><i class="fa fa-thumb-tack"></i><a class="sidebar-link " href="{% url 'almacen:crear_requerimiento' %}">
+                <li class="sidebar-list"><i class="fa fa-thumb-tack"></i><a class="sidebar-link " href="{% url 'almacen:crear_requerimiento' %}">
                   <svg class="stroke-icon">
                     <use href="../assets/svg/icon-sprite.svg#stroke-gallery"></use>
                   </svg>
@@ -262,20 +262,16 @@
                   </svg><span>Requerimientos</span></a>
 
               </li>
-    <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
-      <a class="sidebar-link sidebar-title" href="#">
-        <svg class="stroke-icon">
-          <use href="../assets/svg/icon-sprite.svg#stroke-gallery"></use>
-        </svg>
-        <svg class="fill-icon">
-          <use href="../assets/svg/icon-sprite.svg#fill-gallery"></use>
-        </svg>
-        <span>Asignados</span>
-      </a>
-      <ul class="sidebar-submenu">
+               <li class="sidebar-list"><i class="fa fa-thumb-tack"></i><a class="sidebar-link " href="{% url 'almacen:lista_departamentos' %}">
+                  <svg class="stroke-icon">
+                    <use href="../assets/svg/icon-sprite.svg#stroke-gallery"></use>
+                  </svg>
+                  <svg class="fill-icon">
+                    <use href="{% url 'almacen:lista_departamentos' %}"></use>
+                  </svg><span>Asignados</span></a>
 
-           <li><a href="{% url 'almacen:lista_departamentos' %}">Agisnados</a></li>
-      </ul>
+              </li>
+    
               
   {% endif %}
 
@@ -326,12 +322,29 @@
         <svg class="fill-icon">
           <use href="../assets/svg/icon-sprite.svg#fill-gallery"></use>
         </svg>
-        <span>Asignados</span>
+        <span>Departamentos</span>
       </a>
       <ul class="sidebar-submenu">
+                  <li><a href="{% url 'almacen:crear_departamento' %}">Crear Departamentos</a></li>
+           
+                   <li><a href="{% url 'almacen:asignar_departamento' %}">Asignar Departamentos</a></li>
+           <li><a href="{% url 'almacen:lista_departamentos' %}">Detalle Departamentos</a></li>
           
-           <li><a href="{% url 'almacen:crear_asignacion_detalle' %}">Asignar</a></li>
-           <li><a href="{% url 'almacen:lista_departamentos' %}">Agisnados</a></li>
+      </ul>
+    </li>
+        <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
+      <a class="sidebar-link sidebar-title" href="#">
+        <svg class="stroke-icon">
+          <use href="../assets/svg/icon-sprite.svg#stroke-gallery"></use>
+        </svg>
+        <svg class="fill-icon">
+          <use href="../assets/svg/icon-sprite.svg#fill-gallery"></use>
+        </svg>
+        <span>Articulos</span>
+      </a>
+      <ul class="sidebar-submenu">
+                          <li><a href="{% url 'almacen:crear_articulo' %}">Crear Artículos</a></li>
+ <li><a href="{% url 'almacen:crear_asignacion_detalle' %}">Asignar Articulo</a></li>
       </ul>
     </li>
 
@@ -347,15 +360,12 @@
       </a>
       <ul class="sidebar-submenu">
         <li><a href="{% url 'almacen:crear_unidad' %}">Unidades</a></li>
-        <li><a href="{% url 'almacen:crear_departamento' %}">Departamentos</a></li>
+        <li><a href="{% url 'almacen:crear_ubicacion' %}">Ubicaciones</a></li>
         <li><a href="{% url 'almacen:crear_categoria' %}">Categorías</a></li>
         <li><a href="{% url 'almacen:crear_programa' %}">Programas</a></li>
         <li><a href="{% url 'almacen:crear_dependencia' %}">Dependencias</a></li>
         <li><a href="{% url 'almacen:crear_proveedor' %}">Proveedores</a></li>
-        <li><a href="{% url 'almacen:crear_articulo' %}">Artículos</a></li>
         <li><a href="{% url 'almacen:user_create' %}">Usuarios</a></li>
-        <li><a href="{% url 'almacen:asignar_departamento' %}">Asignar Depto.</a></li>
-        <li><a href="{% url 'almacen:crear_ubicacion' %}">Ubicaciones</a></li>
         <li><a href="{% url 'almacen:lista_series' %}">Series 1H</a></li>
         <li><a href="{% url 'almacen:editar_institucion' %}">Institución</a></li>
         <li><a href="#">Manuales</a></li>
