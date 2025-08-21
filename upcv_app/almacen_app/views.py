@@ -53,7 +53,7 @@ from datetime import datetime
 
 
 @login_required
-@grupo_requerido('Administrador')
+@grupo_requerido('Administrador', 'Almacen')
 def exportar_detalle_factura_pdf(request, form1h_id):
     form1h_instance = get_object_or_404(form1h, id=form1h_id)
     detalles = DetalleFactura.objects.filter(form1h=form1h_instance)
@@ -132,6 +132,7 @@ def libro_ingresos_pdf(request):
     return response
 
 @login_required
+@grupo_requerido('Administrador', 'Almacen')
 def transferir_articulos(request):
     departamentos = Departamento.objects.all()
 
@@ -219,6 +220,7 @@ def articulos_asignados(request, departamento_id):
     
     
 @login_required
+@grupo_requerido('Administrador')
 def editar_institucion(request):
     institucion = Institucion.objects.first()  # Solo debería haber una
 
@@ -237,6 +239,7 @@ def editar_institucion(request):
 from django.db.models import F
 
 @login_required
+@grupo_requerido('Administrador', 'Almacen')
 @transaction.atomic
 def despachar_requerimiento(request, requerimiento_id):
     if not request.user.groups.filter(name='Administrador').exists():
@@ -338,7 +341,7 @@ def crear_requerimiento(request):
 
     # Filtrar los requerimientos según el rol del usuario
     if request.user.groups.filter(name='Administrador').exists():
-        requerimientos = Requerimiento.objects.filter( estado__in=['enviado', 'despachado', 'rechazado']).order_by('-fecha_creacion')
+        requerimientos = Requerimiento.objects.filter( estado__in=['enviado', 'despachado', 'rechazado', 'parcial']).order_by('-fecha_creacion')
     else:
         requerimientos = Requerimiento.objects.filter(creado_por=request.user)
 
@@ -528,6 +531,8 @@ def exportar_requerimiento_pdf(request, requerimiento_id):
     response['Content-Disposition'] = f'inline; filename="requerimiento_{requerimiento.id}.pdf"'
     return response
 
+@login_required
+@grupo_requerido('Administrador', 'Almacen')
 def historial_kardex_articulo(request, articulo_id):
     articulo = get_object_or_404(Articulo, id=articulo_id)
     movimientos = Kardex.objects.filter(articulo=articulo).order_by('fecha', 'id')
@@ -537,7 +542,8 @@ def historial_kardex_articulo(request, articulo_id):
     })
 
 
-
+@login_required
+@grupo_requerido('Administrador', 'Almacen')
 def ver_stock_formulario_1h(request):
     ingresos = DetalleFactura.objects.filter(
         form1h__estado='confirmado'
@@ -600,7 +606,7 @@ def ver_stock_formulario_1h(request):
     
 
 @login_required
-@grupo_requerido('Administrador')
+@grupo_requerido('Administrador', 'Almacen')
 @user_passes_test(lambda u: u.is_superuser or u.groups.filter(name='Administrador').exists())
 def asignar_departamento_usuario(request):
     if request.method == 'POST':
@@ -735,7 +741,7 @@ def detalle_departamento(request, pk):
 
 
 @login_required
-@grupo_requerido('Administrador')
+@grupo_requerido('Administrador', 'Almacen')
 def crear_asignacion_detalle(request):
     if request.method == 'POST':
         form = AsignacionDetalleFacturaForm(request.POST)
@@ -775,7 +781,7 @@ def crear_asignacion_detalle(request):
 
    
 @login_required
-@grupo_requerido('Administrador')
+@grupo_requerido('Administrador', 'Almacen')
 def crear_asignacion_detalle_articulo(request):
     if request.method == 'POST':
         form = AsignacionDetalleFacturaForm(request.POST)
@@ -865,7 +871,7 @@ def buscar_articulos(request):
     return JsonResponse(results, safe=False)
     
 @login_required
-@grupo_requerido('Administrador')    
+@grupo_requerido('Administrador', 'Almacen')   
 def serie_form_list(request, pk=None):
     if pk:
         instance = get_object_or_404(Serie, pk=pk)
@@ -887,7 +893,7 @@ def serie_form_list(request, pk=None):
     })
 
 @login_required
-@grupo_requerido('Administrador')
+@grupo_requerido('Administrador', 'Almacen')
 @require_POST
 def confirmar_form1h(request, form1h_id):
     formulario = get_object_or_404(form1h, id=form1h_id)
@@ -904,6 +910,7 @@ def confirmar_form1h(request, form1h_id):
     return redirect('almacen:agregar_detalle_factura', form1h_id=form1h_id)
 
 @login_required
+@grupo_requerido('Administrador', 'Almacen')
 @transaction.atomic
 def anular_requerimiento(request, requerimiento_id):
     if not request.user.groups.filter(name='Administrador').exists():
@@ -933,7 +940,7 @@ def anular_requerimiento(request, requerimiento_id):
 
 
 @login_required
-@grupo_requerido('Administrador')
+@grupo_requerido('Administrador', 'Almacen')
 @require_POST
 def anular_form1h(request, form1h_id):
     formulario = get_object_or_404(form1h, id=form1h_id)
@@ -976,7 +983,7 @@ def buscar_proveedor_id(request, proveedor_id):
         return JsonResponse({'error': 'Proveedor no encontrado'}, status=404)
 
 @login_required
-@grupo_requerido('Administrador')
+@grupo_requerido('Administrador', 'Almacen')
 def crear_form1h(request):
     form1h_list = form1h.objects.all()
     form = Form1hForm(request.POST or None)
@@ -1020,7 +1027,7 @@ def crear_form1h(request):
     })
 
 @login_required
-@grupo_requerido('Administrador')
+@grupo_requerido('Administrador', 'Almacen')
 def agregar_detalle_factura(request, form1h_id):
     form1h_instance = get_object_or_404(form1h, id=form1h_id)
     detalles_factura = DetalleFactura.objects.filter(form1h=form1h_instance)
@@ -1109,6 +1116,7 @@ def agregar_detalle_factura(request, form1h_id):
 
 
 @require_POST
+@grupo_requerido('Administrador', 'Almacen')
 def eliminar_detalle_requerimiento(request, pk):
     if request.method == 'POST':
         try:
@@ -1121,7 +1129,7 @@ def eliminar_detalle_requerimiento(request, pk):
 
 # Views for Departamento
 @login_required
-@grupo_requerido('Administrador')
+@grupo_requerido('Administrador', 'Almacen')
 def crear_departamento(request):
     departamentos = Departamento.objects.all()  # Obtener todos los departamentos
     form = DepartamentoForm(request.POST or None)  # Crear el formulario
@@ -1131,7 +1139,7 @@ def crear_departamento(request):
     return render(request, 'almacen/crear_departamento.html', {'form': form, 'departamentos': departamentos})
 
 @login_required
-@grupo_requerido('Administrador')
+@grupo_requerido('Administrador', 'Almacen')
 def editar_departamento(request, pk):
     departamento = get_object_or_404(Departamento, pk=pk)  # Obtener el departamento por su PK
     form = DepartamentoForm(request.POST or None, instance=departamento)  # Rellenar el formulario con los datos existentes
@@ -1143,7 +1151,7 @@ def editar_departamento(request, pk):
 
 # Create your views here.
 @login_required
-@grupo_requerido('Administrador')
+@grupo_requerido('Administrador', 'Almacen')
 def crear_articulo(request):
     articulos = Articulo.objects.all()  # Obtener todos los artículos
     form = ArticuloForm(request.POST or None)  # Crear el formulario
@@ -1153,7 +1161,7 @@ def crear_articulo(request):
     return render(request, 'almacen/crear_articulo.html', {'form': form, 'articulos': articulos})
 
 @login_required
-@grupo_requerido('Administrador')
+@grupo_requerido('Administrador', 'Almacen')
 def editar_articulo(request, pk):
     articulo = get_object_or_404(Articulo, pk=pk)  # Obtener el artículo por su PK
     form = ArticuloForm(request.POST or None, instance=articulo)  # Rellenar el formulario con los datos existentes
@@ -1163,7 +1171,7 @@ def editar_articulo(request, pk):
     return render(request, 'almacen/editar_articulo.html', {'form': form, 'articulos': Articulo.objects.all()})
 
 @login_required
-@grupo_requerido('Administrador')
+@grupo_requerido('Administrador', 'Almacen')
 def crear_proveedor(request):
     proveedores = Proveedor.objects.all()  # Obtener todos los proveedores
     form = ProveedorForm(request.POST or None)  # Crear el formulario
@@ -1173,7 +1181,7 @@ def crear_proveedor(request):
     return render(request, 'almacen/crear_proveedor.html', {'form': form, 'proveedores': proveedores})
 
 @login_required
-@grupo_requerido('Administrador')
+@grupo_requerido('Administrador', 'Almacen')
 def editar_proveedor(request, pk):
     proveedor = get_object_or_404(Proveedor, pk=pk)  # Obtener el proveedor por su PK
     form = ProveedorForm(request.POST or None, instance=proveedor)  # Rellenar el formulario con los datos existentes
@@ -1184,7 +1192,7 @@ def editar_proveedor(request, pk):
 
 # Views for Categoria
 @login_required
-@grupo_requerido('Administrador')
+@grupo_requerido('Administrador', 'Almacen')
 def crear_categoria(request):
     categorias = Categoria.objects.all()  # Obtener todas las categorías
     form = CategoriaForm(request.POST or None)  # Crear el formulario
@@ -1194,7 +1202,7 @@ def crear_categoria(request):
     return render(request, 'almacen/crear_categoria.html', {'form': form, 'categorias': categorias})
 
 @login_required
-@grupo_requerido('Administrador')
+@grupo_requerido('Administrador', 'Almacen')
 def editar_categoria(request, pk):
     categoria = get_object_or_404(Categoria, pk=pk)  # Obtener la categoría por su PK
     form = CategoriaForm(request.POST or None, instance=categoria)  # Rellenar el formulario con los datos existentes
@@ -1204,7 +1212,7 @@ def editar_categoria(request, pk):
     return render(request, 'almacen/editar_categoria.html', {'form': form, 'categorias': Categoria.objects.all()})
 
 @login_required
-@grupo_requerido('Administrador')
+@grupo_requerido('Administrador', 'Almacen')
 def crear_unidad(request):
     unidades = UnidadDeMedida.objects.all()  # Obtener todas las unidades de medida
     form = UnidadDeMedidaForm(request.POST or None)  # Crear el formulario
@@ -1214,7 +1222,7 @@ def crear_unidad(request):
     return render(request, 'almacen/crear_unidad.html', {'form': form, 'unidades': unidades})
 
 @login_required
-@grupo_requerido('Administrador')
+@grupo_requerido('Administrador', 'Almacen')
 def editar_unidad(request, pk):
     unidad = get_object_or_404(UnidadDeMedida, pk=pk)
     if request.method == 'POST':
@@ -1228,7 +1236,7 @@ def editar_unidad(request, pk):
     return render(request, 'almacen/crear_unidad.html', {'form': form})
 
 @login_required
-@grupo_requerido('Administrador')
+@grupo_requerido('Administrador', 'Almacen')
 def crear_programa(request):
     programas = Programa.objects.all()
     form = ProgramaForm(request.POST or None)
@@ -1239,7 +1247,7 @@ def crear_programa(request):
 
 
 @login_required
-@grupo_requerido('Administrador')
+@grupo_requerido('Administrador', 'Almacen')
 def editar_programa(request, pk):
     programa = get_object_or_404(Programa, pk=pk)
     programas = Programa.objects.all()
@@ -1253,7 +1261,7 @@ def editar_programa(request, pk):
     return render(request, 'almacen/crear_programa.html', {'form': form, 'programas': programas})
 
 @login_required
-@grupo_requerido('Administrador')
+@grupo_requerido('Administrador', 'Almacen')
 def crear_dependencia(request):
     dependencias = Dependencia.objects.all()
     form = DependenciaForm(request.POST or None)
@@ -1264,7 +1272,7 @@ def crear_dependencia(request):
 
 
 @login_required
-@grupo_requerido('Administrador')
+@grupo_requerido('Administrador', 'Almacen')
 def editar_dependencia(request, pk):
     dependencia = get_object_or_404(Dependencia, pk=pk)
     dependencias = Dependencia.objects.all()
@@ -1280,7 +1288,7 @@ def editar_dependencia(request, pk):
     return render(request, 'almacen/crear_dependencia.html', {'form': form, 'dependencias': dependencias})
 
 @login_required
-@grupo_requerido('Administrador')
+@grupo_requerido('Administrador', 'Almacen')
 def crear_ubicacion(request):
     ubicaciones = Ubicacion.objects.all()
     form = UbicacionForm(request.POST or None)
@@ -1302,7 +1310,7 @@ def crear_ubicacion(request):
     return render(request, 'almacen/crear_ubicacion.html', {'form': form, 'ubicaciones': ubicaciones})
 
 @login_required
-@grupo_requerido('Administrador')
+@grupo_requerido('Administrador', 'Almacen')
 def editar_ubicacion(request, pk):
     ubicacion = get_object_or_404(Ubicacion, pk=pk)
     form = UbicacionForm(request.POST or None, instance=ubicacion)
@@ -1312,7 +1320,7 @@ def editar_ubicacion(request, pk):
     return render(request, 'almacen/editar_ubicacion.html', {'form': form, 'ubicaciones': Ubicacion.objects.all()})
 
 @login_required
-@grupo_requerido('Administrador')
+@grupo_requerido('Administrador', 'Almacen')
 def buscar_proveedor_por_nit(request, nit):
     try:
         proveedor = Proveedor.objects.get(nit=nit)
@@ -1346,7 +1354,7 @@ def obtener_detalle_factura(request, detalle_id):
     return JsonResponse(data)
 
 @login_required
-@grupo_requerido('Administrador')    
+@grupo_requerido('Administrador', 'Almacen')  
 def editar_detalle_factura(request):
     if request.method == 'POST':
         detalle_id = request.POST.get("detalle_id")  # Obtener el ID del detalle
@@ -1383,7 +1391,7 @@ def editar_detalle_factura(request):
     return HttpResponseNotAllowed(['POST'])
 
 @login_required
-@grupo_requerido('Administrador')
+@grupo_requerido('Administrador', 'Almacen')
 def user_create(request):
     if request.method == 'POST':
         form = UserCreateForm(request.POST, request.FILES)
@@ -1416,7 +1424,7 @@ def user_create(request):
     return render(request, 'almacen/user_form_create.html', {'form': form, 'users': users})
 
 @login_required
-@grupo_requerido('Administrador')
+@grupo_requerido('Administrador', 'Almacen')
 def user_edit(request, user_id):
     user = get_object_or_404(User, pk=user_id)
     try:
@@ -1443,6 +1451,7 @@ def user_edit(request, user_id):
     return render(request, 'almacen/user_form_edit.html', context)
 
 @login_required
+@grupo_requerido('Administrador', 'Almacen')
 def perfil_edit(request, user_id):
     user = get_object_or_404(User, pk=user_id)
     try:
@@ -1461,6 +1470,7 @@ def perfil_edit(request, user_id):
     return render(request, 'almacen/perfil_edit.html', {'form': form, 'user': user})
 
 @login_required
+@grupo_requerido('Administrador', 'Almacen')
 def user_delete(request, user_id):
     user = get_object_or_404(User, id=user_id)
     if request.method == 'POST':
@@ -1478,6 +1488,7 @@ from django.db.models import Count, Q, Sum
 import json
 
 @login_required
+@grupo_requerido('Administrador', 'Almacen')
 def dahsboard(request):
     # Totales de artículos activos/inactivos
     totales_articulos = Articulo.objects.aggregate(
@@ -1542,6 +1553,7 @@ def dahsboard(request):
     return render(request, 'almacen/dashboard.html', context)
 
 @login_required
+@grupo_requerido('Administrador', 'Almacen')
 def articulos_por_vencer(request):
     today = timezone.now().date()
     limite = today + timedelta(days=30)
@@ -1620,8 +1632,8 @@ def signin(request):
                     return redirect('almacen:dahsboard')
                 elif g.name == 'Departamento':
                     return redirect('almacen:crear_requerimiento')
-                elif g.name == 'tecnico':
-                    return redirect('tickets:tickets_dahsboard')
+                elif g.name == 'Almacen':
+                    return redirect('almacen:dahsboard')
             # Si no se encuentra el grupo adecuado, se redirige a una página por defecto
             return redirect('dahsboard')
         else:

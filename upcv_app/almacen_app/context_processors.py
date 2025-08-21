@@ -23,6 +23,7 @@ def grupo_usuario(request):
     return {
         'es_departamento': request.user.groups.filter(name='Departamento').exists(),
         'es_administrador': request.user.groups.filter(name='Administrador').exists(),
+        'es_almacen': request.user.groups.filter(name='Almacen').exists(),
     }
 
 

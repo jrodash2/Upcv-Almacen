@@ -1,6 +1,9 @@
 from .models import ContadorDetalleFactura, LineaLibre, LineaReservada, AsignacionDetalleFactura
-
+from functools import wraps
+from django.http import HttpResponseForbidden
 from django.contrib.auth.decorators import user_passes_test
+from django.shortcuts import redirect
+from django.urls import reverse
 
 def reservar_lineas(cantidad, form1h_instance):
     contador_global, _ = ContadorDetalleFactura.objects.get_or_create(id=1)
@@ -28,11 +31,19 @@ def reservar_lineas(cantidad, form1h_instance):
     return lineas_reservadas
 
 
+def grupo_requerido(*nombres_grupos):
+    def decorador(view_func):
+        @wraps(view_func)
+        def _wrapped_view(request, *args, **kwargs):
+            if request.user.is_authenticated and (
+                request.user.groups.filter(name__in=nombres_grupos).exists() or request.user.is_superuser
+            ):
+                return view_func(request, *args, **kwargs)
+            # Redirigir a la vista de acceso denegado
+            return redirect(reverse('almacen:acceso_denegado'))
+        return _wrapped_view
+    return decorador
 
-def grupo_requerido(nombre_grupo):
-    def in_group(user):
-        return user.is_authenticated and user.groups.filter(name=nombre_grupo).exists()
-    return user_passes_test(in_group)
 
 from django.db.models import Sum
 
