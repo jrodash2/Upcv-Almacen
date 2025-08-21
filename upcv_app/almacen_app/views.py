@@ -340,7 +340,8 @@ def crear_requerimiento(request):
     form = RequerimientoForm(request.POST or None, usuario=request.user)
 
     # Filtrar los requerimientos según el rol del usuario
-    if request.user.groups.filter(name='Administrador').exists():
+    if request.user.groups.filter(name__in=['Administrador', 'Almacen']).exists():
+        
         requerimientos = Requerimiento.objects.filter( estado__in=['enviado', 'despachado', 'rechazado', 'parcial']).order_by('-fecha_creacion')
     else:
         requerimientos = Requerimiento.objects.filter(creado_por=request.user)

@@ -146,58 +146,72 @@
 </head>
 <body>
 
-<!-- Logos arriba -->
+{% comment %} <!-- Logos arriba -->
 <div class="logo-row">
   <img src="{{ institucion.logo.url }}" alt="Logo 1">
   <img src="{{ institucion.logo2.url }}" alt="Logo 2">
-</div>
+</div> {% endcomment %}
+  <br>  <br>  <br>  <br>  <br>  <br>  <br>
 
-<!-- invoice Description -->
-<div class="card-body border-top pt-20 mt-30">
-  <!-- Título del Departamento -->
-  <div style="display: flex; justify-content: center; align-items: center; width: 100%; border-top: 0.3px solid #0b2a4a;">
-    <p class="text-center text-15" style="margin: 0; padding: 0; color: #0b2a4a;">
-      <strong>{{ requerimiento.departamento.nombre }}</strong>
-    </p>
-  </div>
-  <br>
 
-  <div class="row">
-    <!-- Primera columna con datos de Departamento y Creado por -->
-    <div class="col-sm-6">
-      <div class="invoice-details mb-20">
-        <div class="invoice-details-inner mt-2" style="display: flex; justify-content: space-between; margin: 0; padding: 0;">
-          <p style="margin: 0; padding: 0; font-size: 12px;">
-            <strong style="color: #020202ff">Elaborado Por:</strong> {{ requerimiento.creado_por.get_full_name }}
-          </p>
-          <p style="margin: 0; padding: 0; font-size: 12px;">
-            <strong style="color: #020202ff">Fecha:</strong> {{ requerimiento.fecha_creacion|date:"d \d\e F \d\e Y" }}
-          </p>
-          {% if requerimiento.estado != 'pendiente' %}
-          <p style="margin: 0; padding: 0; font-size: 12px;">
-             
-            <strong style="color: #020202ff">Estado:</strong> {{ requerimiento.get_estado_display }}
-          </p>
-             {% endif %}
-        </div>
-      </div>
-    </div>
-  </div>
+<div class="card-body pt-10 mt-10">  <!-- Quitado 'border-top' -->
+<!-- Línea con nombre del Departamento centrado -->
+<p style="text-align: center; font-size: 14px; color: #0b2a4a; border-top: 0.5px solid #0b2a4a; margin: 4px 0 8px 0;">
+  <strong>{{ requerimiento.departamento.nombre }}</strong>
+</p>
 
-  <!-- Motivo (si existe) -->
+<!-- Tabla con información del requerimiento y motivo -->
+<table style="width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed;">
+  <tr style="border-bottom: 0.5px solid #0b2a4a;">
+    <th style="width: 15%; text-align: left; padding: 6px; background-color: #717172ff; color: white; border: 1px solid #0b2a4a;">
+      Elaborado Por:
+    </th>
+    <td style="padding: 6px; border: 1px solid #0b2a4a; overflow-wrap: break-word; width: 35%;">
+      {{ requerimiento.creado_por.get_full_name }}
+    </td>
+
+    <th style="width: 6%; text-align: left; padding: 6px; background-color: #717172ff; color: white; border: 1px solid #0b2a4a;">
+      Fecha:
+    </th>
+    <td style="padding: 3px; border: 1px solid #0b2a4a; width: 17%;">
+      {{ requerimiento.fecha_creacion|date:"d \d\e F \d\e Y" }}
+    </td>
+{% if requerimiento.estado != 'pendiente' %}
+<th style="width: 6%; text-align: left; padding: 6px; background-color: #717172ff; color: white; border: 1px solid #0b2a4a;">
+  Estado:
+</th>
+{% else %}
+<th style="width: 6%; text-align: left; padding: 6px; background-color: #717172ff; color: #717172ff; border: 1px solid #0b2a4a;">
+  Estado:
+</th>
+{% endif %}
+
+    <td style="padding: 6px; border: 1px solid #0b2a4a; overflow-wrap: break-word;">
+      {% if requerimiento.estado != 'pendiente' %}
+        {{ requerimiento.get_estado_display }}
+      {% else %}
+        <!-- Dejar vacío pero mantener estructura -->
+      {% endif %}
+    </td>
+  </tr>
+
   {% if requerimiento.motivo %}
-  <div style="display: flex; justify-content: center; align-items: center; width: 100%;solid #0b2a4a; margin-top: 3px;">
-    <h6 class="mb-10 text-12 text-capitalize" style="font-size: 12px; margin: 0; padding: 0;">
-      <strong>Motivo de Solicitud del Requerimiento No. {{ requerimiento.id }}</strong>
-    </h6>
-  </div>
-  <div class="invoice-details-inner mt-2" style="margin: 0; padding: 0; ">
-    <p style="margin: 0; padding: 0; font-size: 13px; word-wrap: break-word; overflow: hidden; text-overflow: ellipsis; margin-top: 3px;">
+  <tr>
+    <th colspan="1" style="text-align: left; padding: 6px; color: white; border: 1px solid #0b2a4a; background-color: #717172ff;">
+      Motivo de la Solicitud:
+    </th>
+    <td colspan="5" style="padding: 6px; border: 1px solid #0b2a4a; word-wrap: break-word; overflow-wrap: break-word;">
       {{ requerimiento.motivo }}
-    </p>
-  </div>
+    </td>
+  </tr>
   {% endif %}
-</div>
+</table>
+
+
+
+
+
+
 <br>
 <style>
   table {
@@ -217,7 +231,7 @@
     color: white;
   }
   tr:nth-child(even) {
-    background-color: #f2f2f2;
+    background-color: 
   }
   tr:hover {
     background-color: #ddd;
@@ -267,20 +281,22 @@
 <!-- Firmas -->
 
 
-<!-- Firmas -->
-<div class="firmas" style="text-align: center; padding-bottom: 25px; margin-right: 30px; font-size: 13px; position: fixed; bottom: 100px; width: 100%; left: 0;">
+<!-- Primera línea de firmas -->
+<div class="firmas" style="text-align: center; padding-bottom: 25px; margin-right: 30px; font-size: 13px; position: fixed; bottom: 130px; width: 100%; left: 0;">
   <div>_______________________________<br><strong>Elaborado Por</strong></div>
-  <div>_________________________________<br><strong>Jefe Departamento y/o Sección</strong></div>
+  <div style="margin-top: -15px;">_________________________________<br><strong>Jefe Departamento y/o Sección</strong></div>
   <div>_________________________<br><strong>Recibí Conforme</strong></div>
 </div>
 
-<div class="firmas" style="text-align: center; padding-bottom: 5px; margin-right: 30px; font-size: 13px; position: fixed; bottom: 50px; width: 100%; left: 0;">
+<!-- Segunda línea de firmas -->
+<div class="firmas" style="text-align: center; padding-bottom: 5px; margin-right: 30px; font-size: 13px; position: fixed; bottom: 1px; width: 100%; left: 0;">
   <div>_______________________________<br><strong>Departamento Financiero</strong></div>
-  <div>_________________________<br><strong>Vo. Bo. Coordinación</strong></div>
+  <div style="margin-top: -15px;">_________________________<br><strong>Vo. Bo. Coordinación</strong></div>
   <div>_________________________<br><strong>Entrega Sección de Almacén</strong></div>
 </div>
 
 
+{% comment %} 
 <!-- Información de la institución abajo -->
 <div class="institucion-info" style="display: flex; justify-content: space-between; align-items: center; width: 100%; border-top: 5px solid transparent; padding: 0.5px; position: fixed; bottom: 0; background-color: white; padding-top: 10px;">
   
@@ -308,7 +324,7 @@
     <span style="font-size: 11px; font-weight: bold;">{{ institucion.direccion }}</span>
   </div>
   
-</div>
+</div> {% endcomment %}
 
 
 
