@@ -164,3 +164,13 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # El directorio donde se almacenan
 LOGIN_URL = '/no-autorizado/'  # o una ruta válida a la que redirigir
 
 LOGOUT_ON_PASSWORD_CHANGE = True  # si usas algún middleware de seguridad extendido
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'informatica@upcv.gob.gt'  
+EMAIL_HOST_PASSWORD = 'xtdj nvwz ymyw lqyr'  
+
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER

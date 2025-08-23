@@ -87,12 +87,12 @@ class UserCreateForm(forms.ModelForm):
     
 from django import forms
 from django.contrib.auth.models import User, Group
-
 class UserEditForm(forms.ModelForm):
     group = forms.ModelChoiceField(
         queryset=Group.objects.all(),
         required=False,
-        widget=forms.HiddenInput()  # Oculto pero funcional
+        label="Grupo",
+        widget=forms.Select(attrs={'class': 'form-control'})
     )
     foto = forms.ImageField(
         required=False,
@@ -103,7 +103,7 @@ class UserEditForm(forms.ModelForm):
         model = User
         fields = ['username', 'first_name', 'last_name', 'email']
         widgets = {
-            'username': forms.TextInput(attrs={'class': 'form-control', 'readonly': 'readonly'}),  # <- solo lectura
+            'username': forms.TextInput(attrs={'class': 'form-control', 'readonly': 'readonly'}),
             'first_name': forms.TextInput(attrs={'class': 'form-control'}),
             'last_name': forms.TextInput(attrs={'class': 'form-control'}),
             'email': forms.EmailInput(attrs={'class': 'form-control'}),
@@ -112,6 +112,12 @@ class UserEditForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['username'].required = False
+        # Preseleccionar grupo actual si existe
+        if self.instance and self.instance.pk:
+            groups = self.instance.groups.all()
+            if groups.exists():
+                self.fields['group'].initial = groups.first()
+
 
 class AsignacionDetalleFacturaForm(forms.ModelForm):
     articulo = forms.ModelChoiceField(
