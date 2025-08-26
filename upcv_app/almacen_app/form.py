@@ -507,7 +507,7 @@ class ProgramaForm(forms.ModelForm):
 class DetalleRequerimientoForm(forms.ModelForm):
     class Meta:
         model = DetalleRequerimiento
-        fields = ['articulo', 'cantidad']
+        fields = ['articulo', 'cantidad', 'observacion']
 
     def __init__(self, *args, **kwargs):
         departamento = kwargs.pop('departamento', None)

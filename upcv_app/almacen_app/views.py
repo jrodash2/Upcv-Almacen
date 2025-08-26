@@ -131,67 +131,9 @@ def libro_ingresos_pdf(request):
 
     return response
 
-@login_required
-@grupo_requerido('Administrador', 'Almacen')
-def transferir_articulos(request):
-    departamentos = Departamento.objects.all()
 
-    if request.method == 'POST':
-        departamento_origen_id = request.POST.get('departamento_origen')
-        articulo_id = request.POST.get('articulo')
-        cantidad_str = request.POST.get('cantidad_transferir')
-        departamento_destino_id = request.POST.get('departamento_destino')
-        observacion = request.POST.get('observacion', '').strip()  # <-- aquí
 
-        if not (departamento_origen_id and articulo_id and cantidad_str and departamento_destino_id):
-            messages.error(request, 'Faltan datos para realizar la transferencia.')
-            return redirect('almacen:lista_departamentos')
 
-        try:
-            cantidad = int(cantidad_str)
-        except ValueError:
-            messages.error(request, 'Cantidad inválida.')
-            return redirect('almacen:detalle_departamento', pk=departamento_origen_id)
-
-        departamento_origen = get_object_or_404(Departamento, id=departamento_origen_id)
-        articulo = get_object_or_404(Articulo, id=articulo_id)
-        departamento_destino = get_object_or_404(Departamento, id=departamento_destino_id)
-
-        asignacion_origen = AsignacionDetalleFactura.objects.filter(
-            articulo=articulo, destino=departamento_origen
-        ).first()
-
-        if not asignacion_origen or asignacion_origen.cantidad_asignada < cantidad:
-            messages.error(request, 'No hay suficiente cantidad en el departamento de origen.')
-            return redirect('almacen:detalle_departamento', pk=departamento_origen_id)
-
-        # Reducir cantidad en origen
-        asignacion_origen.cantidad_asignada -= cantidad
-        asignacion_origen.save()
-
-        # Incrementar cantidad en destino, o crear asignación si no existe
-        asignacion_destino, created = AsignacionDetalleFactura.objects.get_or_create(
-            articulo=articulo, destino=departamento_destino,
-            defaults={'cantidad_asignada': 0}
-        )
-        asignacion_destino.cantidad_asignada += cantidad
-        asignacion_destino.save()
-
-        # Guardar historial de transferencia con observación
-        HistorialTransferencia.objects.create(
-            articulo=articulo,
-            cantidad=cantidad,
-            departamento_origen=departamento_origen,
-            departamento_destino=departamento_destino,
-            usuario=request.user,
-            observacion=observacion
-        )
-
-        messages.success(request, f'Se transfirieron {cantidad} unidades de {articulo.nombre} de {departamento_origen.nombre} a {departamento_destino.nombre}.')
-
-        return redirect('almacen:detalle_departamento', pk=departamento_origen_id)
-
-    return redirect('almacen:lista_departamentos')
 
 
 
@@ -739,6 +681,67 @@ def detalle_departamento(request, pk):
     })
 
 
+@login_required
+@grupo_requerido('Administrador', 'Almacen')
+def transferir_articulos(request):
+    departamentos = Departamento.objects.all()
+
+    if request.method == 'POST':
+        departamento_origen_id = request.POST.get('departamento_origen')
+        articulo_id = request.POST.get('articulo')
+        cantidad_str = request.POST.get('cantidad_transferir')
+        departamento_destino_id = request.POST.get('departamento_destino')
+        observacion = request.POST.get('observacion', '').strip()  # <-- aquí
+
+        if not (departamento_origen_id and articulo_id and cantidad_str and departamento_destino_id):
+            messages.error(request, 'Faltan datos para realizar la transferencia.')
+            return redirect('almacen:lista_departamentos')
+
+        try:
+            cantidad = int(cantidad_str)
+        except ValueError:
+            messages.error(request, 'Cantidad inválida.')
+            return redirect('almacen:detalle_departamento', pk=departamento_origen_id)
+
+        departamento_origen = get_object_or_404(Departamento, id=departamento_origen_id)
+        articulo = get_object_or_404(Articulo, id=articulo_id)
+        departamento_destino = get_object_or_404(Departamento, id=departamento_destino_id)
+
+        asignacion_origen = AsignacionDetalleFactura.objects.filter(
+            articulo=articulo, destino=departamento_origen
+        ).first()
+
+        if not asignacion_origen or asignacion_origen.cantidad_asignada < cantidad:
+            messages.error(request, 'No hay suficiente cantidad en el departamento de origen.')
+            return redirect('almacen:detalle_departamento', pk=departamento_origen_id)
+
+        # Reducir cantidad en origen
+        asignacion_origen.cantidad_asignada -= cantidad
+        asignacion_origen.save()
+
+        # Incrementar cantidad en destino, o crear asignación si no existe
+        asignacion_destino, created = AsignacionDetalleFactura.objects.get_or_create(
+            articulo=articulo, destino=departamento_destino,
+            defaults={'cantidad_asignada': 0}
+        )
+        asignacion_destino.cantidad_asignada += cantidad
+        asignacion_destino.save()
+
+        # Guardar historial de transferencia con observación
+        HistorialTransferencia.objects.create(
+            articulo=articulo,
+            cantidad=cantidad,
+            departamento_origen=departamento_origen,
+            departamento_destino=departamento_destino,
+            usuario=request.user,
+            observacion=observacion
+        )
+
+        messages.success(request, f'Se transfirieron {cantidad} unidades de {articulo.nombre} de {departamento_origen.nombre} a {departamento_destino.nombre}.')
+
+        return redirect('almacen:detalle_departamento', pk=departamento_origen_id)
+
+    return redirect('almacen:lista_departamentos')
 
 
 @login_required
@@ -1117,7 +1120,7 @@ def agregar_detalle_factura(request, form1h_id):
 
 
 @require_POST
-@grupo_requerido('Administrador', 'Almacen')
+@grupo_requerido('Administrador', 'Almacen', 'Departamento')
 def eliminar_detalle_requerimiento(request, pk):
     if request.method == 'POST':
         try:

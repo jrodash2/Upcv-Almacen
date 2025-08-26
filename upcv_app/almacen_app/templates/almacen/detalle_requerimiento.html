@@ -189,12 +189,7 @@ table.order-details th {
   <h6>{{ requerimiento.creado_por.get_full_name|default:requerimiento.creado_por.username }}</h6>
 </td>
 
-                    <td style="width: 40%">
-                      <span style="opacity: 0.8">Numero de Requerimiento</span>
-                      <h6>{{ requerimiento.id }}</h6>
-                    </td>
-                    <td></td>
-                  </tr>
+
                 </tbody>
               </table>
 
@@ -246,7 +241,7 @@ table.order-details th {
                         <span>{{ detalle.cantidad }}</span>
                       </td>
                       <td style="padding: 18px 15px;">
-                        <span>{{ detalle.observaciones }}</span>
+                        <span>{{ detalle.observacion }}</span>
                       </td>
                       <td style="text-align: center; vertical-align: middle;">
 {% if requerimiento.estado != 'rechazado' and requerimiento.estado != 'enviado' and requerimiento.estado != 'despachado' and requerimiento.estado != 'parcial' %}
