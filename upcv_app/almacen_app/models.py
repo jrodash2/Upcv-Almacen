@@ -1,3 +1,4 @@
+from asyncio import open_connection
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.contrib.auth.models import User
@@ -141,6 +142,18 @@ class DetalleFactura(models.Model):
 
 
 
+from django.core.mail import send_mail
+from django.conf import settings
+from django.core.mail import EmailMessage
+import ssl
+import certifi
+from django.db.models import Sum
+from django.core.exceptions import ValidationError
+import logging
+
+# Logger para errores
+logger = logging.getLogger(__name__)
+
 class AsignacionDetalleFactura(models.Model):
     articulo = models.ForeignKey(Articulo, on_delete=models.CASCADE)
     cantidad_asignada = models.PositiveIntegerField()
@@ -165,6 +178,46 @@ class AsignacionDetalleFactura(models.Model):
 
     def __str__(self):
         return f"{self.cantidad_asignada} de {self.articulo.nombre} a {self.destino.nombre}"
+
+    def save(self, *args, **kwargs):
+        # Llamar a la lógica de guardado del modelo
+        super().save(*args, **kwargs)
+        
+        # Obtener el usuario asociado al departamento
+        usuario = UsuarioDepartamento.objects.filter(departamento=self.destino).first().usuario
+        
+        if usuario and usuario.email:
+            try:
+                # Crear contexto SSL con certifi
+                ssl_context = ssl.create_default_context(cafile=certifi.where())
+                
+                # URL del sistema
+                URL_SISTEMA = 'https://apps.upcv.gob.gt/'
+                
+                # Correo electrónico
+                email = EmailMessage(
+                    subject=f'Asignación de artículo: {self.articulo.nombre}',
+                    body=(
+                        f"Hola {usuario.get_full_name() or usuario.username},\n\n"
+                        f"Se te ha asignado el siguiente artículo a tu departamento:\n\n"
+                        f"- Artículo: {self.articulo.nombre}\n"
+                        f"- Cantidad: {self.cantidad_asignada}\n"
+                        f"- Departamento: {self.destino.nombre}\n"
+                        f"- Fecha de asignación: {self.fecha_asignacion}\n\n"
+                        f"Puedes revisar los detalles en el sistema:\n{URL_SISTEMA}"
+                    ),
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to=[usuario.email],
+                    connection=open_connection(ssl_context=ssl_context)
+                )
+                
+                # Enviar correo
+                email.send()
+                logger.info(f"Correo enviado con éxito a {usuario.email} para la asignación del artículo {self.articulo.nombre}.")
+                
+            except Exception as e:
+                logger.error(f"Error al enviar correo para Asignación de Artículo: {e}")
+
 
 
 class HistorialTransferencia(models.Model):

@@ -1,0 +1,15 @@
+<html>
+    <body>
+        <h2>Asignación de Artículo</h2>
+        <p>Estimado {{ usuario.username }},</p>
+        <p>El artículo <strong>{{ articulo.nombre }}</strong> ha sido asignado a su departamento <strong>{{ departamento.nombre }}</strong>.</p>
+        <p>Detalles del artículo:</p>
+        <ul>
+            <li><strong>Categoría:</strong> {{ articulo.categoria }}</li>
+            <li><strong>Ubicación:</strong> {{ articulo.ubicacion }}</li>
+            <li><strong>Unidad de medida:</strong> {{ articulo.unidad_medida }}</li>
+        </ul>
+        <p>Saludos cordiales,</p>
+        <p>El equipo de inventarios</p>
+    </body>
+</html>

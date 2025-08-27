@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from venv import logger
 from django.forms import IntegerField
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login as auth_login, logout
@@ -47,9 +48,34 @@ from reportlab.lib.pagesizes import landscape, letter
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
 import datetime
-
+from django.core.mail import send_mail
+from django.conf import settings
+from django.utils.html import strip_tags
 
 from datetime import datetime  
+
+
+from django.core.mail import BadHeaderError
+from smtplib import SMTPException
+
+def enviar_correo_asignacion(articulo, departamento, usuario):
+    asunto = f"Asignación de artículo: {articulo.nombre}"
+    mensaje = f"Se ha asignado el artículo {articulo.nombre} al departamento {departamento.nombre}."
+    destinatario = usuario.email
+
+    try:
+        send_mail(
+            asunto,
+            mensaje,
+            'informatica@upcv.gob.gt',
+            [destinatario],
+            fail_silently=False,
+        )
+        logger.info(f"Correo enviado correctamente a {destinatario}")
+    except BadHeaderError:
+        logger.error("Header del correo es incorrecto")
+    except SMTPException as e:
+        logger.error(f"Error al enviar el correo: {e}")
 
 
 @login_required
