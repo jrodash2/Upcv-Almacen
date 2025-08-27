@@ -143,6 +143,7 @@ class DetalleFactura(models.Model):
 
 
 from django.core.mail import send_mail
+
 from django.conf import settings
 from django.core.mail import EmailMessage
 import ssl
@@ -165,16 +166,6 @@ class AsignacionDetalleFactura(models.Model):
         super().clean()
         if self.articulo is None:
             raise ValidationError("El campo artículo es obligatorio.")
-        
-        # Calcular el stock total disponible desde DetalleFactura
-        total_stock = DetalleFactura.objects.filter(articulo=self.articulo).aggregate(
-            total=Sum('cantidad'))['total'] or 0
-        total_asignado = AsignacionDetalleFactura.objects.filter(articulo=self.articulo).aggregate(
-            total=Sum('cantidad_asignada'))['total'] or 0
-        disponible = total_stock - total_asignado
-
-        if self.cantidad_asignada > disponible:
-            raise ValidationError("La cantidad asignada no puede ser mayor al stock disponible.")
 
     def __str__(self):
         return f"{self.cantidad_asignada} de {self.articulo.nombre} a {self.destino.nombre}"
@@ -183,38 +174,47 @@ class AsignacionDetalleFactura(models.Model):
         # Llamar a la lógica de guardado del modelo
         super().save(*args, **kwargs)
         
-        # Obtener el usuario asociado al departamento
-        usuario = UsuarioDepartamento.objects.filter(departamento=self.destino).first().usuario
+        # Obtener todos los usuarios asociados al departamento
+        usuarios = UsuarioDepartamento.objects.filter(departamento=self.destino).values_list('usuario', flat=True)
         
-        if usuario and usuario.email:
+        if usuarios:
             try:
-                # Crear contexto SSL con certifi
-                ssl_context = ssl.create_default_context(cafile=certifi.where())
+                # Crear el cuerpo del mensaje en formato HTML
+                mensaje_html = f"""
+                <html>
+                    <body>
+                        <p>Se ha asignado el artículo <strong>{self.articulo.nombre}</strong> a <strong>{self.destino.nombre}</strong>.</p>
+
+                        <ul>
+                            <li><strong>Artículo:</strong> {self.articulo.nombre}</li>
+                            <li><strong>Descripción:</strong> {self.articulo.descripcion if self.articulo.descripcion else 'No disponible'}</li>
+                            <li><strong>Código del artículo:</strong> {self.articulo.codigo if hasattr(self.articulo, 'codigo') else 'No disponible'}</li>
+                            <li><strong>Cantidad asignada:</strong> {self.cantidad_asignada}</li>
+                            <li><strong>Cantidad disponible en stock:</strong> {self.articulo.stock_total if hasattr(self.articulo, 'stock_total') else 'No disponible'}</li>
+                            <li><strong>Fecha de asignación:</strong> {self.fecha_asignacion.strftime('%d/%m/%Y %H:%M:%S')}</li>
+                        </ul>
+
+                        <p>Puedes revisar los detalles en el sistema: <a href="https://apps.upcv.gob.gt">Acceder al sistema</a></p>
+
+                        <p>Atentamente,</p>
+                        <p>El equipo de administración de inventarios.</p>
+                    </body>
+                </html>
+                """
                 
-                # URL del sistema
-                URL_SISTEMA = 'https://apps.upcv.gob.gt/'
-                
-                # Correo electrónico
-                email = EmailMessage(
-                    subject=f'Asignación de artículo: {self.articulo.nombre}',
-                    body=(
-                        f"Hola {usuario.get_full_name() or usuario.username},\n\n"
-                        f"Se te ha asignado el siguiente artículo a tu departamento:\n\n"
-                        f"- Artículo: {self.articulo.nombre}\n"
-                        f"- Cantidad: {self.cantidad_asignada}\n"
-                        f"- Departamento: {self.destino.nombre}\n"
-                        f"- Fecha de asignación: {self.fecha_asignacion}\n\n"
-                        f"Puedes revisar los detalles en el sistema:\n{URL_SISTEMA}"
-                    ),
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    to=[usuario.email],
-                    connection=open_connection(ssl_context=ssl_context)
-                )
-                
-                # Enviar correo
-                email.send()
-                logger.info(f"Correo enviado con éxito a {usuario.email} para la asignación del artículo {self.articulo.nombre}.")
-                
+                # Iterar sobre los usuarios y enviar el correo
+                for usuario_id in usuarios:
+                    usuario = User.objects.get(id=usuario_id)
+                    send_mail(
+                        f"Asignación de artículo: {self.articulo.nombre}",
+                        "Este correo no soporta HTML.",  # El cuerpo del mensaje en texto plano
+                        'informatica@upcv.gob.gt',
+                        [usuario.email],
+                        fail_silently=False,
+                        html_message=mensaje_html  # Aquí pasamos el mensaje en formato HTML
+                    )
+                    logger.info(f"Correo enviado correctamente a {usuario.email} para la asignación del artículo {self.articulo.nombre}")
+
             except Exception as e:
                 logger.error(f"Error al enviar correo para Asignación de Artículo: {e}")
 

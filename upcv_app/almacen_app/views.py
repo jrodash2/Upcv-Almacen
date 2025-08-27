@@ -60,7 +60,7 @@ from smtplib import SMTPException
 
 def enviar_correo_asignacion(articulo, departamento, usuario):
     asunto = f"Asignación de artículo: {articulo.nombre}"
-    mensaje = f"Se ha asignado el artículo {articulo.nombre} al departamento {departamento.nombre}."
+    mensaje = f"Se ha asignado el artículo {articulo.nombre} a {departamento.nombre}. para ver mas detalles ingrese con sus credenciales a la Aplicación de Gestión de Almacen"
     destinatario = usuario.email
 
     try:

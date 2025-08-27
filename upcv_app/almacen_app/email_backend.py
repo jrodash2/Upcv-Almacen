@@ -1,11 +1,16 @@
-# almacen_app/email_backend.py
-
+import ssl
+import certifi
 from django.core.mail.backends.smtp import EmailBackend
 import logging
 
 logger = logging.getLogger(__name__)
 
 class CustomEmailBackend(EmailBackend):
+    def open(self):
+        # Crear un contexto SSL que use los certificados de certifi
+        self.ssl_context = ssl.create_default_context(cafile=certifi.where())
+        return super().open()
+
     def send_messages(self, email_messages):
         try:
             result = super().send_messages(email_messages)

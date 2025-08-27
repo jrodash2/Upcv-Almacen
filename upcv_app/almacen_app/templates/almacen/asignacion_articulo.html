@@ -1,15 +1,29 @@
+from django.core.mail import EmailMessage
+
+# Correo en formato HTML
+body = f"""
 <html>
-    <body>
-        <h2>Asignación de Artículo</h2>
-        <p>Estimado {{ usuario.username }},</p>
-        <p>El artículo <strong>{{ articulo.nombre }}</strong> ha sido asignado a su departamento <strong>{{ departamento.nombre }}</strong>.</p>
-        <p>Detalles del artículo:</p>
-        <ul>
-            <li><strong>Categoría:</strong> {{ articulo.categoria }}</li>
-            <li><strong>Ubicación:</strong> {{ articulo.ubicacion }}</li>
-            <li><strong>Unidad de medida:</strong> {{ articulo.unidad_medida }}</li>
-        </ul>
-        <p>Saludos cordiales,</p>
-        <p>El equipo de inventarios</p>
-    </body>
+  <body>
+    <h3>Hola {usuario.get_full_name() or usuario.username},</h3>
+    <p>Se te ha asignado el siguiente artículo a tu departamento:</p>
+    <ul>
+      <li><strong>Artículo:</strong> {self.articulo.nombre}</li>
+      <li><strong>Cantidad:</strong> {self.cantidad_asignada}</li>
+      <li><strong>Departamento:</strong> {self.destino.nombre}</li>
+      <li><strong>Fecha de asignación:</strong> {self.fecha_asignacion}</li>
+    </ul>
+    <p>Puedes revisar los detalles en el sistema: <a href="{URL_SISTEMA}">Acceder al sistema</a></p>
+  </body>
 </html>
+"""
+
+# Enviar correo con contenido HTML
+email = EmailMessage(
+    subject=f'Asignación de artículo: {self.articulo.nombre}',
+    body=body,
+    from_email=settings.DEFAULT_FROM_EMAIL,
+    to=[usuario.email],
+    connection=open_connection(ssl_context=ssl_context),
+)
+email.content_subtype = "html"  # Especificar que el cuerpo es HTML
+email.send()
