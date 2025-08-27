@@ -277,21 +277,34 @@ def despachar_requerimiento(request, requerimiento_id):
     return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
 
     
+from django.db.models import Q
+
 @login_required
 def crear_requerimiento(request):
     form = RequerimientoForm(request.POST or None, usuario=request.user)
 
-    # Filtrar los requerimientos según el rol del usuario
     if request.user.groups.filter(name__in=['Administrador', 'Almacen']).exists():
-        
-        requerimientos = Requerimiento.objects.filter( estado__in=['enviado', 'despachado', 'rechazado', 'parcial']).order_by('-fecha_creacion')
+        requerimientos = Requerimiento.objects.filter(
+            estado__in=['enviado', 'despachado', 'rechazado', 'parcial']
+        ).order_by('-fecha_creacion')
     else:
-        requerimientos = Requerimiento.objects.filter(creado_por=request.user)
+        # Obtener los departamentos a los que pertenece el usuario
+        departamentos_usuario = UsuarioDepartamento.objects.filter(usuario=request.user).values_list('departamento', flat=True)
+
+        # Filtrar requerimientos creados por el usuario o pertenecientes a sus departamentos
+        requerimientos = Requerimiento.objects.filter(
+            Q(creado_por=request.user) | Q(departamento__in=departamentos_usuario)
+        ).distinct().order_by('-fecha_creacion')
 
     if request.method == "POST":
         if form.is_valid():
             nuevo = form.save(commit=False)
             nuevo.creado_por = request.user
+            # Asignar el departamento si no lo trae el form automáticamente
+            if not nuevo.departamento_id:
+                asignacion = UsuarioDepartamento.objects.filter(usuario=request.user).first()
+                if asignacion:
+                    nuevo.departamento = asignacion.departamento
             nuevo.save()
             messages.success(request, "Requerimiento creado exitosamente.")
             return redirect('almacen:detalle_requerimiento', requerimiento_id=nuevo.id)
