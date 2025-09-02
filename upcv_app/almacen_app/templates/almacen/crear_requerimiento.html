@@ -41,6 +41,7 @@
                 <div class="text-end">
                   <!-- Botón para abrir el modal -->
                  {% if not request.user.groups.all.0.name == 'Administrador' %}
+{% if not es_admin and not es_almacen %}
   <button
     type="button"
     class="btn btn-primary"
@@ -49,6 +50,8 @@
   >
     Crear Requerimiento
   </button>
+{% endif %}
+
 {% endif %}
 
                 </div>
@@ -61,7 +64,7 @@
                  <table class="display" id="basic-9">
                   <thead>
                     <tr>
-                      <th>ID</th>
+                      <th># Requerimiento</th>
                       <th>Departamento</th>
                       <th>Creado Por</th>
                       <th>Fecha</th>
@@ -98,7 +101,7 @@
                   </tbody>
                   <tfoot>
                     <tr>
-                      <th>ID</th>
+                      <th># Requerimiento</th>
                       <th>Departamento</th>
                       <th>Creado Por</th>
                       <th>Fecha</th>

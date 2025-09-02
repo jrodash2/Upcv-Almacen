@@ -210,7 +210,7 @@ from django.db.models import F
 @grupo_requerido('Administrador', 'Almacen')
 @transaction.atomic
 def despachar_requerimiento(request, requerimiento_id):
-    if not request.user.groups.filter(name='Administrador').exists():
+    if not request.user.groups.filter(name__in=['Administrador', 'Almacen']).exists():
         messages.error(request, "No tienes permiso para despachar requerimientos.")
         return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento_id)
 
@@ -311,7 +311,7 @@ def crear_requerimiento(request):
 
     if request.user.groups.filter(name__in=['Administrador', 'Almacen']).exists():
         requerimientos = Requerimiento.objects.filter(
-            estado__in=['enviado', 'despachado', 'rechazado', 'parcial']
+            estado__in=['enviado', 'despachado', 'rechazado', 'parcial', 'pendiente']
         ).order_by('-fecha_creacion')
     else:
         # Obtener los departamentos a los que pertenece el usuario
@@ -956,15 +956,16 @@ def confirmar_form1h(request, form1h_id):
 @grupo_requerido('Administrador', 'Almacen')
 @transaction.atomic
 def anular_requerimiento(request, requerimiento_id):
-    if not request.user.groups.filter(name='Administrador').exists():
+    if not request.user.groups.filter(name__in=['Administrador', 'Almacen']).exists():
         messages.error(request, "No tienes permiso para anular requerimientos.")
         return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento_id)
 
     requerimiento = get_object_or_404(Requerimiento, id=requerimiento_id)
 
-    if requerimiento.estado != 'enviado':
-        messages.warning(request, "Solo se pueden anular requerimientos en estado 'enviado'.")
+    if requerimiento.estado not in ['pendiente', 'enviado']:
+        messages.warning(request, "Solo se pueden anular requerimientos en estado 'pendiente' o 'enviado'.")
         return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
+
 
     if request.method == 'POST':
         motivo_anulacion = request.POST.get('motivo_anulacion')

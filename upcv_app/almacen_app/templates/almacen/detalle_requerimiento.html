@@ -116,7 +116,7 @@ table.order-details th {
                     <div class="product-hover">
                       <div class="m-t-15 btn-showcase">
 
-{% if requerimiento.estado == 'pendiente' %}
+{% if requerimiento.estado == 'pendiente' and not es_admin and not es_almacen %}
   <a class="btn btn-outline-warning btn-lg"
      href="{% url 'almacen:enviar_requerimiento' requerimiento.id %}"
      title="Enviar Requerimiento"
@@ -135,17 +135,35 @@ table.order-details th {
 
 <!-- Botón para abrir modal de despachar -->
 {% if es_admin and requerimiento.estado == 'enviado' %}
-  <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalDespachar">
+  <button type="button" class="btn btn-outline-warning btn-lg" data-bs-toggle="modal" data-bs-target="#modalDespachar">
+    <i class="fa fa-truck"></i> Despachar Requerimiento
+  </button>
+{% elif es_almacen and requerimiento.estado == 'enviado' %}
+  <button type="button" class="btn btn-outline-warning btn-lg" data-bs-toggle="modal" data-bs-target="#modalDespachar">
     <i class="fa fa-truck"></i> Despachar Requerimiento
   </button>
 {% endif %}
 
+
 <!-- Botón para abrir modal de anulación -->
-{% if es_admin and requerimiento.estado == 'enviado' %}
-  <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#modalAnular">
+{% if es_admin and requerimiento.estado == 'pendiente' %}
+  <button type="button" class="btn btn-outline-warning btn-lg" data-bs-toggle="modal" data-bs-target="#modalAnular">
+    <i class="fa fa-times-circle"></i> Rechazar Requerimiento
+  </button>
+{% elif es_admin and requerimiento.estado == 'enviado' %}
+  <button type="button" class="btn btn-outline-warning btn-lg" data-bs-toggle="modal" data-bs-target="#modalAnular">
+    <i class="fa fa-times-circle"></i> Rechazar Requerimiento
+  </button>
+{% elif es_almacen and requerimiento.estado == 'pendiente' %}
+  <button type="button" class="btn btn-outline-warning btn-lg" data-bs-toggle="modal" data-bs-target="#modalAnular">
+    <i class="fa fa-times-circle"></i> Rechazar Requerimiento
+  </button>
+{% elif es_almacen and requerimiento.estado == 'enviado' %}
+  <button type="button" class="btn btn-outline-warning btn-lg" data-bs-toggle="modal" data-bs-target="#modalAnular">
     <i class="fa fa-times-circle"></i> Rechazar Requerimiento
   </button>
 {% endif %}
+
 
 
 <a href="{% url 'almacen:exportar_requerimiento_pdf' requerimiento.id %}" target="_blank" class="btn btn-outline-secondary">
@@ -167,7 +185,7 @@ table.order-details th {
               <table class="bill-content" style="width: 100%">
                 <tbody>
                   <tr>
-                    <td style="width: 130%">
+                    <td style="width: 120%">
                       <span style="opacity: 0.8">Departamento</span>
                       <h4 class="card-title mb-0">
                         {{ requerimiento.departamento.nombre }}
@@ -188,7 +206,10 @@ table.order-details th {
   <span style="opacity: 0.8">Creado Por</span>
   <h6>{{ requerimiento.creado_por.get_full_name|default:requerimiento.creado_por.username }}</h6>
 </td>
-
+ <td style="width: 40%">
+                      <span style="opacity: 0.8">Numero Requerimiento:</span>
+                      <h6>{{ requerimiento.id }}</h6>
+                    </td>
 
                 </tbody>
               </table>
@@ -298,79 +319,125 @@ table.order-details th {
   </div>
 </div>
 
-<!-- Modal de Anulación -->
+<!-- Modal de Anulación con nuevo formato -->
 <div class="modal fade" id="modalAnular" tabindex="-1" aria-labelledby="modalAnularLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-    <form method="POST" action="{% url 'almacen:anular_requerimiento' requerimiento_id=requerimiento.id %}">
-      {% csrf_token %}
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="modalAnularLabel">Anular Requerimiento #{{ requerimiento.id }}</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-        </div>
-        <div class="modal-body">
-          <p>¿Estás seguro de que deseas anular este requerimiento?</p>
-          <p><strong>Motivo:</strong></p>
-          <textarea name="motivo_anulacion" class="form-control" rows="4" placeholder="Escribe el motivo de la anulación..." required></textarea>
-        </div>
-        <div class="modal-footer">
-          <button type="submit" class="btn btn-danger">Confirmar Anulación</button>
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content dark-sign-up">
+      <div class="modal-body social-profile text-start p-4">
+        <div class="Riho-demo-img">
+          
+          <!-- Encabezado -->
+          <div class="title-wrapper pb-3 modal-heading text-center">
+            <h5 class="theme-name mb-0">
+              <span>Rechazar - </span>Requerimiento # {{ requerimiento.id }}
+            </h5>
+            <p>Complete el motivo por el cual desea Rechazar este requerimiento.</p>
+          </div>
+
+          <!-- Imagen decorativa -->
+          <div class="overflow-hidden text-center mb-4">
+            <img class="img-fluid" src="{% static 'assets/images/logo/logo.png' %}" alt="imagen decorativa" />
+          </div>
+
+          <!-- Formulario de Anulación -->
+          <form method="POST" action="{% url 'almacen:anular_requerimiento' requerimiento_id=requerimiento.id %}">
+            {% csrf_token %}
+            
+            <div class="row justify-content-center">
+              <div class="col-md-10 mb-3">
+                <label for="motivo_anulacion" class="form-label">Motivo</label>
+                <textarea name="motivo_anulacion" class="form-control" rows="4" placeholder="Escribe el motivo del por que se rechaza..." required></textarea>
+              </div>
+            </div>
+
+            <!-- Botones -->
+            <div class="text-end">
+              <button type="submit" class="btn btn-danger">Confirmar</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            </div>
+          </form>
+
         </div>
       </div>
-    </form>
+    </div>
   </div>
 </div>
+
 
 
 <!-- Modal de Despacho -->
+<!-- Modal de Despacho con nuevo formato -->
 <div class="modal fade" id="modalDespachar" tabindex="-1" aria-labelledby="modalDespacharLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-    <form method="POST" action="{% url 'almacen:despachar_requerimiento' requerimiento_id=requerimiento.id %}">
-      {% csrf_token %}
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="modalDespacharLabel">Despachar Requerimiento #{{ requerimiento.id }}</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-        </div>
-        <div class="modal-body">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Artículo</th>
-                <th>Cantidad requerida</th>
-                <th>Cantidad a despachar</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for detalle in detalles_requerimiento %}
-              <tr>
-                <td>{{ detalle.articulo.nombre }}</td>
-                <td>{{ detalle.cantidad }}</td>
-                <td>
-                  <input
-                    type="number"
-                    name="cantidades[{{ detalle.id }}]"
-                    min="0"
-                    max="{{ detalle.cantidad }}"
-                    value="{{ detalle.cantidad }}"
-                    class="form-control"
-                    required
-                  />
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-        <div class="modal-footer">
-          <button type="submit" class="btn btn-primary">Confirmar Despacho</button>
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content dark-sign-up">
+      <div class="modal-body social-profile text-start p-4">
+        <div class="Riho-demo-img">
+          
+          <!-- Encabezado -->
+          <div class="title-wrapper pb-3 modal-heading text-center">
+            <h5 class="theme-name mb-0">
+              <span>Despachar - </span>Requerimiento # {{ requerimiento.id }}
+            </h5>
+            <p>Complete la cantidad que desea despachar para cada artículo.</p>
+          </div>
+
+          <!-- Imagen decorativa -->
+          <div class="overflow-hidden text-center mb-4">
+            <img class="img-fluid" src="{% static 'assets/images/logo/logo.png' %}" alt="imagen decorativa" />
+          </div>
+
+          <!-- Formulario de Despacho -->
+          <form method="POST" action="{% url 'almacen:despachar_requerimiento' requerimiento_id=requerimiento.id %}">
+            {% csrf_token %}
+            
+            <div class="row justify-content-center">
+              <div class="col-md-12 mb-3">
+                <div class="table-responsive">
+                  <table class="table table-bordered align-middle text-center">
+                    <thead >
+                      <tr>
+                        <th>Artículo</th>
+                        <th>Cantidad requerida</th>
+                        <th>Cantidad a despachar</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for detalle in detalles_requerimiento %}
+                      <tr>
+                        <td>{{ detalle.articulo.nombre }}</td>
+                        <td>{{ detalle.cantidad }}</td>
+                        <td>
+                          <input
+                            type="number"
+                            name="cantidades[{{ detalle.id }}]"
+                            min="0"
+                            max="{{ detalle.cantidad }}"
+                            value="{{ detalle.cantidad }}"
+                            class="form-control text-center"
+                            required
+                          />
+                        </td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Botones -->
+            <div class="text-end">
+              <button type="submit" class="btn btn-primary">Confirmar Despacho</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            </div>
+          </form>
+
         </div>
       </div>
-    </form>
+    </div>
   </div>
 </div>
+
 <!-- Modal para Agregar Detalle (con estilo decorativo e imagen) -->
 <div class="modal fade" id="agregarDetalleModal" tabindex="-1" aria-labelledby="agregarDetalleModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg">

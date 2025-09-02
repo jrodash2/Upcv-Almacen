@@ -91,7 +91,7 @@ WSGI_APPLICATION = 'upcv_app.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'Alma_CAP',  # Cambia esto por el nombre de tu base de datos
+        'NAME': 'Alma_P',  # Cambia esto por el nombre de tu base de datos
         'USER': 'postgres',
         'PASSWORD': 'Jrodash2*',  # La contraseña que configuraste
         'HOST': 'localhost',
