@@ -66,7 +66,7 @@ class Categoria(models.Model):
         return self.nombre
     
 class Articulo(models.Model):
-    nombre = models.CharField(max_length=255)
+    nombre = models.CharField(max_length=1085)
     categoria = models.ForeignKey(Categoria, on_delete=models.SET_NULL, null=True, blank=True)
     unidad_medida = models.ForeignKey(UnidadDeMedida, on_delete=models.SET_NULL, null=True, blank=True)
     ubicacion = models.ForeignKey(Ubicacion, on_delete=models.SET_NULL, null=True, blank=True)
@@ -112,8 +112,8 @@ class DetalleFactura(models.Model):
     form1h = models.ForeignKey('form1h', related_name='detalles', on_delete=models.CASCADE)
     articulo = models.ForeignKey(Articulo, related_name='detalles_factura', on_delete=models.CASCADE)
     cantidad = models.PositiveIntegerField()
-    precio_unitario = models.DecimalField(max_digits=10, decimal_places=2)
-    precio_total = models.DecimalField(max_digits=10, decimal_places=2)
+    precio_unitario = models.DecimalField(max_digits=25, decimal_places=2)
+    precio_total = models.DecimalField(max_digits=25, decimal_places=2)
     id_linea = models.PositiveIntegerField()
     renglon = models.PositiveIntegerField()
     fecha_vencimiento = models.DateField(null=True, blank=True)  # <-- NUEVO CAMPO
