@@ -117,6 +117,11 @@ table.order-details th {
 <a href="{% url 'almacen:exportar_detalle_factura_pdf' form1h_instance.id %}" target="_blank" class="btn btn-outline-secondary">
   <i class="fa fa-file-pdf-o"></i> Imprimir
 </a>
+<a href="{% url 'almacen:exportar_excel' form1h_instance.id %}" target="_blank" class="btn btn-outline-success">
+  <i class="fa fa-file-excel-o"></i> Descargar Excel
+</a>
+
+
 {# Botón Anular #}
 {% if form1h_instance.estado == 'borrador' %}
     <form method="post" action="{% url 'almacen:anular_form1h' form1h_instance.id %}" style="display: inline;">

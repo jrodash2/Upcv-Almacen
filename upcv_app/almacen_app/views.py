@@ -53,10 +53,110 @@ from django.conf import settings
 from django.utils.html import strip_tags
 
 from datetime import datetime  
-
+from openpyxl import Workbook
+from openpyxl.utils import get_column_letter
+from openpyxl.styles import Alignment, Font
+import re
 
 from django.core.mail import BadHeaderError
 from smtplib import SMTPException
+
+@login_required
+@grupo_requerido('Administrador', 'Almacen')
+def exportar_detalle_factura_excel(request, form1h_id):
+    form1h_instance = get_object_or_404(form1h, id=form1h_id)
+    detalles = DetalleFactura.objects.filter(form1h=form1h_instance)
+
+    # Crear archivo Excel
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Detalle Factura"
+
+    # Información superior
+    ws["A1"] = "Dependencia:"
+    ws["B1"] = str(form1h_instance.dependencia)
+    ws["D1"] = "Factura:"
+    ws["E1"] = form1h_instance.numero_factura
+
+    ws["A2"] = "Programa:"
+    ws["B2"] = str(form1h_instance.programa)
+    ws["D2"] = "Fecha:"
+    ws["E2"] = form1h_instance.fecha_factura.strftime("%d/%m/%Y")
+
+    ws["A3"] = "Proveedor:"
+    ws["B3"] = str(form1h_instance.proveedor)
+    ws["D3"] = "Orden Compra:"
+    ws["E3"] = form1h_instance.orden_compra
+
+    # Encabezados
+    headers = [
+        "Cantidad", "Detalle", "Renglón", "Folio Almacén",
+        "Precio Unidad", "Valor Total", "Folio Inventario", "Nomenclatura"
+    ]
+    ws.append([])
+    ws.append(headers)
+
+    # Filas de datos
+    for d in detalles:
+        inventarios = d.inventarios.all()
+        if inventarios.exists():
+            for i, inv in enumerate(inventarios):
+                if i == 0:
+                    ws.append([
+                        d.cantidad,
+                        d.articulo.nombre,
+                        d.renglon,
+                        getattr(d, 'numero_linea', ''),
+                        f"Q{d.precio_unitario}",
+                        f"Q{d.precio_total}",
+                        inv.folio_inventario,
+                        inv.nomenclatura
+                    ])
+                else:
+                    ws.append([
+                        "", "", "", "", "", "",
+                        inv.folio_inventario,
+                        inv.nomenclatura
+                    ])
+        else:
+            ws.append([
+                d.cantidad,
+                d.articulo.nombre,
+                d.renglon,
+                getattr(d, 'numero_linea', ''),
+                f"Q{d.precio_unitario}",
+                f"Q{d.precio_total}",
+                "-", "-"
+            ])
+
+    # Alinear texto en celdas
+    for row in ws.iter_rows():
+        for cell in row:
+            cell.alignment = Alignment(vertical="top", wrap_text=True)
+
+    # Ajustar ancho de columnas automáticamente (opcional)
+    for col in ws.columns:
+        max_length = 0
+        col_letter = get_column_letter(col[0].column)
+        for cell in col:
+            if cell.value:
+                max_length = max(max_length, len(str(cell.value)))
+        ws.column_dimensions[col_letter].width = max_length + 2
+
+    # Nombre archivo usando los campos correctos
+    serie_texto = str(form1h_instance.serie.serie) if form1h_instance.serie else ''
+    numero = str(form1h_instance.numero_serie) if form1h_instance.numero_serie else ''
+    nombre_archivo = f"formulario_1h_{serie_texto} {numero}".strip()
+
+    # Crear respuesta HTTP
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = f'attachment; filename="{nombre_archivo}.xlsx"'
+    wb.save(response)
+    return response
+
+
 
 def enviar_correo_asignacion(articulo, departamento, usuario):
     asunto = f"Asignación de artículo: {articulo.nombre}"
