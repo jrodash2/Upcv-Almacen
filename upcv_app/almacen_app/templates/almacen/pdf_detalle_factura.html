@@ -1,76 +1,137 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <style>
-        body { font-family: sans-serif; font-size: 12px; }
-        h2, h3 { text-align: center; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #000; padding: 6px; text-align: left; }
-        th { background-color: #f0f0f0; }
-        .info { margin-bottom: 10px; }
-    </style>
+  <meta charset="UTF-8">
+ <style>
+  body {
+    font-family: Calibri, sans-serif;
+    font-size: 11px;
+    margin: 0;
+    padding: 0;
+    margin-left: -1cm;
+    margin-right: -2cm;
+  }
+
+  table.encabezado {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+  }
+
+  table.encabezado td {
+    padding: 0.5px;
+    border: none;
+    text-align: left;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+  }
+
+  th, td {
+    padding: 4px;
+    text-align: left;
+  }
+
+  th {
+    background-color: #f0f0f0;
+  }
+
+  thead tr.encabezado-oculto {
+    visibility: hidden;
+    height: 0;
+  }
+</style>
+
+
 </head>
 <body>
 
-    <p><strong>Dependencia:</strong> {{ form1h_instance.dependencia }}</p>
-    <p><strong>Programa:</strong> {{ form1h_instance.programa }}</p>
-    <p><strong>Proveedor:</strong> {{ form1h_instance.proveedor }}</p>
-    <p><strong>Fecha:</strong> {{ form1h_instance.fecha_factura }}</p>
-    <p><strong>Orden de Compra:</strong> {{ form1h_instance.orden_compra }}</p>
+  <div style="position: absolute; top: 1.27cm; left: 1.2cm;">
+  {{ form1h_instance.dependencia }}
+</div>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Cantidad</th>
-          <th>Detalle</th>
-          <th>Renglón</th>
-          <th>Folio Almacén</th>
-          <th>Precio Unidad</th>
-          <th>Valor Total</th>
-          <th>Folio Inventario</th>
-          <th>Nomenclatura</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for d in detalles %}
-          {% with inventarios=d.inventarios.all %}
-            {% if inventarios|length > 0 %}
-              <!-- Primera fila con detalle completo y primer inventario -->
-              <tr>
-                <td rowspan="{{ inventarios|length }}">{{ d.cantidad }}</td>
-                <td rowspan="{{ inventarios|length }}">{{ d.articulo.nombre }}</td>
-                <td rowspan="{{ inventarios|length }}">{{ d.renglon }}</td>
-                <td rowspan="{{ inventarios|length }}">{{ d.numero_linea }}</td>
-                <td rowspan="{{ inventarios|length }}">Q{{ d.precio_unitario }}</td>
-                <td rowspan="{{ inventarios|length }}">Q{{ d.precio_total }}</td>
-                <td>{{ inventarios.0.folio_inventario }}</td>
-                <td>{{ inventarios.0.nomenclatura }}</td>
-              </tr>
-              <!-- Filas adicionales para inventarios restantes -->
-              {% for inventario in inventarios|slice:"1:" %}
-                <tr>
-                  <td>{{ inventario.folio_inventario }}</td>
-                  <td>{{ inventario.nomenclatura }}</td>
-                </tr>
-              {% endfor %}
-            {% else %}
-              <!-- Sin inventarios -->
-              <tr>
-                <td>{{ d.cantidad }}</td>
-                <td>{{ d.articulo.nombre }}</td>
-                <td>{{ d.renglon }}</td>
-                <td>{{ d.numero_linea }}</td>
-                <td>Q{{ d.precio_unitario }}</td>
-                <td>Q{{ d.precio_total }}</td>
-                <td>-</td>
-                <td>-</td>
-              </tr>
-            {% endif %}
-          {% endwith %}
-        {% endfor %}
-      </tbody>
-    </table>
+<div style="position: absolute; top: 1.27cm; left: 14.5cm;">
+  {{ form1h_instance.numero_factura }}
+</div>
+
+<div style="position: absolute; top: 2.02cm; left: 1cm;">
+  {{ form1h_instance.programa }}
+</div>
+
+<div style="position: absolute; top: 2.02cm; left: 14.4cm;">
+  {{ form1h_instance.fecha_factura }}
+</div>
+
+<div style="position: absolute; top: 2.67cm; left: 1.2cm;">
+  {{ form1h_instance.proveedor }}
+</div>
+
+<div style="position: absolute; top: 2.67cm; right: -0.2cm;">
+  {{ form1h_instance.orden_compra }}
+</div>
+
+<br><br><br><br><br><br><br><br><br><br><br><br>
+
+<!-- Tabla de detalles -->
+<table>
+<thead>
+  <tr class="encabezado-oculto">
+    <th style="width: 5%;">Cantidad</th>
+    <th style="width: 35%;">Detalle</th>
+    <th style="width: 6%;">Renglón</th>
+    <th style="width: 11%;">Folio Almacén</th>
+    <th style="width: 12%;">Precio Unidad</th>
+    <th style="width: 12%;">Valor Total</th>
+    <th style="width: 12%;">Folio Inventario</th>
+    <th style="width: 12%;">Nomenclatura</th>
+  </tr>
+</thead>
+
+  <tbody>
+    {% for d in detalles %}
+      {% with inventarios=d.inventarios.all %}
+        {% if inventarios|length > 0 %}
+          <!-- Fila principal con rowspan -->
+          <tr>
+            <td rowspan="{{ inventarios|length }}" style="padding-left: 3px;">{{ d.cantidad }}</td>
+            <td rowspan="{{ inventarios|length }}" style="padding-left: 3px;">{{ d.articulo.nombre }}</td>
+            <td rowspan="{{ inventarios|length }}" style="padding-right: 55px;">{{ d.renglon }}</td>
+            <td rowspan="{{ inventarios|length }}" style="padding-left: 15px;">{{ d.numero_linea }}</td>
+            <td rowspan="{{ inventarios|length }}" style="padding-right: 10px;">Q{{ d.precio_unitario }}</td>
+            <td rowspan="{{ inventarios|length }}" style="padding-left: 8px;">Q{{ d.precio_total }}</td>
+            <td style="padding-right: 12px;">{{ inventarios.0.folio_inventario }}</td>
+            <td style="padding-left: 5px;">{{ inventarios.0.nomenclatura }}</td>
+          </tr>
+
+          <!-- Filas adicionales de inventario -->
+          {% for inventario in inventarios|slice:"1:" %}
+            <tr>
+              <td style="padding-right: 12px;">{{ inventario.folio_inventario }}</td>
+              <td style="padding-left: 5px;">{{ inventario.nomenclatura }}</td>
+            </tr>
+          {% endfor %}
+
+        {% else %}
+          <!-- Sin inventarios -->
+          <tr>
+            <td style="padding-left: 3px;">{{ d.cantidad }}</td>
+            <td style="padding-left: 3px;">{{ d.articulo.nombre }}</td>
+            <td style="padding-right: 55px;">{{ d.renglon }}</td>
+            <td style="padding-left: 15px;">{{ d.numero_linea }}</td>
+            <td style="padding-right: 10px;">Q{{ d.precio_unitario }}</td>
+            <td style="padding-left: 8px;">Q{{ d.precio_total }}</td>
+            <td style="padding-right: 12px;">-</td>
+            <td style="padding-left: 5px;">-</td>
+          </tr>
+        {% endif %}
+      {% endwith %}
+    {% endfor %}
+  </tbody>
+</table>
+
 
 </body>
 </html>
