@@ -85,7 +85,7 @@
                   <div class="checkbox p-0">
                     <input id="checkbox1" type="checkbox">
                     <label class="text-muted" for="checkbox1">Recordar Contraseña</label>
-                    <a href="{% url 'password_reset' %}">¿Olvidaste tu contraseña?</a>
+                    {% comment %} <a href="{% url 'password_reset' %}">¿Olvidaste tu contraseña?</a> {% endcomment %}
 
                   </div>
                   <button class="btn btn-primary btn-block w-100" type="submit">Entrar</button>

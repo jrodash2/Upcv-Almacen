@@ -202,6 +202,14 @@
       <a class="d-block" href="{% url 'almacen:password_change' %}">Cambio de Contraseña</a>
     {% endif %}
   </li>
+{% load static %}
+<li>
+  {% if user.is_authenticated %}
+    <a class="d-block" href="{% static 'manuales/manual_usuario.pdf' %}" target="_blank">Manual de Usuario</a>
+  {% endif %}
+</li>
+
+
   <li>
     <a class="btn btn-pill btn-outline-primary btn-sm d-block mx-auto mt-2" href="/logout">Salir del Sistema</a>
   </li>
