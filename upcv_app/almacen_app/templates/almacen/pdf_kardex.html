@@ -1,85 +1,172 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <title>Historial Kardex</title>
-  <style>
-    @page {
-      size: legal landscape;
-      margin: 1.5cm;
-    }
+    <meta charset="UTF-8" />
+    <title>Historial Kardex</title>
+    <style>
+        @page {
+            size: legal landscape;
+            margin: 1.5cm;
+        }
 
-    body {
-      font-family: "Segoe UI", Arial, sans-serif;
-      font-size: 9pt;
-      color: #333;
-    }
+        body {
+            font-family: "Segoe UI", Arial, sans-serif;
+            font-size: 9pt;
+            color: #333;
+        }
 
-    h2 {
-      text-align: center;
-      margin-bottom: 20px;
-      font-size: 14pt;
-      color: #1a1a1a;
-      border-bottom: 2px solid #666;
-      padding-bottom: 5px;
-    }
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 14pt;
+            color: #1a1a1a;
+            border-bottom: 2px solid #666;
+            padding-bottom: 5px;
+        }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            table-layout: fixed;
+        }
 
-    th, td {
-      border: 1px solid #aaa;
-      padding: 6px 8px;
-      text-align: center;
-      vertical-align: middle;
-    }
+        th, td {
+            border: 1px solid #aaa;
+            padding: 6px 4px;
+            text-align: center;
+            vertical-align: middle;
+            word-wrap: break-word; /* Permite que el texto largo se rompa */
+        }
 
-    th {
-      background-color: #e0e0e0;
-      font-weight: bold;
-      color: #000;
-    }
+        th {
+            background-color: #e0e0e0;
+            font-weight: bold;
+            color: #000;
+        }
 
-    tr:nth-child(even) {
-      background-color: #f9f9f9;
-    }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
 
-    tr:hover {
-      background-color: #f1f1f1;
-    }
-  </style>
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .header-group {
+            border-bottom: 1px solid #aaa;
+        }
+
+        .small-col {
+            width: 8%;
+        }
+
+        .med-col {
+            width: 12%;
+        }
+
+        .large-col {
+            width: 25%;
+        }
+    </style>
 </head>
 <body>
 
-  <h2>Historial de movimientos para: {{ articulo.nombre }}</h2>
+    <h2>Historial de movimientos para: {{ articulo.nombre }}</h2>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Fecha</th>
-        <th>Tipo</th>
-        <th>Cantidad</th>
-        <th>Saldo Anterior</th>
-        <th>Saldo Actual</th>
-        <th>Observación</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for m in movimientos %}
-      <tr>
-        <td>{{ m.fecha|date:"Y-m-d H:i" }}</td>
-        <td>{{ m.get_tipo_movimiento_display }}</td>
-        <td>{{ m.cantidad }}</td>
-        <td>{{ m.saldo_anterior }}</td>
-        <td>{{ m.saldo_actual }}</td>
-        <td>{{ m.observacion }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+    <table>
+        <thead>
+            <tr>
+                <th rowspan="2" class="large-col">Descripción</th>
+                <th colspan="3" class="header-group">Entradas</th>
+                <th colspan="3" class="header-group">Salidas</th>
+                <th colspan="3" class="header-group">Saldo</th>
+                <th rowspan="2" class="large-col">Observación</th>
+            </tr>
+            <tr>
+                <th class="small-col">Unidades</th>
+                <th class="med-col">Costo U.</th>
+                <th class="med-col">Costo T.</th>
+                <th class="small-col">Unidades</th>
+                <th class="med-col">Costo U.</th>
+                <th class="med-col">Costo T.</th>
+                <th class="small-col">Unidades</th>
+                <th class="med-col">Costo U.</th>
+                <th class="med-col">Costo T.</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for m in movimientos %}
+            <tr>
+                <td>{{ m.get_tipo_movimiento_display }}</td>
+                <td>
+                    {% if m.tipo_movimiento == 'INGRESO' %}
+                        {{ m.cantidad }}
+                    {% else %}
+                        0
+                    {% endif %}
+                </td>
+                <td>
+                    {% if m.tipo_movimiento == 'INGRESO' %}
+                        {{ m.precio_unitario|floatformat:2 }}
+                    {% else %}
+                        0.00
+                    {% endif %}
+                </td>
+                <td>
+                    {% if m.tipo_movimiento == 'INGRESO' %}
+                        {{ m.precio_total|floatformat:2 }}
+                    {% else %}
+                        0.00
+                    {% endif %}
+                </td>
+                <td>
+                    {% if m.tipo_movimiento == 'SALIDA' %}
+                        {{ m.cantidad }}
+                    {% else %}
+                        0
+                    {% endif %}
+                </td>
+                <td>
+                    {% if m.tipo_movimiento == 'SALIDA' %}
+                        {{ m.precio_unitario|floatformat:2 }}
+                    {% else %}
+                        0.00
+                    {% endif %}
+                </td>
+                <td>
+                    {% if m.tipo_movimiento == 'SALIDA' %}
+                        {{ m.precio_total|floatformat:2 }}
+                    {% else %}
+                        0.00
+                    {% endif %}
+                </td>
+                <td>{{ m.saldo_actual }}</td>
+                <td>
+                    {% comment %} El precio unitario para el saldo se usa desde la vista {% endcomment %}
+                    {{ m.precio_unitario|floatformat:2 }}
+                </td>
+                <td>{{ m.saldo_costo_total|floatformat:2 }}</td>
+                <td>{{ m.observacion }}</td>
+            </tr>
+            {% endfor %}
+            {% if totales %}
+            <tr>
+                <td style="text-align: right; font-weight: bold;">Totales</td>
+                <td style="font-weight: bold;">{{ totales.total_ingresos }}</td>
+                <td></td>
+                <td style="font-weight: bold;">{{ totales.total_costo_ingresos|floatformat:2 }}</td>
+                <td style="font-weight: bold;">{{ totales.total_salidas }}</td>
+                <td></td>
+                <td style="font-weight: bold;">{{ totales.total_costo_salidas|floatformat:2 }}</td>
+                <td style="font-weight: bold;">{{ totales.saldo_final_unidades }}</td>
+                <td></td>
+                <td style="font-weight: bold;">{{ totales.saldo_final_costo|floatformat:2 }}</td>
+                <td></td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
 
 </body>
 </html>

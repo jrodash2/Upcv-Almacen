@@ -51,7 +51,7 @@ import datetime
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils.html import strip_tags
-
+from decimal import Decimal
 from datetime import datetime  
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
@@ -307,7 +307,7 @@ def editar_institucion(request):
 from django.db.models import F
 
 @login_required
-@grupo_requerido('Administrador', 'Almacen')
+# @grupo_requerido('Administrador', 'Almacen') # Descomenta si usas este decorador
 @transaction.atomic
 def despachar_requerimiento(request, requerimiento_id):
     if not request.user.groups.filter(name__in=['Administrador', 'Almacen']).exists():
@@ -334,21 +334,19 @@ def despachar_requerimiento(request, requerimiento_id):
 
         for detalle in detalles:
             cantidad_a_despachar = cantidades_dict.get(detalle.id, 0)
-
+            
             # Validación: no se puede despachar más de lo solicitado
             if cantidad_a_despachar > detalle.cantidad:
                 messages.error(request, f"No puedes despachar más de lo solicitado para {detalle.articulo.nombre}.")
                 return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
-
+            
             # Validación: no despachar cantidades negativas
             if cantidad_a_despachar < 0:
                 messages.error(request, f"La cantidad a despachar para {detalle.articulo.nombre} no puede ser negativa.")
                 return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
 
-        # Despacho desde los lotes disponibles
-        for detalle in detalles:
+            # Despacho desde los lotes disponibles
             articulo = detalle.articulo
-            cantidad_a_despachar = cantidades_dict.get(detalle.id, 0)
             cantidad_restante = cantidad_a_despachar
 
             lotes = DetalleFactura.objects.filter(
@@ -356,8 +354,7 @@ def despachar_requerimiento(request, requerimiento_id):
                 form1h__estado='confirmado'
             ).annotate(
                 total_salidas=Coalesce(
-                    Sum('kardex__cantidad', filter=Q(kardex__tipo_movimiento='SALIDA')),
-                    0
+                    Sum('kardex__cantidad', filter=Q(kardex__tipo_movimiento='SALIDA', kardex__fuente_factura__isnull=False)), 0
                 ),
                 stock_disponible=F('cantidad') - F('total_salidas')
             ).filter(
@@ -369,22 +366,13 @@ def despachar_requerimiento(request, requerimiento_id):
                     break
 
                 cantidad_despacho = min(cantidad_restante, lote.stock_disponible)
-
-                Kardex.objects.create(
-                    articulo=articulo,
-                    tipo_movimiento='SALIDA',
-                    cantidad=cantidad_despacho,
-                    fuente_factura=lote,
-                    observacion=f"Despacho de requerimiento #{requerimiento.id} para {requerimiento.departamento.nombre}"
-                )
-
                 cantidad_restante -= cantidad_despacho
 
             if cantidad_restante > 0:
                 messages.error(request, f"No hay suficiente stock disponible para despachar {detalle.articulo.nombre}.")
                 return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
 
-            # Actualizar el detalle
+            # Actualizar el detalle. Esto dispara la señal para crear el Kardex
             detalle.cantidad_despachada = cantidad_a_despachar
             detalle.estado = 'despachado' if cantidad_a_despachar == detalle.cantidad else 'parcial'
             detalle.save()
@@ -401,7 +389,6 @@ def despachar_requerimiento(request, requerimiento_id):
 
     messages.error(request, "Método no permitido.")
     return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
-
     
 from django.db.models import Q
 
@@ -578,22 +565,75 @@ def editar_detalle_requerimiento(request):
 
 def exportar_kardex_pdf(request, articulo_id):
     articulo = get_object_or_404(Articulo, id=articulo_id)
-    movimientos = Kardex.objects.filter(articulo=articulo).order_by('fecha')
+    movimientos = Kardex.objects.filter(articulo=articulo).order_by('fecha', 'id')
 
-    # Renderizas la plantilla a HTML
+    movimientos_con_precios = []
+    total_ingresos = 0
+    total_costo_ingresos = Decimal('0.00')
+    total_salidas = 0
+    total_costo_salidas = Decimal('0.00')
+    
+    saldo_costo_acumulado = Decimal('0.00')
+
+    for m in movimientos:
+        m.precio_unitario = Decimal('0.00')
+        m.precio_total = Decimal('0.00')
+
+        if m.tipo_movimiento == 'INGRESO':
+            if m.fuente_factura:
+                m.precio_unitario = m.fuente_factura.precio_unitario
+                m.precio_total = m.fuente_factura.precio_total
+            total_ingresos += m.cantidad
+            total_costo_ingresos += m.precio_total
+
+        elif m.tipo_movimiento == 'SALIDA':
+            # Buscamos el precio unitario del último ingreso.
+            ultimo_ingreso_kardex = Kardex.objects.filter(
+                articulo=articulo,
+                tipo_movimiento='INGRESO',
+                fecha__lt=m.fecha  # Usamos < para buscar movimientos anteriores
+            ).order_by('-fecha', '-id').first()
+
+            if ultimo_ingreso_kardex and ultimo_ingreso_kardex.fuente_factura:
+                precio_unitario = ultimo_ingreso_kardex.fuente_factura.precio_unitario
+                m.precio_unitario = precio_unitario
+                m.precio_total = m.cantidad * precio_unitario
+            
+            total_salidas += m.cantidad
+            total_costo_salidas += m.precio_total
+
+        # Asignamos el costo total del saldo a cada movimiento para la plantilla
+        if m.tipo_movimiento == 'INGRESO':
+            saldo_costo_acumulado += m.precio_total
+        else:
+            saldo_costo_acumulado -= m.precio_total
+
+        m.saldo_costo_total = saldo_costo_acumulado
+        
+        movimientos_con_precios.append(m)
+        
+    totales = {
+        'total_ingresos': total_ingresos,
+        'total_costo_ingresos': total_costo_ingresos,
+        'total_salidas': total_salidas,
+        'total_costo_salidas': total_costo_salidas,
+        'saldo_final_unidades': total_ingresos - total_salidas,
+        'saldo_final_costo': total_costo_ingresos - total_costo_salidas
+    }
+
     html_string = render(request, 'almacen/pdf_kardex.html', {
         'articulo': articulo,
-        'movimientos': movimientos,
+        'movimientos': movimientos_con_precios,
+        'totales': totales,
     }).content.decode('utf-8')
 
-    # Generas PDF desde el HTML
     pdf_file = HTML(string=html_string).write_pdf()
 
-    # Construyes la respuesta para mostrar en navegador (inline)
     response = HttpResponse(pdf_file, content_type='application/pdf')
     response['Content-Disposition'] = 'inline; filename="kardex_{}.pdf"'.format(articulo.id)
 
     return response
+
 
 def exportar_requerimiento_pdf(request, requerimiento_id):
     requerimiento = get_object_or_404(Requerimiento, id=requerimiento_id)

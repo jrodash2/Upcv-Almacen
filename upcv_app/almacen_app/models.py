@@ -361,22 +361,24 @@ class Kardex(models.Model):
         ('SALIDA', 'Salida'),
     ]
 
-    articulo = models.ForeignKey(Articulo, related_name='kardex', on_delete=models.CASCADE)
+    articulo = models.ForeignKey('Articulo', related_name='kardex', on_delete=models.CASCADE)
     tipo_movimiento = models.CharField(max_length=10, choices=TIPO_MOVIMIENTO)
     cantidad = models.PositiveIntegerField()
     saldo_anterior = models.PositiveIntegerField(default=0)
     saldo_actual = models.PositiveIntegerField(default=0)
     fecha = models.DateTimeField(auto_now_add=True)
     
-    fuente_factura = models.ForeignKey(DetalleFactura, null=True, blank=True, on_delete=models.SET_NULL)
-    fuente_asignacion = models.ForeignKey(AsignacionDetalleFactura, null=True, blank=True, on_delete=models.SET_NULL)
+    fuente_factura = models.ForeignKey('DetalleFactura', null=True, blank=True, on_delete=models.SET_NULL)
+    fuente_asignacion = models.ForeignKey('AsignacionDetalleFactura', null=True, blank=True, on_delete=models.SET_NULL)
+    # Este es el campo que evita duplicados. Debe ser único para cada despacho.
+    fuente_despacho = models.ForeignKey('DetalleRequerimiento', null=True, blank=True, on_delete=models.SET_NULL, unique=True)
     
     observacion = models.TextField(null=True, blank=True)
 
     class Meta:
         ordering = ['fecha', 'id']  # Orden cronológico
 
-    def __str__(self): 
+    def __str__(self):
         return f'{self.tipo_movimiento} {self.cantidad} {self.articulo.nombre} ({self.fecha.date()})'
 
     def save(self, *args, **kwargs):
@@ -390,6 +392,7 @@ class Kardex(models.Model):
             self.saldo_actual = self.saldo_anterior - self.cantidad
 
         super().save(*args, **kwargs)
+
 
 
 
