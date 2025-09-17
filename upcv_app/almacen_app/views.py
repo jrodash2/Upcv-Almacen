@@ -563,6 +563,7 @@ def editar_detalle_requerimiento(request):
 
     return redirect('almacen:detalle_requerimiento')  # o donde quieras    
 
+
 def exportar_kardex_pdf(request, articulo_id):
     articulo = get_object_or_404(Articulo, id=articulo_id)
     movimientos = Kardex.objects.filter(articulo=articulo).order_by('fecha', 'id')
@@ -574,44 +575,83 @@ def exportar_kardex_pdf(request, articulo_id):
     total_costo_salidas = Decimal('0.00')
     
     saldo_costo_acumulado = Decimal('0.00')
+    saldo_unidades = 0
 
     for m in movimientos:
         m.precio_unitario = Decimal('0.00')
         m.precio_total = Decimal('0.00')
 
-        if m.tipo_movimiento == 'INGRESO':
-            if m.fuente_factura:
-                m.precio_unitario = m.fuente_factura.precio_unitario
-                m.precio_total = m.fuente_factura.precio_total
+        if m.tipo_movimiento == 'INGRESO' and m.fuente_factura:
+            m.precio_unitario = m.fuente_factura.precio_unitario
+            m.precio_total = m.fuente_factura.precio_total
             total_ingresos += m.cantidad
             total_costo_ingresos += m.precio_total
 
         elif m.tipo_movimiento == 'SALIDA':
-            # Buscamos el precio unitario del último ingreso.
             ultimo_ingreso_kardex = Kardex.objects.filter(
                 articulo=articulo,
                 tipo_movimiento='INGRESO',
-                fecha__lt=m.fecha  # Usamos < para buscar movimientos anteriores
+                fecha__lt=m.fecha
             ).order_by('-fecha', '-id').first()
 
             if ultimo_ingreso_kardex and ultimo_ingreso_kardex.fuente_factura:
                 precio_unitario = ultimo_ingreso_kardex.fuente_factura.precio_unitario
                 m.precio_unitario = precio_unitario
                 m.precio_total = m.cantidad * precio_unitario
-            
+
             total_salidas += m.cantidad
             total_costo_salidas += m.precio_total
 
-        # Asignamos el costo total del saldo a cada movimiento para la plantilla
         if m.tipo_movimiento == 'INGRESO':
             saldo_costo_acumulado += m.precio_total
         else:
             saldo_costo_acumulado -= m.precio_total
 
         m.saldo_costo_total = saldo_costo_acumulado
-        
+        m.precio_unitario_saldo = m.saldo_actual and (m.saldo_costo_total / m.saldo_actual) or Decimal('0.00')
+
         movimientos_con_precios.append(m)
-        
+
+    # Paginación
+    MAX_MOVS_POR_HOJA = 30
+    hojas = []
+    hoja_actual = []
+    linea_global = 1
+    saldo_unidades = 0
+    saldo_costo = Decimal('0.00')
+
+    for m in movimientos_con_precios:
+        if len(hoja_actual) == 0:
+            hoja_actual.append({
+                'tipo': 'VIENEN',
+                'saldo_unidades': saldo_unidades,
+                'saldo_costo_unitario': saldo_unidades and (saldo_costo / saldo_unidades) or Decimal('0.00'),
+                'saldo_costo_total': saldo_costo
+            })
+
+        hoja_actual.append({
+            'tipo': 'MOVIMIENTO',
+            'nro': linea_global,
+            'movimiento': m
+        })
+
+        saldo_unidades = m.saldo_actual
+        saldo_costo = m.saldo_costo_total
+        linea_global += 1
+
+        if len(hoja_actual) == MAX_MOVS_POR_HOJA:
+            hoja_actual.append({
+                'tipo': 'VAN',
+                'saldo_unidades': saldo_unidades,
+                'saldo_costo_unitario': saldo_unidades and (saldo_costo / saldo_unidades) or Decimal('0.00'),
+                'saldo_costo_total': saldo_costo
+            })
+            hojas.append(hoja_actual)
+            hoja_actual = []
+
+    if hoja_actual:
+        hojas.append(hoja_actual)
+
     totales = {
         'total_ingresos': total_ingresos,
         'total_costo_ingresos': total_costo_ingresos,
@@ -623,15 +663,13 @@ def exportar_kardex_pdf(request, articulo_id):
 
     html_string = render(request, 'almacen/pdf_kardex.html', {
         'articulo': articulo,
-        'movimientos': movimientos_con_precios,
+        'hojas': hojas,
         'totales': totales,
     }).content.decode('utf-8')
 
     pdf_file = HTML(string=html_string).write_pdf()
-
     response = HttpResponse(pdf_file, content_type='application/pdf')
     response['Content-Disposition'] = 'inline; filename="kardex_{}.pdf"'.format(articulo.id)
-
     return response
 
 

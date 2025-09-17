@@ -39,7 +39,7 @@ def crear_kardex_salida_despacho(sender, instance, **kwargs):
                 articulo=instance.articulo,
                 tipo_movimiento='SALIDA',
                 cantidad=instance.cantidad_despachada,
-                observacion=f'Salida por despacho del requerimiento #{instance.requerimiento.id} para {instance.requerimiento.departamento.nombre}',
+                observacion=f'Requerimiento #{instance.requerimiento.id} para {instance.requerimiento.departamento.nombre}',
                 fuente_despacho=instance
             )
         except IntegrityError:

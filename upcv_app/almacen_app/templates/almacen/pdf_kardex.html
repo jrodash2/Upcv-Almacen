@@ -24,6 +24,12 @@
             padding-bottom: 5px;
         }
 
+        .kardex-page {
+            page-break-inside: avoid;
+            break-inside: avoid;
+            margin-bottom: 30px;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -36,7 +42,7 @@
             padding: 6px 4px;
             text-align: center;
             vertical-align: middle;
-            word-wrap: break-word; /* Permite que el texto largo se rompa */
+            word-wrap: break-word;
         }
 
         th {
@@ -57,26 +63,51 @@
             border-bottom: 1px solid #aaa;
         }
 
-        .small-col {
-            width: 8%;
+        .small-col { width: 8%; }
+        .med-col { width: 12%; }
+        .large-col { width: 25%; }
+
+        .page-break {
+            page-break-after: always;
         }
 
-        .med-col {
-            width: 12%;
-        }
-
-        .large-col {
-            width: 25%;
+        tr, td, th {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
         }
     </style>
 </head>
 <body>
 
+{% for hoja in hojas %}
+<div class="kardex-page">
     <h2>Historial de movimientos para: {{ articulo.nombre }}</h2>
+    <p style="text-align: center; font-size: 10pt; margin: 0 0 10px 0;">
+        <strong>KARDEX N° {{ articulo.numero_kardex }}</strong>
+    </p>
+
 
     <table>
+        <colgroup>
+    <col style="width: 3%;">   <!-- No. -->
+    <col style="width: 7%;">   <!-- Fecha -->
+    <col style="width: 7%;">  <!-- Descripción -->
+    <col style="width: 5%;">   <!-- Entradas - Unidades -->
+    <col style="width: 5%;">   <!-- Entradas - Costo U. -->
+    <col style="width: 5%;">   <!-- Entradas - Costo T. -->
+    <col style="width: 5%;">   <!-- Salidas - Unidades -->
+    <col style="width: 5%;">   <!-- Salidas - Costo U. -->
+    <col style="width: 5%;">   <!-- Salidas - Costo T. -->
+    <col style="width: 5%;">   <!-- Saldo - Unidades -->
+    <col style="width: 5%;">   <!-- Saldo - Costo U. -->
+    <col style="width: 5%;">   <!-- Saldo - Costo T. -->
+    <col style="width: 25%;">  <!-- Observación -->
+</colgroup>
+
         <thead>
             <tr>
+                <th rowspan="2">No.</th>
+                <th rowspan="2">Fecha</th>
                 <th rowspan="2" class="large-col">Descripción</th>
                 <th colspan="3" class="header-group">Entradas</th>
                 <th colspan="3" class="header-group">Salidas</th>
@@ -96,77 +127,100 @@
             </tr>
         </thead>
         <tbody>
-            {% for m in movimientos %}
-            <tr>
-                <td>{{ m.get_tipo_movimiento_display }}</td>
-                <td>
-                    {% if m.tipo_movimiento == 'INGRESO' %}
-                        {{ m.cantidad }}
-                    {% else %}
-                        0
-                    {% endif %}
-                </td>
-                <td>
-                    {% if m.tipo_movimiento == 'INGRESO' %}
-                        {{ m.precio_unitario|floatformat:2 }}
-                    {% else %}
-                        0.00
-                    {% endif %}
-                </td>
-                <td>
-                    {% if m.tipo_movimiento == 'INGRESO' %}
-                        {{ m.precio_total|floatformat:2 }}
-                    {% else %}
-                        0.00
-                    {% endif %}
-                </td>
-                <td>
-                    {% if m.tipo_movimiento == 'SALIDA' %}
-                        {{ m.cantidad }}
-                    {% else %}
-                        0
-                    {% endif %}
-                </td>
-                <td>
-                    {% if m.tipo_movimiento == 'SALIDA' %}
-                        {{ m.precio_unitario|floatformat:2 }}
-                    {% else %}
-                        0.00
-                    {% endif %}
-                </td>
-                <td>
-                    {% if m.tipo_movimiento == 'SALIDA' %}
-                        {{ m.precio_total|floatformat:2 }}
-                    {% else %}
-                        0.00
-                    {% endif %}
-                </td>
-                <td>{{ m.saldo_actual }}</td>
-                <td>
-                    {% comment %} El precio unitario para el saldo se usa desde la vista {% endcomment %}
-                    {{ m.precio_unitario|floatformat:2 }}
-                </td>
-                <td>{{ m.saldo_costo_total|floatformat:2 }}</td>
-                <td>{{ m.observacion }}</td>
-            </tr>
+            {% for fila in hoja %}
+                {% if fila.tipo == 'VIENEN' %}
+                <tr>
+                    <td></td><td></td><td><strong>VIENEN</strong></td>
+                    <td colspan="6"></td>
+                    <td>{{ fila.saldo_unidades }}</td>
+                    <td>{{ fila.saldo_costo_unitario|floatformat:5 }}</td>
+                    <td>{{ fila.saldo_costo_total|floatformat:2 }}</td>
+                    <td></td>
+                </tr>
+                {% elif fila.tipo == 'VAN' %}
+                <tr>
+                    <td></td><td></td><td><strong>VAN</strong></td>
+                    <td colspan="6"></td>
+                    <td>{{ fila.saldo_unidades }}</td>
+                    <td>{{ fila.saldo_costo_unitario|floatformat:5 }}</td>
+                    <td>{{ fila.saldo_costo_total|floatformat:2 }}</td>
+                    <td></td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td>{{ fila.nro }}</td>
+                    <td>{{ fila.movimiento.fecha|date:"d/m/Y" }}</td>
+                    <td>{{ fila.movimiento.get_tipo_movimiento_display }}</td>
+
+                    <!-- Entradas -->
+                    <td>
+                        {% if fila.movimiento.tipo_movimiento == 'INGRESO' %}
+                            {{ fila.movimiento.cantidad }}
+                        {% else %} 0 {% endif %}
+                    </td>
+                    <td>
+                        {% if fila.movimiento.tipo_movimiento == 'INGRESO' %}
+                            {{ fila.movimiento.precio_unitario|floatformat:2 }}
+                        {% else %} 0.00 {% endif %}
+                    </td>
+                    <td>
+                        {% if fila.movimiento.tipo_movimiento == 'INGRESO' %}
+                            {{ fila.movimiento.precio_total|floatformat:2 }}
+                        {% else %} 0.00 {% endif %}
+                    </td>
+
+                    <!-- Salidas -->
+                    <td>
+                        {% if fila.movimiento.tipo_movimiento == 'SALIDA' %}
+                            {{ fila.movimiento.cantidad }}
+                        {% else %} 0 {% endif %}
+                    </td>
+                    <td>
+                        {% if fila.movimiento.tipo_movimiento == 'SALIDA' %}
+                            {{ fila.movimiento.precio_unitario|floatformat:2 }}
+                        {% else %} 0.00 {% endif %}
+                    </td>
+                    <td>
+                        {% if fila.movimiento.tipo_movimiento == 'SALIDA' %}
+                            {{ fila.movimiento.precio_total|floatformat:2 }}
+                        {% else %} 0.00 {% endif %}
+                    </td>
+
+                    <!-- Saldo -->
+                    <td>{{ fila.movimiento.saldo_actual }}</td>
+                    <td>{{ fila.movimiento.precio_unitario_saldo|floatformat:5 }}</td>
+                    <td>{{ fila.movimiento.saldo_costo_total|floatformat:2 }}</td>
+
+                    <td>{{ fila.movimiento.observacion }}</td>
+                </tr>
+                {% endif %}
             {% endfor %}
-            {% if totales %}
-            <tr>
-                <td style="text-align: right; font-weight: bold;">Totales</td>
-                <td style="font-weight: bold;">{{ totales.total_ingresos }}</td>
-                <td></td>
-                <td style="font-weight: bold;">{{ totales.total_costo_ingresos|floatformat:2 }}</td>
-                <td style="font-weight: bold;">{{ totales.total_salidas }}</td>
-                <td></td>
-                <td style="font-weight: bold;">{{ totales.total_costo_salidas|floatformat:2 }}</td>
-                <td style="font-weight: bold;">{{ totales.saldo_final_unidades }}</td>
-                <td></td>
-                <td style="font-weight: bold;">{{ totales.saldo_final_costo|floatformat:2 }}</td>
-                <td></td>
-            </tr>
-            {% endif %}
         </tbody>
     </table>
+</div>
+
+{% if not forloop.last %}
+    <div class="page-break"></div>
+{% endif %}
+{% endfor %}
+
+{% if totales %}
+    <table style="margin-top: 30px;">
+        <tr>
+            <td colspan="3" style="text-align: right; font-weight: bold;">Totales</td>
+            <td style="font-weight: bold;">{{ totales.total_ingresos }}</td>
+            <td></td>
+            <td style="font-weight: bold;">{{ totales.total_costo_ingresos|floatformat:2 }}</td>
+            <td style="font-weight: bold;">{{ totales.total_salidas }}</td>
+            <td></td>
+            <td style="font-weight: bold;">{{ totales.total_costo_salidas|floatformat:2 }}</td>
+            <td style="font-weight: bold;">{{ totales.saldo_final_unidades }}</td>
+            <td></td>
+            <td style="font-weight: bold;">{{ totales.saldo_final_costo|floatformat:2 }}</td>
+            <td></td>
+        </tr>
+    </table>
+{% endif %}
 
 </body>
 </html>
