@@ -564,6 +564,12 @@ def editar_detalle_requerimiento(request):
     return redirect('almacen:detalle_requerimiento')  # o donde quieras    
 
 
+from decimal import Decimal
+from django.shortcuts import get_object_or_404
+from django.http import HttpResponse
+from django.template.loader import render_to_string
+from weasyprint import HTML
+
 def exportar_kardex_pdf(request, articulo_id):
     articulo = get_object_or_404(Articulo, id=articulo_id)
     movimientos = Kardex.objects.filter(articulo=articulo).order_by('fecha', 'id')
@@ -573,7 +579,7 @@ def exportar_kardex_pdf(request, articulo_id):
     total_costo_ingresos = Decimal('0.00')
     total_salidas = 0
     total_costo_salidas = Decimal('0.00')
-    
+
     saldo_costo_acumulado = Decimal('0.00')
     saldo_unidades = 0
 
@@ -613,7 +619,7 @@ def exportar_kardex_pdf(request, articulo_id):
         movimientos_con_precios.append(m)
 
     # Paginación
-    MAX_MOVS_POR_HOJA = 30
+    MAX_MOVS_POR_HOJA = 5
     hojas = []
     hoja_actual = []
     linea_global = 1
@@ -661,10 +667,14 @@ def exportar_kardex_pdf(request, articulo_id):
         'saldo_final_costo': total_costo_ingresos - total_costo_salidas
     }
 
+    # 👇 Obtener el último movimiento del Kardex para mostrar su número
+    ultimo_kardex = movimientos.last()
+
     html_string = render(request, 'almacen/pdf_kardex.html', {
         'articulo': articulo,
         'hojas': hojas,
         'totales': totales,
+        'ultimo_kardex': ultimo_kardex,  # 👈 Pasado al template
     }).content.decode('utf-8')
 
     pdf_file = HTML(string=html_string).write_pdf()

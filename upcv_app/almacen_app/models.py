@@ -354,12 +354,16 @@ class ContadorDetalleFactura(models.Model):
     def __str__(self):
         return f"Contador global de detalles: {self.contador}"
 
-# Modelo de Kardex (Movimientos de Inventario)
+from django.db import models
+from django.utils.timezone import now
+
 class Kardex(models.Model):
     TIPO_MOVIMIENTO = [
         ('INGRESO', 'Ingreso'),
         ('SALIDA', 'Salida'),
     ]
+
+    numero_kardex = models.CharField(max_length=20, unique=True, editable=False, blank=True)  # Nuevo campo
 
     articulo = models.ForeignKey('Articulo', related_name='kardex', on_delete=models.CASCADE)
     tipo_movimiento = models.CharField(max_length=10, choices=TIPO_MOVIMIENTO)
@@ -379,7 +383,7 @@ class Kardex(models.Model):
         ordering = ['fecha', 'id']  # Orden cronológico
 
     def __str__(self):
-        return f'{self.tipo_movimiento} {self.cantidad} {self.articulo.nombre} ({self.fecha.date()})'
+        return f'Kardex #{self.numero_kardex} - {self.tipo_movimiento} {self.cantidad} {self.articulo.nombre} ({self.fecha.date()})'
 
     def save(self, *args, **kwargs):
         # Calcular saldo actual
@@ -391,9 +395,19 @@ class Kardex(models.Model):
         elif self.tipo_movimiento == 'SALIDA':
             self.saldo_actual = self.saldo_anterior - self.cantidad
 
+        # Generar número de Kardex único si no existe
+        if not self.numero_kardex:
+            ultimo = Kardex.objects.all().order_by('-id').first()
+            ultimo_numero = 0
+            if ultimo and ultimo.numero_kardex:
+                try:
+                    ultimo_numero = int(ultimo.numero_kardex.split('-')[-1])
+                except:
+                    pass
+            nuevo_numero = ultimo_numero + 1
+            self.numero_kardex = f'KDX-{nuevo_numero:06d}'
+
         super().save(*args, **kwargs)
-
-
 
 
 # Modelo de Movimiento (Registra los movimientos internos, transferencias, etc.)
