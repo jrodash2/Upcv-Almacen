@@ -81,30 +81,33 @@
 
 {% for hoja in hojas %}
 <div class="kardex-page">
-    <h2>Historial de movimientos para: {{ articulo.nombre }}</h2>
-    <p style="text-align: center; font-size: 10pt; margin: 0 0 10px 0;">
- <strong>KARDEX N° {{ ultimo_kardex.numero_kardex }}</strong>
-
-
-    </p>
+   <h2>Historial de movimientos para: {{ articulo.nombre }}</h2>
+<p style="text-align: center; font-size: 10pt; margin: 0 0 10px 0;">
+    <strong>KARDEX N° {{ hoja.numero_kardex }}</strong>
+</p>
+{% if hoja.referencia_anterior %}
+<p style="text-align: center; font-size: 8pt; margin: 0 0 10px 0;">
+    (Viene de kardex N° {{ hoja.referencia_anterior }})
+</p>
+{% endif %}
 
 
     <table>
         <colgroup>
-    <col style="width: 3%;">   <!-- No. -->
-    <col style="width: 7%;">   <!-- Fecha -->
-    <col style="width: 7%;">  <!-- Descripción -->
-    <col style="width: 5%;">   <!-- Entradas - Unidades -->
-    <col style="width: 5%;">   <!-- Entradas - Costo U. -->
-    <col style="width: 5%;">   <!-- Entradas - Costo T. -->
-    <col style="width: 5%;">   <!-- Salidas - Unidades -->
-    <col style="width: 5%;">   <!-- Salidas - Costo U. -->
-    <col style="width: 5%;">   <!-- Salidas - Costo T. -->
-    <col style="width: 5%;">   <!-- Saldo - Unidades -->
-    <col style="width: 5%;">   <!-- Saldo - Costo U. -->
-    <col style="width: 5%;">   <!-- Saldo - Costo T. -->
-    <col style="width: 25%;">  <!-- Observación -->
-</colgroup>
+            <col style="width: 3%;">
+            <col style="width: 7%;">
+            <col style="width: 7%;">
+            <col style="width: 5%;">
+            <col style="width: 5%;">
+            <col style="width: 5%;">
+            <col style="width: 5%;">
+            <col style="width: 5%;">
+            <col style="width: 5%;">
+            <col style="width: 5%;">
+            <col style="width: 5%;">
+            <col style="width: 5%;">
+            <col style="width: 25%;">
+        </colgroup>
 
         <thead>
             <tr>
@@ -129,7 +132,7 @@
             </tr>
         </thead>
         <tbody>
-            {% for fila in hoja %}
+            {% for fila in hoja.lineas %}
                 {% if fila.tipo == 'VIENEN' %}
                 <tr>
                     <td></td><td></td><td><strong>VIENEN</strong></td>
@@ -155,44 +158,19 @@
                     <td>{{ fila.movimiento.get_tipo_movimiento_display }}</td>
 
                     <!-- Entradas -->
-                    <td>
-                        {% if fila.movimiento.tipo_movimiento == 'INGRESO' %}
-                            {{ fila.movimiento.cantidad }}
-                        {% else %} 0 {% endif %}
-                    </td>
-                    <td>
-                        {% if fila.movimiento.tipo_movimiento == 'INGRESO' %}
-                            {{ fila.movimiento.precio_unitario|floatformat:2 }}
-                        {% else %} 0.00 {% endif %}
-                    </td>
-                    <td>
-                        {% if fila.movimiento.tipo_movimiento == 'INGRESO' %}
-                            {{ fila.movimiento.precio_total|floatformat:2 }}
-                        {% else %} 0.00 {% endif %}
-                    </td>
+                    <td>{% if fila.movimiento.tipo_movimiento == 'INGRESO' %}{{ fila.movimiento.cantidad }}{% else %} 0 {% endif %}</td>
+                    <td>{% if fila.movimiento.tipo_movimiento == 'INGRESO' %}{{ fila.movimiento.precio_unitario|floatformat:2 }}{% else %} 0.00 {% endif %}</td>
+                    <td>{% if fila.movimiento.tipo_movimiento == 'INGRESO' %}{{ fila.movimiento.precio_total|floatformat:2 }}{% else %} 0.00 {% endif %}</td>
 
                     <!-- Salidas -->
-                    <td>
-                        {% if fila.movimiento.tipo_movimiento == 'SALIDA' %}
-                            {{ fila.movimiento.cantidad }}
-                        {% else %} 0 {% endif %}
-                    </td>
-                    <td>
-                        {% if fila.movimiento.tipo_movimiento == 'SALIDA' %}
-                            {{ fila.movimiento.precio_unitario|floatformat:2 }}
-                        {% else %} 0.00 {% endif %}
-                    </td>
-                    <td>
-                        {% if fila.movimiento.tipo_movimiento == 'SALIDA' %}
-                            {{ fila.movimiento.precio_total|floatformat:2 }}
-                        {% else %} 0.00 {% endif %}
-                    </td>
+                    <td>{% if fila.movimiento.tipo_movimiento == 'SALIDA' %}{{ fila.movimiento.cantidad }}{% else %} 0 {% endif %}</td>
+                    <td>{% if fila.movimiento.tipo_movimiento == 'SALIDA' %}{{ fila.movimiento.precio_unitario|floatformat:2 }}{% else %} 0.00 {% endif %}</td>
+                    <td>{% if fila.movimiento.tipo_movimiento == 'SALIDA' %}{{ fila.movimiento.precio_total|floatformat:2 }}{% else %} 0.00 {% endif %}</td>
 
                     <!-- Saldo -->
                     <td>{{ fila.movimiento.saldo_actual }}</td>
                     <td>{{ fila.movimiento.precio_unitario_saldo|floatformat:5 }}</td>
                     <td>{{ fila.movimiento.saldo_costo_total|floatformat:2 }}</td>
-
                     <td>{{ fila.movimiento.observacion }}</td>
                 </tr>
                 {% endif %}

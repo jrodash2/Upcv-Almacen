@@ -570,7 +570,13 @@ from django.http import HttpResponse
 from django.template.loader import render_to_string
 from weasyprint import HTML
 
+
 def exportar_kardex_pdf(request, articulo_id):
+    from decimal import Decimal
+    from django.shortcuts import get_object_or_404, render
+    from django.http import HttpResponse
+    from weasyprint import HTML
+
     articulo = get_object_or_404(Articulo, id=articulo_id)
     movimientos = Kardex.objects.filter(articulo=articulo).order_by('fecha', 'id')
 
@@ -618,13 +624,14 @@ def exportar_kardex_pdf(request, articulo_id):
 
         movimientos_con_precios.append(m)
 
-    # Paginación
-    MAX_MOVS_POR_HOJA = 5
+    MAX_MOVS_POR_HOJA = 7
     hojas = []
     hoja_actual = []
     linea_global = 1
     saldo_unidades = 0
     saldo_costo = Decimal('0.00')
+
+    referencia_anterior = None  # Inicializa sin referencia anterior
 
     for m in movimientos_con_precios:
         if len(hoja_actual) == 0:
@@ -646,17 +653,22 @@ def exportar_kardex_pdf(request, articulo_id):
         linea_global += 1
 
         if len(hoja_actual) == MAX_MOVS_POR_HOJA:
-            hoja_actual.append({
-                'tipo': 'VAN',
-                'saldo_unidades': saldo_unidades,
-                'saldo_costo_unitario': saldo_unidades and (saldo_costo / saldo_unidades) or Decimal('0.00'),
-                'saldo_costo_total': saldo_costo
+            numero_kardex_hoja = hoja_actual[1]['movimiento'].numero_kardex
+            hojas.append({
+                'numero_kardex': numero_kardex_hoja,
+                'referencia_anterior': referencia_anterior,
+                'lineas': hoja_actual,
             })
-            hojas.append(hoja_actual)
+            referencia_anterior = numero_kardex_hoja  # Actualiza referencia para la siguiente hoja
             hoja_actual = []
 
     if hoja_actual:
-        hojas.append(hoja_actual)
+        numero_kardex_hoja = hoja_actual[1]['movimiento'].numero_kardex
+        hojas.append({
+            'numero_kardex': numero_kardex_hoja,
+            'referencia_anterior': referencia_anterior,
+            'lineas': hoja_actual,
+        })
 
     totales = {
         'total_ingresos': total_ingresos,
@@ -667,20 +679,18 @@ def exportar_kardex_pdf(request, articulo_id):
         'saldo_final_costo': total_costo_ingresos - total_costo_salidas
     }
 
-    # 👇 Obtener el último movimiento del Kardex para mostrar su número
-    ultimo_kardex = movimientos.last()
-
     html_string = render(request, 'almacen/pdf_kardex.html', {
         'articulo': articulo,
         'hojas': hojas,
         'totales': totales,
-        'ultimo_kardex': ultimo_kardex,  # 👈 Pasado al template
     }).content.decode('utf-8')
 
     pdf_file = HTML(string=html_string).write_pdf()
     response = HttpResponse(pdf_file, content_type='application/pdf')
-    response['Content-Disposition'] = 'inline; filename="kardex_{}.pdf"'.format(articulo.id)
+    response['Content-Disposition'] = f'inline; filename="kardex_{articulo.id}.pdf"'
     return response
+
+
 
 
 def exportar_requerimiento_pdf(request, requerimiento_id):
