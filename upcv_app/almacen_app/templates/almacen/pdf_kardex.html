@@ -39,7 +39,7 @@
 
         th, td {
             border: 1px solid #aaa;
-            padding: 6px 4px;
+            padding: 1px 4px;
             text-align: center;
             vertical-align: middle;
             word-wrap: break-word;
@@ -94,19 +94,19 @@
 
     <table>
         <colgroup>
-            <col style="width: 3%;">
-            <col style="width: 7%;">
-            <col style="width: 7%;">
+            <col style="width: 1%;">
             <col style="width: 5%;">
             <col style="width: 5%;">
-            <col style="width: 5%;">
-            <col style="width: 5%;">
-            <col style="width: 5%;">
-            <col style="width: 5%;">
-            <col style="width: 5%;">
-            <col style="width: 5%;">
-            <col style="width: 5%;">
-            <col style="width: 25%;">
+            <col style="width: 4%;">
+            <col style="width: 4%;">
+            <col style="width: 4%;">
+            <col style="width: 4%;">
+            <col style="width: 4%;">
+            <col style="width: 4%;">
+            <col style="width: 4%;">
+            <col style="width: 4%;">
+            <col style="width: 4%;">
+            <col style="width: 30%;">
         </colgroup>
 
         <thead>
@@ -185,21 +185,22 @@
 {% endfor %}
 
 {% if totales %}
-    <table style="margin-top: 30px;">
-        <tr>
-            <td colspan="3" style="text-align: right; font-weight: bold;">Totales</td>
-            <td style="font-weight: bold;">{{ totales.total_ingresos }}</td>
-            <td></td>
-            <td style="font-weight: bold;">{{ totales.total_costo_ingresos|floatformat:2 }}</td>
-            <td style="font-weight: bold;">{{ totales.total_salidas }}</td>
-            <td></td>
-            <td style="font-weight: bold;">{{ totales.total_costo_salidas|floatformat:2 }}</td>
-            <td style="font-weight: bold;">{{ totales.saldo_final_unidades }}</td>
-            <td></td>
-            <td style="font-weight: bold;">{{ totales.saldo_final_costo|floatformat:2 }}</td>
-            <td></td>
-        </tr>
-    </table>
+<table style="margin-top: 30px; border-collapse: collapse;">
+    <tr>
+        <td colspan="3" style="text-align: left; font-weight: bold; width: 120px; height: 30px;">Totales</td>
+        <td style="font-weight: bold; text-align: center; width: 40px;">{{ totales.total_ingresos }}</td>
+        <td style="width: 40px;"></td>
+        <td style="font-weight: bold; text-align: center; width: 40px;">{{ totales.total_costo_ingresos|floatformat:2 }}</td>
+        <td style="font-weight: bold; text-align: center; width: 40px;">{{ totales.total_salidas }}</td>
+        <td style="width: 40px;"></td>
+        <td style="font-weight: bold; text-align: left; width: 40px;">{{ totales.total_costo_salidas|floatformat:2 }}</td>
+        <td style="font-weight: bold; text-align: left; width: 40px;">{{ totales.saldo_final_unidades }}</td>
+        <td style="width: 40px;"></td>
+        <td style="font-weight: bold; text-align: left; width: 40px;">{{ totales.saldo_final_costo|floatformat:2 }}</td>
+        <td style="width: 350px;"></td>
+    </tr>
+</table>
+
 {% endif %}
 
 </body>

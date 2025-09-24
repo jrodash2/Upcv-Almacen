@@ -1675,11 +1675,23 @@ def user_edit(request, user_id):
         perfil = Perfil(user=user)
 
     if request.method == 'POST':
-        form_user = UserEditForm(request.POST, request.FILES, instance=user)
+        form_user = UserEditForm(request.POST, instance=user)
         form_perfil = PerfilForm(request.POST, request.FILES, instance=perfil)
         if form_user.is_valid() and form_perfil.is_valid():
-            form_user.save()
-            form_perfil.save()
+            user = form_user.save(commit=False)
+            user.save()
+
+            # Actualizar grupo: limpiar y agregar el nuevo grupo
+            group = form_user.cleaned_data.get('group')
+            if group:
+                user.groups.clear()
+                user.groups.add(group)
+
+            perfil = form_perfil.save(commit=False)
+            perfil.user = user
+            perfil.save()
+
+            messages.success(request, 'Usuario editado correctamente.')
             return redirect('almacen:user_create')
     else:
         form_user = UserEditForm(instance=user)
@@ -1691,6 +1703,8 @@ def user_edit(request, user_id):
         'users': User.objects.all(),
     }
     return render(request, 'almacen/user_form_edit.html', context)
+
+
 
 @login_required
 @grupo_requerido('Administrador', 'Almacen')

@@ -84,19 +84,12 @@ class UserCreateForm(forms.ModelForm):
             raise forms.ValidationError("Las contraseñas no coinciden.")
         return cleaned_data
     
-    
-from django import forms
-from django.contrib.auth.models import User, Group
 class UserEditForm(forms.ModelForm):
     group = forms.ModelChoiceField(
         queryset=Group.objects.all(),
         required=False,
         label="Grupo",
         widget=forms.Select(attrs={'class': 'form-control'})
-    )
-    foto = forms.ImageField(
-        required=False,
-        widget=forms.ClearableFileInput(attrs={'class': 'form-control'})
     )
 
     class Meta:
@@ -112,11 +105,11 @@ class UserEditForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['username'].required = False
-        # Preseleccionar grupo actual si existe
         if self.instance and self.instance.pk:
             groups = self.instance.groups.all()
             if groups.exists():
                 self.fields['group'].initial = groups.first()
+
 
 
 class AsignacionDetalleFacturaForm(forms.ModelForm):

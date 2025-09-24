@@ -35,10 +35,13 @@
               </ul>
               {% endif %}
 
-              {% if form.errors %}
+              {% if form.errors or perfil_form.errors %}
               <div class="alert alert-danger">
                 <ul>
                   {% for field, errors in form.errors.items %}
+                  <li><strong>{{ field }}:</strong> {{ errors|join:", " }}</li>
+                  {% endfor %}
+                  {% for field, errors in perfil_form.errors.items %}
                   <li><strong>{{ field }}:</strong> {{ errors|join:", " }}</li>
                   {% endfor %}
                 </ul>
@@ -49,6 +52,7 @@
                 {% csrf_token %}
                 <div class="row">
                   <div class="col-md-6">
+                    <!-- Campos del usuario -->
                     <div class="form-group">
                       <label for="{{ form.username.id_for_label }}">Nombre de usuario</label>
                       {{ form.username }}
@@ -65,10 +69,13 @@
                       <label for="{{ form.group.id_for_label }}">Grupo</label>
                       {{ form.group }}
                     </div>
+
+                    <!-- Campo foto viene de perfil_form -->
                     <div class="form-group">
-                      <label for="{{ form.foto.id_for_label }}">Foto de perfil</label>
-                      {{ form.foto }}
+                      <label for="{{ perfil_form.foto.id_for_label }}">Foto de perfil</label>
+                      {{ perfil_form.foto }}
                     </div>
+
                     {% if form.instance.perfil and form.instance.perfil.foto %}
                     <div class="form-group mt-2">
                       <label>Vista previa de la foto actual:</label><br>
@@ -78,14 +85,11 @@
                   </div>
 
                   <div class="col-md-6">
+                    <!-- Otros campos del usuario -->
                     <div class="form-group">
                       <label for="{{ form.email.id_for_label }}">Email</label>
                       {{ form.email }}
                     </div>
-                    <!--
-                    Si quieres incluir cambio de contraseña, podrías agregarlo aquí,
-                    pero normalmente no se muestra en edición simple.
-                    -->
                   </div>
                 </div>
 
@@ -118,7 +122,6 @@
                       <td>{{ user.email }}</td>
                       <td>{{ user.groups.all|join:", " }}</td>
                       <td>
-                     
                         <a href="{% url 'almacen:user_edit' user.id %}" class="btn btn-primary btn-sm">Editar</a>
                       </td>
                     </tr>
