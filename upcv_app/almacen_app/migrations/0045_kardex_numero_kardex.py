@@ -13,6 +13,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='kardex',
             name='numero_kardex',
-            field=models.CharField(blank=True, editable=False, max_length=20, unique=True),
+            field=models.CharField(
+                max_length=20,
+                null=True,     # ✅ permite valores nulos en la base de datos
+                blank=True,    # ✅ permite que los formularios lo dejen vacío
+                editable=False,
+                unique=True
+            ),
         ),
     ]
