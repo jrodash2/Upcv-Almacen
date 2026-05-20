@@ -1,0 +1,9 @@
+{% extends 'almacen/base.html' %}
+{% block content %}
+<div class="container-fluid"><div class="card"><div class="card-body">
+<h4>Bandeja de Solicitudes</h4>
+<table class="table"><tr><th>ID</th><th>Solicitante</th><th>Departamento</th><th>Estado</th><th></th></tr>
+{% for s in solicitudes %}<tr><td>{{ s.id }}</td><td>{{ s.usuario_solicitante }}</td><td>{{ s.departamento }}</td><td>{{ s.get_estado_display }}</td><td><a href="{% url 'almacen:detalle_solicitud_requerimiento' solicitud_id=s.id %}">Ver</a></td></tr>{% endfor %}
+</table>
+</div></div></div>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends 'almacen/base.html' %}
+{% block content %}
+<div class="container-fluid"><div class="card"><div class="card-body">
+<h4>Solicitud #{{ solicitud.id }}</h4>
+<p><b>Estado:</b> {{ solicitud.get_estado_display }}</p>
+<p><b>Departamento:</b> {{ solicitud.departamento }}</p>
+<ul>{% for d in solicitud.detalles.all %}<li>{{ d.articulo }} - {{ d.cantidad }}</li>{% endfor %}</ul>
+{% if es_administrador or es_departamento or es_almacen %}
+{% if solicitud.estado == 'pendiente' %}
+<a class="btn btn-success" href="{% url 'almacen:convertir_solicitud_en_requerimiento' solicitud_id=solicitud.id %}">Convertir</a>
+<a class="btn btn-danger" href="{% url 'almacen:rechazar_solicitud_requerimiento' solicitud_id=solicitud.id %}">Rechazar</a>
+{% endif %}
+{% endif %}
+{% if solicitud.requerimiento %}<a href="{% url 'almacen:detalle_requerimiento' requerimiento_id=solicitud.requerimiento.id %}" class="btn btn-info">Ver requerimiento asociado</a>{% endif %}
+</div></div></div>
+{% endblock %}
