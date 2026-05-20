@@ -24,6 +24,11 @@
             <h5 class="mb-0"><i class="fa fa-file-text-o me-2"></i>Crear Solicitud de Requerimiento</h5>
           </div>
           <div class="card-body">
+            {% if sin_stock_disponible %}
+              <div class="alert alert-warning">
+                No tiene artículos asignados disponibles para solicitar. Comuníquese con el administrador o con su departamento.
+              </div>
+            {% endif %}
             <form method="post">
               {% csrf_token %}
               <div class="row">
@@ -40,16 +45,20 @@
               </div>
 
               <h6 class="mt-2 mb-3">Detalle de artículos solicitados</h6>
+              {% if formset.non_form_errors %}
+                <div class="alert alert-danger py-2">{{ formset.non_form_errors|striptags }}</div>
+              {% endif %}
               {{ formset.management_form }}
               <div class="table-responsive">
                 <table class="table table-bordered table-hover align-middle">
                   <thead class="table-light">
-                    <tr><th>Artículo</th><th style="width:150px;">Cantidad</th><th>Observación</th><th style="width:90px;">Acción</th></tr>
+                    <tr><th>Artículo</th><th style="width:140px;">Disponible</th><th style="width:150px;">Cantidad</th><th>Observación</th><th style="width:90px;">Acción</th></tr>
                   </thead>
                   <tbody>
                     {% for f in formset %}
                       <tr>
                         <td>{{ f.articulo }}{% if f.articulo.errors %}<div class="text-danger small">{{ f.articulo.errors|striptags }}</div>{% endif %}</td>
+                        <td class="cantidad-disponible text-center">-</td>
                         <td>{{ f.cantidad }}{% if f.cantidad.errors %}<div class="text-danger small">{{ f.cantidad.errors|striptags }}</div>{% endif %}</td>
                         <td>{{ f.observacion }}{% if f.observacion.errors %}<div class="text-danger small">{{ f.observacion.errors|striptags }}</div>{% endif %}</td>
                         <td class="text-center">{% if f.DELETE %}<div class="form-check">{{ f.DELETE }}<label class="form-check-label ms-1">Quitar</label></div>{% else %}-{% endif %}</td>
@@ -61,13 +70,33 @@
 
               <div class="d-flex justify-content-end gap-2 mt-4">
                 <a href="{% url 'almacen:listado_solicitudes_gestor' %}" class="btn btn-light border">Cancelar</a>
-                <button class="btn btn-primary" type="submit">Guardar Solicitud</button>
+                <button class="btn btn-primary" type="submit" {% if sin_stock_disponible %}disabled{% endif %}>Guardar Solicitud</button>
               </div>
             </form>
+            {{ stock_disponible|json_script:"stock-articulos-data" }}
           </div>
         </div>
       </div>
     </div>
   </div>
 </div>
+<script>
+  const stockData = JSON.parse(document.getElementById("stock-articulos-data").textContent || "{}");
+  function actualizarFila(row) {
+    const select = row.querySelector(".select-articulo");
+    const disponibleCell = row.querySelector(".cantidad-disponible");
+    const cantidadInput = row.querySelector(".cantidad-solicitada");
+    if (!select || !disponibleCell || !cantidadInput) return;
+    const disponible = Number(stockData[select.value] || 0);
+    disponibleCell.textContent = disponible;
+    cantidadInput.max = disponible > 0 ? disponible : "";
+    cantidadInput.placeholder = disponible > 0 ? `Máximo ${disponible}` : "Sin disponibilidad";
+  }
+  document.querySelectorAll("tbody tr").forEach(actualizarFila);
+  document.addEventListener("change", function(e) {
+    if (e.target.classList.contains("select-articulo")) {
+      actualizarFila(e.target.closest("tr"));
+    }
+  });
+</script>
 {% endblock %}

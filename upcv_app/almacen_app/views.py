@@ -438,7 +438,45 @@ def crear_requerimiento(request):
 @grupo_requerido('Gestor')
 def crear_solicitud_requerimiento(request):
     form = SolicitudRequerimientoForm(request.POST or None, usuario=request.user)
-    formset = DetalleSolicitudRequerimientoFormSet(request.POST or None, queryset=DetalleSolicitudRequerimiento.objects.none())
+    departamento = None
+    if request.method == 'POST':
+        departamento_id = request.POST.get('departamento')
+        if departamento_id:
+            departamento = Departamento.objects.filter(
+                id=departamento_id,
+                usuariodepartamento__usuario=request.user
+            ).first()
+
+    stock_disponible = {}
+    if departamento:
+        asignaciones = (
+            AsignacionDetalleFactura.objects
+            .filter(destino=departamento)
+            .values('articulo_id')
+            .annotate(total_asignado=Coalesce(Sum('cantidad_asignada'), 0))
+        )
+        despachados = (
+            DetalleRequerimiento.objects
+            .filter(requerimiento__departamento=departamento)
+            .values('articulo_id')
+            .annotate(total_despachado=Coalesce(Sum('cantidad_despachada'), 0))
+        )
+        despachados_dict = {d['articulo_id']: d['total_despachado'] for d in despachados}
+        for a in asignaciones:
+            disponible = a['total_asignado'] - despachados_dict.get(a['articulo_id'], 0)
+            if disponible > 0:
+                stock_disponible[a['articulo_id']] = disponible
+
+    formset = DetalleSolicitudRequerimientoFormSet(
+        request.POST or None,
+        queryset=DetalleSolicitudRequerimiento.objects.none(),
+        departamento=departamento,
+        stock_disponible=stock_disponible
+    )
+
+    if request.method == 'POST' and not stock_disponible:
+        messages.error(request, "No tiene artículos asignados disponibles para solicitar. Comuníquese con el administrador o con su departamento.")
+
     if request.method == 'POST' and form.is_valid() and formset.is_valid():
         solicitud = form.save(commit=False)
         solicitud.usuario_solicitante = request.user
@@ -450,7 +488,12 @@ def crear_solicitud_requerimiento(request):
                 detalle.save()
         messages.success(request, "Solicitud creada correctamente.")
         return redirect('almacen:listado_solicitudes_gestor')
-    return render(request, 'almacen/crear_solicitud_requerimiento.html', {'form': form, 'formset': formset})
+    return render(request, 'almacen/crear_solicitud_requerimiento.html', {
+        'form': form,
+        'formset': formset,
+        'stock_disponible': {str(k): str(v) for k, v in stock_disponible.items()},
+        'sin_stock_disponible': not bool(stock_disponible),
+    })
 
 
 @login_required
