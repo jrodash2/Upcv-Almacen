@@ -2013,8 +2013,8 @@ def signin(request):
                     return redirect('almacen:dahsboard')
                 elif g.name == 'Departamento':
                     return redirect('almacen:crear_requerimiento')
-                elif g.name == 'Almacen':
-                    return redirect('almacen:dahsboard')
+                elif g.name == 'Gestor':
+                    return redirect('almacen:listado_solicitudes_gestor')
             # Si no se encuentra el grupo adecuado, se redirige a una página por defecto
             return redirect('dahsboard')
         else:
