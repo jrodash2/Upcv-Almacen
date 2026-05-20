@@ -259,8 +259,9 @@
 {% if user.is_authenticated %}
 
   {# Mostrar "Asignados" a Departamentos #}
-  {% if es_departamento%}
+  {% if es_departamento_o_gestor %}
    </li>
+                {% if es_departamento %}
                 <li class="sidebar-list"><i class="fa fa-thumb-tack"></i><a class="sidebar-link " href="{% url 'almacen:crear_requerimiento' %}">
                   <svg class="stroke-icon">
                     <use href="../assets/svg/icon-sprite.svg#stroke-gallery"></use>
@@ -270,6 +271,7 @@
                   </svg><span>Requerimientos</span></a>
 
               </li>
+              {% endif %}
                <li class="sidebar-list"><i class="fa fa-thumb-tack"></i><a class="sidebar-link " href="{% url 'almacen:lista_departamentos' %}">
                   <svg class="stroke-icon">
                     <use href="../assets/svg/icon-sprite.svg#stroke-gallery"></use>
@@ -279,7 +281,10 @@
                   </svg><span>Asignados</span></a>
 
               </li>
+              <li class="sidebar-list"><i class="fa fa-thumb-tack"></i><a class="sidebar-link " href="{% url 'almacen:crear_requerimiento' %}"><span>Seguimiento Requerimientos</span></a></li>
+              {% if es_departamento %}
               <li class="sidebar-list"><i class="fa fa-thumb-tack"></i><a class="sidebar-link " href="{% url 'almacen:bandeja_solicitudes_requerimiento' %}"><span>Bandeja de Solicitudes</span></a></li>
+              {% endif %}
     
               
   {% endif %}

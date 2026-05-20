@@ -535,6 +535,10 @@ def rechazar_solicitud_requerimiento(request, solicitud_id):
 
 @login_required
 def enviar_requerimiento(request, requerimiento_id):
+    if not request.user.groups.filter(name__in=['Administrador', 'Almacen', 'Departamento']).exists():
+        messages.error(request, "No tiene permiso para realizar esta acción.")
+        return redirect('almacen:acceso_denegado')
+
     requerimiento = get_object_or_404(Requerimiento, id=requerimiento_id)
 
     if requerimiento.estado != 'confirmado':  # Evita cambiar si ya fue confirmado
@@ -549,6 +553,16 @@ def enviar_requerimiento(request, requerimiento_id):
 @login_required
 def detalle_requerimiento(request, requerimiento_id):
     requerimiento = get_object_or_404(Requerimiento, id=requerimiento_id)
+    es_admin = request.user.groups.filter(name='Administrador').exists()
+    es_almacen = request.user.groups.filter(name='Almacen').exists()
+    tiene_departamento_asignado = UsuarioDepartamento.objects.filter(
+        usuario=request.user,
+        departamento=requerimiento.departamento
+    ).exists()
+
+    if not (es_admin or es_almacen or tiene_departamento_asignado):
+        messages.error(request, "No tiene permiso para realizar esta acción.")
+        return redirect('almacen:acceso_denegado')
 
     # Asignaciones
     asignaciones_qs = (
@@ -588,14 +602,15 @@ def detalle_requerimiento(request, requerimiento_id):
     # Lista de detalles ya agregados al requerimiento
     detalles_requerimiento = DetalleRequerimiento.objects.filter(requerimiento=requerimiento)
 
-    es_admin = request.user.groups.filter(name='Administrador').exists()
-
     # Pasar motivo de rechazo al contexto si el estado es 'rechazado'
     motivo_rechazo = None
     if requerimiento.estado == 'rechazado':
         motivo_rechazo = requerimiento.motivo_rechazo
 
     if request.method == 'POST':
+        if request.user.groups.filter(name='Gestor').exists():
+            messages.error(request, "No tiene permiso para realizar esta acción.")
+            return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
         articulo_id = request.POST.get('articulo')
         cantidad = int(request.POST.get('cantidad', 0))
         observacion = request.POST.get('observaciones', '')
@@ -645,6 +660,10 @@ def detalle_requerimiento_api(request, detalle_id):
   
 @login_required
 def editar_detalle_requerimiento(request):
+    if not request.user.groups.filter(name__in=['Administrador', 'Almacen', 'Departamento']).exists():
+        messages.error(request, "No tiene permiso para realizar esta acción.")
+        return redirect('almacen:acceso_denegado')
+
     if request.method == 'POST':
         detalle_id = request.POST.get('detalle_id')
         articulo_id = request.POST.get('articulo')
@@ -929,8 +948,9 @@ def eliminar_asignacion(request, usuario_id, departamento_id):
 @login_required
 def lista_departamentos(request):
     es_departamento = request.user.groups.filter(name='Departamento').exists()
+    es_gestor = request.user.groups.filter(name='Gestor').exists()
 
-    if es_departamento:
+    if es_departamento or es_gestor:
         # Obtener todos los objetos UsuarioDepartamento vinculados al usuario
         usuario_departamentos = UsuarioDepartamento.objects.filter(usuario=request.user)
         # Mostrar todos los departamentos asociados a esas instancias
@@ -953,6 +973,7 @@ def detalle_departamento(request, pk):
     departamento = get_object_or_404(Departamento, pk=pk)
 
     es_departamento = request.user.groups.filter(name='Departamento').exists()
+    es_gestor = request.user.groups.filter(name='Gestor').exists()
     es_admin = request.user.groups.filter(name='Administrador').exists()
 
     tiene_acceso = es_admin or UsuarioDepartamento.objects.filter(usuario=request.user, departamento=departamento).exists()
@@ -1016,6 +1037,7 @@ def detalle_departamento(request, pk):
         'resumen_stock': resumen_stock,
         'tiene_acceso': tiene_acceso,
         'es_departamento': es_departamento,
+        'es_gestor': es_gestor,
         'departamentos': departamentos,
         'historial_transferencias': historial_transferencias,
     })
