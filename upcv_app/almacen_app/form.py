@@ -442,7 +442,7 @@ class PerfilForm(forms.ModelForm):
         }
         
 from django import forms
-from .models import Requerimiento, DetalleRequerimiento, AsignacionDetalleFactura
+from .models import Requerimiento, DetalleRequerimiento, AsignacionDetalleFactura, SolicitudRequerimiento, DetalleSolicitudRequerimiento
 
 class RequerimientoForm(forms.ModelForm):
     class Meta:
@@ -525,6 +525,42 @@ DetalleRequerimientoFormSet = modelformset_factory(
     DetalleRequerimiento,
     form=DetalleRequerimientoForm,
     formset=BaseDetalleRequerimientoFormSet,
+    extra=1,
+    can_delete=True
+)
+
+
+class SolicitudRequerimientoForm(forms.ModelForm):
+    class Meta:
+        model = SolicitudRequerimiento
+        fields = ['departamento', 'observaciones']
+
+    def __init__(self, *args, **kwargs):
+        usuario = kwargs.pop('usuario', None)
+        super().__init__(*args, **kwargs)
+        if usuario:
+            self.fields['departamento'].queryset = Departamento.objects.filter(
+                usuariodepartamento__usuario=usuario
+            ).distinct()
+
+
+class DetalleSolicitudRequerimientoForm(forms.ModelForm):
+    class Meta:
+        model = DetalleSolicitudRequerimiento
+        fields = ['articulo', 'cantidad', 'observacion']
+
+    def __init__(self, *args, **kwargs):
+        departamento = kwargs.pop('departamento', None)
+        super().__init__(*args, **kwargs)
+        if departamento:
+            self.fields['articulo'].queryset = Articulo.objects.filter(
+                asignaciondetallefactura__destino=departamento
+            ).distinct()
+
+
+DetalleSolicitudRequerimientoFormSet = modelformset_factory(
+    DetalleSolicitudRequerimiento,
+    form=DetalleSolicitudRequerimientoForm,
     extra=1,
     can_delete=True
 )

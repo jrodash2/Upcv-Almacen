@@ -95,6 +95,12 @@ urlpatterns = [
     
   
     path('requerimientos/crear/', views.crear_requerimiento, name='crear_requerimiento'),
+    path('solicitudes-requerimiento/crear/', views.crear_solicitud_requerimiento, name='crear_solicitud_requerimiento'),
+    path('solicitudes-requerimiento/mis-solicitudes/', views.listado_solicitudes_gestor, name='listado_solicitudes_gestor'),
+    path('solicitudes-requerimiento/bandeja/', views.bandeja_solicitudes_requerimiento, name='bandeja_solicitudes_requerimiento'),
+    path('solicitudes-requerimiento/<int:solicitud_id>/', views.detalle_solicitud_requerimiento, name='detalle_solicitud_requerimiento'),
+    path('solicitudes-requerimiento/<int:solicitud_id>/convertir/', views.convertir_solicitud_en_requerimiento, name='convertir_solicitud_en_requerimiento'),
+    path('solicitudes-requerimiento/<int:solicitud_id>/rechazar/', views.rechazar_solicitud_requerimiento, name='rechazar_solicitud_requerimiento'),
     path('requerimientos/<int:requerimiento_id>/', views.detalle_requerimiento, name='detalle_requerimiento'),
     path('detalle-requerimiento/eliminar/<int:pk>/', views.eliminar_detalle_requerimiento, name='eliminar_detalle_requerimiento'),
     path('api/detalle_requerimiento/<int:detalle_id>/', views.detalle_requerimiento_api, name='detalle_requerimiento_api'),
