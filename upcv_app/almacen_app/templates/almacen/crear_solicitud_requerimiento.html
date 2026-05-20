@@ -1,0 +1,73 @@
+{% extends 'almacen/base.html' %}
+{% load static %}
+{% block content %}
+<div class="page-body">
+  <div class="container-fluid">
+    <div class="page-title">
+      <div class="row">
+        <div class="col-6"><h4 class="mb-0">Solicitudes de Requerimiento</h4></div>
+        <div class="col-6">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item">Gestor</li>
+            <li class="breadcrumb-item active">Crear Solicitud</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container-fluid">
+    <div class="row justify-content-center">
+      <div class="col-xl-10 col-lg-11 col-md-12">
+        <div class="card shadow-sm border-0">
+          <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fa fa-file-text-o me-2"></i>Crear Solicitud de Requerimiento</h5>
+          </div>
+          <div class="card-body">
+            <form method="post">
+              {% csrf_token %}
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label fw-semibold" for="{{ form.departamento.id_for_label }}">{{ form.departamento.label }}</label>
+                  {{ form.departamento }}
+                  {% if form.departamento.errors %}<div class="text-danger small">{{ form.departamento.errors|striptags }}</div>{% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label fw-semibold" for="{{ form.observaciones.id_for_label }}">{{ form.observaciones.label }}</label>
+                  {{ form.observaciones }}
+                  {% if form.observaciones.errors %}<div class="text-danger small">{{ form.observaciones.errors|striptags }}</div>{% endif %}
+                </div>
+              </div>
+
+              <h6 class="mt-2 mb-3">Detalle de artículos solicitados</h6>
+              {{ formset.management_form }}
+              <div class="table-responsive">
+                <table class="table table-bordered table-hover align-middle">
+                  <thead class="table-light">
+                    <tr><th>Artículo</th><th style="width:150px;">Cantidad</th><th>Observación</th><th style="width:90px;">Acción</th></tr>
+                  </thead>
+                  <tbody>
+                    {% for f in formset %}
+                      <tr>
+                        <td>{{ f.articulo }}{% if f.articulo.errors %}<div class="text-danger small">{{ f.articulo.errors|striptags }}</div>{% endif %}</td>
+                        <td>{{ f.cantidad }}{% if f.cantidad.errors %}<div class="text-danger small">{{ f.cantidad.errors|striptags }}</div>{% endif %}</td>
+                        <td>{{ f.observacion }}{% if f.observacion.errors %}<div class="text-danger small">{{ f.observacion.errors|striptags }}</div>{% endif %}</td>
+                        <td class="text-center">{% if f.DELETE %}<div class="form-check">{{ f.DELETE }}<label class="form-check-label ms-1">Quitar</label></div>{% else %}-{% endif %}</td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="d-flex justify-content-end gap-2 mt-4">
+                <a href="{% url 'almacen:listado_solicitudes_gestor' %}" class="btn btn-light border">Cancelar</a>
+                <button class="btn btn-primary" type="submit">Guardar Solicitud</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

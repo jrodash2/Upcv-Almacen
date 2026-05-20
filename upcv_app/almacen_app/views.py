@@ -8,8 +8,8 @@ from django.contrib.auth.models import Group, User
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
-from .form import DependenciaForm, DetalleFacturaForm, DetalleRequerimientoForm, DetalleRequerimientoFormSet, Form1hForm, PerfilForm, ProgramaForm, RequerimientoForm, UserCreateForm, UserEditForm, UserCreateForm, UbicacionForm, UnidadDeMedidaForm, CategoriaForm, ProveedorForm, ArticuloForm, DepartamentoForm, SerieForm, AsignacionDetalleFacturaForm, UsuarioDepartamentoForm, InstitucionForm
-from .models import ContadorDetalleFactura, DetalleFactura, DetalleRequerimiento, HistorialTransferencia, InventarioDetalle, LineaLibre, Perfil, Requerimiento, Ubicacion, UnidadDeMedida, Categoria, Proveedor, Articulo, Departamento, Kardex, AsignacionDetalleFactura, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa, LineaReservada, UsuarioDepartamento, Institucion
+from .form import DependenciaForm, DetalleFacturaForm, DetalleRequerimientoForm, DetalleRequerimientoFormSet, Form1hForm, PerfilForm, ProgramaForm, RequerimientoForm, UserCreateForm, UserEditForm, UserCreateForm, UbicacionForm, UnidadDeMedidaForm, CategoriaForm, ProveedorForm, ArticuloForm, DepartamentoForm, SerieForm, AsignacionDetalleFacturaForm, UsuarioDepartamentoForm, InstitucionForm, SolicitudRequerimientoForm, DetalleSolicitudRequerimientoFormSet
+from .models import ContadorDetalleFactura, DetalleFactura, DetalleRequerimiento, HistorialTransferencia, InventarioDetalle, LineaLibre, Perfil, Requerimiento, Ubicacion, UnidadDeMedida, Categoria, Proveedor, Articulo, Departamento, Kardex, AsignacionDetalleFactura, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa, LineaReservada, UsuarioDepartamento, Institucion, SolicitudRequerimiento, DetalleSolicitudRequerimiento
 from django.views.generic import CreateView
 from django.views.generic import ListView
 from django.urls import reverse_lazy
@@ -394,6 +394,9 @@ from django.db.models import Q
 
 @login_required
 def crear_requerimiento(request):
+    if request.user.groups.filter(name='Gestor').exists():
+        messages.error(request, "No tiene permiso para realizar esta acción.")
+        return redirect('almacen:acceso_denegado')
     form = RequerimientoForm(request.POST or None, usuario=request.user)
 
     if request.user.groups.filter(name__in=['Administrador', 'Almacen']).exists():
@@ -429,6 +432,106 @@ def crear_requerimiento(request):
         'requerimientos': requerimientos,
         'mostrar_modal': request.method == "POST" and not form.is_valid(),
     })
+
+
+@login_required
+@grupo_requerido('Gestor')
+def crear_solicitud_requerimiento(request):
+    form = SolicitudRequerimientoForm(request.POST or None, usuario=request.user)
+    formset = DetalleSolicitudRequerimientoFormSet(request.POST or None, queryset=DetalleSolicitudRequerimiento.objects.none())
+    if request.method == 'POST' and form.is_valid() and formset.is_valid():
+        solicitud = form.save(commit=False)
+        solicitud.usuario_solicitante = request.user
+        solicitud.save()
+        for f in formset:
+            if f.cleaned_data and not f.cleaned_data.get('DELETE'):
+                detalle = f.save(commit=False)
+                detalle.solicitud = solicitud
+                detalle.save()
+        messages.success(request, "Solicitud creada correctamente.")
+        return redirect('almacen:listado_solicitudes_gestor')
+    return render(request, 'almacen/crear_solicitud_requerimiento.html', {'form': form, 'formset': formset})
+
+
+@login_required
+@grupo_requerido('Gestor')
+def listado_solicitudes_gestor(request):
+    solicitudes = SolicitudRequerimiento.objects.filter(usuario_solicitante=request.user).order_by('-creado_en')
+    return render(request, 'almacen/listado_solicitudes_gestor.html', {'solicitudes': solicitudes})
+
+
+@login_required
+@grupo_requerido('Administrador', 'Almacen', 'Departamento')
+def bandeja_solicitudes_requerimiento(request):
+    solicitudes = SolicitudRequerimiento.objects.all().order_by('-creado_en')
+    if request.user.groups.filter(name='Departamento').exists():
+        deptos = UsuarioDepartamento.objects.filter(usuario=request.user).values_list('departamento_id', flat=True)
+        solicitudes = solicitudes.filter(departamento_id__in=deptos)
+    return render(request, 'almacen/bandeja_solicitudes_requerimiento.html', {'solicitudes': solicitudes})
+
+
+@login_required
+def detalle_solicitud_requerimiento(request, solicitud_id):
+    solicitud = get_object_or_404(SolicitudRequerimiento, id=solicitud_id)
+    if request.user.groups.filter(name='Gestor').exists() and solicitud.usuario_solicitante != request.user:
+        return redirect('almacen:acceso_denegado')
+    return render(request, 'almacen/detalle_solicitud_requerimiento.html', {'solicitud': solicitud})
+
+
+@login_required
+@grupo_requerido('Administrador', 'Almacen', 'Departamento')
+def convertir_solicitud_en_requerimiento(request, solicitud_id):
+    solicitud = get_object_or_404(SolicitudRequerimiento, id=solicitud_id)
+    if solicitud.estado != 'pendiente':
+        messages.warning(request, "La solicitud ya fue procesada.")
+        return redirect('almacen:bandeja_solicitudes_requerimiento')
+    try:
+        with transaction.atomic():
+            requerimiento = Requerimiento.objects.create(
+            departamento=solicitud.departamento,
+            motivo=solicitud.observaciones,
+            creado_por=solicitud.usuario_solicitante,
+            estado='pendiente'
+            )
+            for detalle in solicitud.detalles.all():
+                disponible = AsignacionDetalleFactura.objects.filter(
+                    destino=solicitud.departamento, articulo=detalle.articulo
+                ).aggregate(total=Coalesce(Sum('cantidad_asignada'), 0))['total'] or 0
+                despachado = DetalleRequerimiento.objects.filter(
+                    requerimiento__departamento=solicitud.departamento, articulo=detalle.articulo
+                ).aggregate(total=Coalesce(Sum('cantidad_despachada'), 0))['total'] or 0
+                if detalle.cantidad > (disponible - despachado):
+                    raise ValidationError(f"No hay stock suficiente para {detalle.articulo.nombre}.")
+                DetalleRequerimiento.objects.create(requerimiento=requerimiento, articulo=detalle.articulo, cantidad=detalle.cantidad, observacion=detalle.observacion)
+            solicitud.estado = 'convertida'
+            solicitud.requerimiento = requerimiento
+            solicitud.convertido_por = request.user
+            solicitud.convertido_en = timezone.now()
+            solicitud.save()
+    except ValidationError as e:
+        messages.error(request, str(e))
+        return redirect('almacen:detalle_solicitud_requerimiento', solicitud_id=solicitud.id)
+    messages.success(request, "Solicitud convertida en requerimiento correctamente.")
+    return redirect('almacen:detalle_solicitud_requerimiento', solicitud_id=solicitud.id)
+
+
+@login_required
+@grupo_requerido('Administrador', 'Almacen', 'Departamento')
+def rechazar_solicitud_requerimiento(request, solicitud_id):
+    solicitud = get_object_or_404(SolicitudRequerimiento, id=solicitud_id)
+    if solicitud.estado != 'pendiente':
+        messages.warning(request, "La solicitud ya fue procesada.")
+        return redirect('almacen:bandeja_solicitudes_requerimiento')
+    motivo = request.POST.get('motivo_rechazo', '').strip()
+    if request.method == 'POST' and motivo:
+        solicitud.estado = 'rechazada'
+        solicitud.motivo_rechazo = motivo
+        solicitud.rechazado_por = request.user
+        solicitud.rechazado_en = timezone.now()
+        solicitud.save()
+        messages.success(request, "Solicitud rechazada correctamente.")
+        return redirect('almacen:bandeja_solicitudes_requerimiento')
+    return render(request, 'almacen/rechazar_solicitud_requerimiento.html', {'solicitud': solicitud})
 
 @login_required
 def enviar_requerimiento(request, requerimiento_id):
@@ -1899,4 +2002,3 @@ def signin(request):
                 'error': 'Usuario o contraseña incorrectos',
                 'institucion': institucion,
             })
-
