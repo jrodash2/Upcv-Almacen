@@ -442,7 +442,7 @@ class PerfilForm(forms.ModelForm):
         }
         
 from django import forms
-from .models import Requerimiento, DetalleRequerimiento, AsignacionDetalleFactura
+from .models import Requerimiento, DetalleRequerimiento, AsignacionDetalleFactura, SolicitudRequerimiento, DetalleSolicitudRequerimiento
 
 class RequerimientoForm(forms.ModelForm):
     class Meta:
@@ -525,6 +525,58 @@ DetalleRequerimientoFormSet = modelformset_factory(
     DetalleRequerimiento,
     form=DetalleRequerimientoForm,
     formset=BaseDetalleRequerimientoFormSet,
+    extra=1,
+    can_delete=True
+)
+
+
+class SolicitudRequerimientoForm(forms.ModelForm):
+    class Meta:
+        model = SolicitudRequerimiento
+        fields = ['departamento', 'observaciones']
+
+    def __init__(self, *args, **kwargs):
+        usuario = kwargs.pop('usuario', None)
+        super().__init__(*args, **kwargs)
+        if usuario:
+            self.fields['departamento'].queryset = Departamento.objects.filter(
+                usuariodepartamento__usuario=usuario
+            ).distinct()
+        for name, field in self.fields.items():
+            if isinstance(field.widget, forms.Select):
+                field.widget.attrs.update({'class': 'form-select'})
+            elif isinstance(field.widget, forms.Textarea):
+                field.widget.attrs.update({'class': 'form-control', 'rows': 3})
+            else:
+                field.widget.attrs.update({'class': 'form-control'})
+            field.widget.attrs.setdefault('placeholder', field.label or '')
+
+
+class DetalleSolicitudRequerimientoForm(forms.ModelForm):
+    class Meta:
+        model = DetalleSolicitudRequerimiento
+        fields = ['articulo', 'cantidad', 'observacion']
+
+    def __init__(self, *args, **kwargs):
+        departamento = kwargs.pop('departamento', None)
+        super().__init__(*args, **kwargs)
+        if departamento:
+            self.fields['articulo'].queryset = Articulo.objects.filter(
+                asignaciondetallefactura__destino=departamento
+            ).distinct()
+        for name, field in self.fields.items():
+            if isinstance(field.widget, forms.Select):
+                field.widget.attrs.update({'class': 'form-select'})
+            elif isinstance(field.widget, forms.Textarea):
+                field.widget.attrs.update({'class': 'form-control', 'rows': 2})
+            else:
+                field.widget.attrs.update({'class': 'form-control'})
+            field.widget.attrs.setdefault('placeholder', field.label or '')
+
+
+DetalleSolicitudRequerimientoFormSet = modelformset_factory(
+    DetalleSolicitudRequerimiento,
+    form=DetalleSolicitudRequerimientoForm,
     extra=1,
     can_delete=True
 )

@@ -496,5 +496,33 @@ class DetalleRequerimiento(models.Model):
         return f"{self.articulo.nombre} x {self.cantidad}"
 
 
+class SolicitudRequerimiento(models.Model):
+    ESTADO_CHOICES = [
+        ('pendiente', 'Pendiente'),
+        ('convertida', 'Convertida'),
+        ('rechazada', 'Rechazada'),
+    ]
+
+    usuario_solicitante = models.ForeignKey(User, on_delete=models.CASCADE, related_name='solicitudes_requerimiento')
+    departamento = models.ForeignKey(Departamento, on_delete=models.CASCADE)
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='pendiente')
+    observaciones = models.TextField(blank=True, null=True)
+    motivo_rechazo = models.TextField(blank=True, null=True)
+    requerimiento = models.ForeignKey(Requerimiento, on_delete=models.SET_NULL, blank=True, null=True, related_name='solicitudes_origen')
+    creado_en = models.DateTimeField(auto_now_add=True)
+    actualizado_en = models.DateTimeField(auto_now=True)
+    convertido_por = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name='solicitudes_convertidas')
+    convertido_en = models.DateTimeField(blank=True, null=True)
+    rechazado_por = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name='solicitudes_rechazadas')
+    rechazado_en = models.DateTimeField(blank=True, null=True)
+
+
+class DetalleSolicitudRequerimiento(models.Model):
+    solicitud = models.ForeignKey(SolicitudRequerimiento, on_delete=models.CASCADE, related_name='detalles')
+    articulo = models.ForeignKey(Articulo, on_delete=models.CASCADE)
+    cantidad = models.PositiveIntegerField()
+    observacion = models.TextField(blank=True, null=True)
+
+
         
         
