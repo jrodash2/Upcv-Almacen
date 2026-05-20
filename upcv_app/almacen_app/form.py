@@ -594,7 +594,7 @@ class DetalleSolicitudRequerimientoForm(forms.ModelForm):
     def clean_articulo(self):
         articulo = self.cleaned_data.get('articulo')
         if articulo and articulo.id not in self.stock_disponible:
-            raise forms.ValidationError("Seleccione un artículo asignado a su departamento.")
+            raise forms.ValidationError("El artículo seleccionado no está asignado a la ubicación actual.")
         return articulo
 
     def clean(self):
