@@ -511,6 +511,7 @@ class DetalleRequerimientoForm(forms.ModelForm):
             ).distinct()
 
 from django.forms import BaseModelFormSet
+from collections import defaultdict
 
 class BaseDetalleRequerimientoFormSet(BaseModelFormSet):
     def __init__(self, *args, **kwargs):
@@ -553,30 +554,94 @@ class SolicitudRequerimientoForm(forms.ModelForm):
 
 
 class DetalleSolicitudRequerimientoForm(forms.ModelForm):
+    class ArticuloAsignadoChoiceField(forms.ModelChoiceField):
+        def label_from_instance(self, obj):
+            disponible = getattr(obj, 'cantidad_disponible', None)
+            if disponible is not None:
+                return f"{obj.nombre} — Disponible: {disponible}"
+            return str(obj)
+
+    articulo = ArticuloAsignadoChoiceField(queryset=Articulo.objects.none())
+
     class Meta:
         model = DetalleSolicitudRequerimiento
         fields = ['articulo', 'cantidad', 'observacion']
 
     def __init__(self, *args, **kwargs):
-        departamento = kwargs.pop('departamento', None)
+        self.departamento = kwargs.pop('departamento', None)
+        self.stock_disponible = kwargs.pop('stock_disponible', {})
         super().__init__(*args, **kwargs)
-        if departamento:
-            self.fields['articulo'].queryset = Articulo.objects.filter(
-                asignaciondetallefactura__destino=departamento
-            ).distinct()
+        if self.departamento:
+            articulos = Articulo.objects.filter(
+                asignaciondetallefactura__destino=self.departamento
+            ).distinct().order_by('nombre')
+            for articulo in articulos:
+                articulo.cantidad_disponible = self.stock_disponible.get(articulo.id, 0)
+            self.fields['articulo'].queryset = articulos
+        self.fields['cantidad'].widget.attrs.update({
+            'class': 'form-control cantidad-solicitada',
+            'min': 1
+        })
         for name, field in self.fields.items():
             if isinstance(field.widget, forms.Select):
-                field.widget.attrs.update({'class': 'form-select'})
+                field.widget.attrs.update({'class': 'form-select select-articulo'})
             elif isinstance(field.widget, forms.Textarea):
                 field.widget.attrs.update({'class': 'form-control', 'rows': 2})
-            else:
+            elif name != 'cantidad':
                 field.widget.attrs.update({'class': 'form-control'})
             field.widget.attrs.setdefault('placeholder', field.label or '')
+
+    def clean_articulo(self):
+        articulo = self.cleaned_data.get('articulo')
+        if articulo and articulo.id not in self.stock_disponible:
+            raise forms.ValidationError("El artículo seleccionado no está asignado a la ubicación actual.")
+        return articulo
+
+    def clean(self):
+        cleaned_data = super().clean()
+        articulo = cleaned_data.get('articulo')
+        cantidad = cleaned_data.get('cantidad')
+        if cantidad is not None and cantidad <= 0:
+            raise forms.ValidationError("La cantidad solicitada debe ser mayor a cero.")
+        if articulo and cantidad:
+            disponible = self.stock_disponible.get(articulo.id, 0)
+            if cantidad > disponible:
+                raise forms.ValidationError("La cantidad solicitada supera la cantidad disponible.")
+        return cleaned_data
+
+
+class BaseDetalleSolicitudRequerimientoFormSet(BaseModelFormSet):
+    def __init__(self, *args, **kwargs):
+        self.departamento = kwargs.pop('departamento', None)
+        self.stock_disponible = kwargs.pop('stock_disponible', {})
+        super().__init__(*args, **kwargs)
+
+    def _construct_form(self, i, **kwargs):
+        kwargs['departamento'] = self.departamento
+        kwargs['stock_disponible'] = self.stock_disponible
+        return super()._construct_form(i, **kwargs)
+
+    def clean(self):
+        super().clean()
+        acumulado = defaultdict(float)
+        for form in self.forms:
+            if not getattr(form, 'cleaned_data', None):
+                continue
+            if form.cleaned_data.get('DELETE'):
+                continue
+            articulo = form.cleaned_data.get('articulo')
+            cantidad = form.cleaned_data.get('cantidad')
+            if articulo and cantidad:
+                acumulado[articulo.id] += float(cantidad)
+        for articulo_id, cantidad_total in acumulado.items():
+            if cantidad_total > float(self.stock_disponible.get(articulo_id, 0)):
+                raise forms.ValidationError("No puede repetir un artículo superando el saldo disponible.")
 
 
 DetalleSolicitudRequerimientoFormSet = modelformset_factory(
     DetalleSolicitudRequerimiento,
     form=DetalleSolicitudRequerimientoForm,
+    formset=BaseDetalleSolicitudRequerimientoFormSet,
     extra=1,
     can_delete=True
 )

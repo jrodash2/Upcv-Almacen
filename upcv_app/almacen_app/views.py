@@ -270,17 +270,48 @@ def historial_transferencias(request):
     
     return render(request, 'almacen/historial_transferencias.html', {'transferencias': transferencias})
 
+def obtener_stock_disponible_por_departamento(departamento):
+    asignaciones = (
+        AsignacionDetalleFactura.objects
+        .filter(destino=departamento)
+        .values('articulo_id')
+        .annotate(total_asignado=Coalesce(Sum('cantidad_asignada'), 0))
+    )
+    despachados = (
+        DetalleRequerimiento.objects
+        .filter(requerimiento__departamento=departamento)
+        .values('articulo_id')
+        .annotate(total_despachado=Coalesce(Sum('cantidad_despachada'), 0))
+    )
+    despachados_dict = {d['articulo_id']: d['total_despachado'] for d in despachados}
+
+    stock_disponible = {}
+    for a in asignaciones:
+        disponible = a['total_asignado'] - despachados_dict.get(a['articulo_id'], 0)
+        if disponible > 0:
+            stock_disponible[a['articulo_id']] = disponible
+    return stock_disponible
+
+@login_required
+@grupo_requerido('Gestor', 'Departamento', 'Administrador', 'Almacen')
 def articulos_asignados(request, departamento_id):
     try:
-        departamento = Departamento.objects.get(id=departamento_id)
-        articulos = AsignacionDetalleFactura.objects.filter(destino=departamento)
+        departamento = Departamento.objects.get(
+            id=departamento_id,
+            usuariodepartamento__usuario=request.user
+        )
+        stock_disponible = obtener_stock_disponible_por_departamento(departamento)
+        articulos = Articulo.objects.filter(id__in=stock_disponible.keys()).order_by('nombre')
 
         data = {
-            'articulos': [{
-                'id': asignacion.articulo.id,
-                'nombre': asignacion.articulo.nombre,
-                'cantidad_asignada': asignacion.cantidad_asignada
-            } for asignacion in articulos]
+            'articulos': [
+                {
+                    'id': articulo.id,
+                    'nombre': articulo.nombre,
+                    'cantidad_disponible': str(stock_disponible.get(articulo.id, 0))
+                }
+                for articulo in articulos
+            ]
         }
         return JsonResponse(data)
     except Departamento.DoesNotExist:
@@ -438,7 +469,25 @@ def crear_requerimiento(request):
 @grupo_requerido('Gestor')
 def crear_solicitud_requerimiento(request):
     form = SolicitudRequerimientoForm(request.POST or None, usuario=request.user)
-    formset = DetalleSolicitudRequerimientoFormSet(request.POST or None, queryset=DetalleSolicitudRequerimiento.objects.none())
+    departamentos_qs = form.fields['departamento'].queryset
+    departamento = departamentos_qs.first() if request.method == 'GET' else None
+    if request.method == 'POST':
+        departamento_id = request.POST.get('departamento')
+        if departamento_id:
+            departamento = departamentos_qs.filter(id=departamento_id).first()
+
+    stock_disponible = obtener_stock_disponible_por_departamento(departamento) if departamento else {}
+
+    formset = DetalleSolicitudRequerimientoFormSet(
+        request.POST or None,
+        queryset=DetalleSolicitudRequerimiento.objects.none(),
+        departamento=departamento,
+        stock_disponible=stock_disponible
+    )
+
+    if request.method == 'POST' and not stock_disponible:
+        messages.error(request, "No tiene artículos asignados disponibles para solicitar. Comuníquese con el administrador o con su departamento.")
+
     if request.method == 'POST' and form.is_valid() and formset.is_valid():
         solicitud = form.save(commit=False)
         solicitud.usuario_solicitante = request.user
@@ -450,7 +499,12 @@ def crear_solicitud_requerimiento(request):
                 detalle.save()
         messages.success(request, "Solicitud creada correctamente.")
         return redirect('almacen:listado_solicitudes_gestor')
-    return render(request, 'almacen/crear_solicitud_requerimiento.html', {'form': form, 'formset': formset})
+    return render(request, 'almacen/crear_solicitud_requerimiento.html', {
+        'form': form,
+        'formset': formset,
+        'stock_disponible': {str(k): str(v) for k, v in stock_disponible.items()},
+        'sin_stock_disponible': not bool(stock_disponible),
+    })
 
 
 @login_required
