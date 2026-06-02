@@ -411,6 +411,8 @@ def despachar_requerimiento(request, requerimiento_id):
         # Verificar si todos los detalles fueron despachados completamente
         if all(d.estado == 'despachado' for d in detalles):
             requerimiento.estado = 'despachado'
+            requerimiento.fecha_despachado = timezone.now()
+            requerimiento.despachado_por = request.user
         else:
             requerimiento.estado = 'parcial'
         requerimiento.save()
@@ -581,7 +583,7 @@ def convertir_solicitud_en_requerimiento(request, solicitud_id):
     if not (es_admin or es_almacen or tiene_departamento_asignado):
         messages.error(request, "No tiene permiso para convertir esta solicitud.")
         return redirect('almacen:acceso_denegado')
-    if solicitud.estado != 'pendiente':
+    if solicitud.estado != 'pendiente' or solicitud.requerimiento_id:
         messages.warning(request, "La solicitud ya fue procesada.")
         return redirect('almacen:bandeja_solicitudes_requerimiento')
     try:
@@ -666,16 +668,21 @@ def detalle_requerimiento(request, requerimiento_id):
         usuario=request.user,
         departamento=requerimiento.departamento
     ).exists()
-    solicitud_origen_propia = SolicitudRequerimiento.objects.filter(
-        requerimiento=requerimiento,
-        usuario_solicitante=request.user
-    ).exists()
-
-    if not (es_admin or es_almacen or tiene_departamento_asignado or (es_gestor and solicitud_origen_propia)):
+    solicitud_relacionada = SolicitudRequerimiento.objects.filter(requerimiento=requerimiento).select_related('usuario_solicitante').first()
+    if es_gestor:
+        departamentos_usuario = UsuarioDepartamento.objects.filter(usuario=request.user).values_list('departamento_id', flat=True)
+        gestor_puede_ver = Requerimiento.objects.filter(
+            Q(pk=requerimiento.pk),
+            Q(departamento_id__in=departamentos_usuario) | Q(solicitudes_origen__usuario_solicitante=request.user)
+        ).exists()
+        if not gestor_puede_ver:
+            messages.error(request, "No tiene permiso para ver este requerimiento.")
+            return redirect('almacen:seguimiento_requerimientos')
+    elif not (es_admin or es_almacen or tiene_departamento_asignado):
         messages.error(request, "No tiene permiso para realizar esta acción.")
         return redirect('almacen:acceso_denegado')
 
-    puede_gestionar_requerimiento = es_admin or (es_departamento and tiene_departamento_asignado)
+    puede_gestionar_requerimiento = (not es_gestor) and (es_admin or (es_departamento and tiene_departamento_asignado))
     puede_despachar_requerimiento = es_admin or es_almacen
     puede_anular_requerimiento = puede_despachar_requerimiento and requerimiento.estado in ['pendiente', 'enviado']
 
@@ -760,6 +767,7 @@ def detalle_requerimiento(request, requerimiento_id):
         'puede_gestionar_requerimiento': puede_gestionar_requerimiento,
         'puede_despachar_requerimiento': puede_despachar_requerimiento,
         'puede_anular_requerimiento': puede_anular_requerimiento,
+        'solicitud_relacionada': solicitud_relacionada,
         'motivo_rechazo': motivo_rechazo,  # Agregar el motivo de rechazo al contexto
     })
 
@@ -1420,6 +1428,8 @@ def anular_requerimiento(request, requerimiento_id):
         # Cambiar el estado del requerimiento a "rechazado" y registrar el motivo de anulacion
         requerimiento.estado = 'rechazado'
         requerimiento.motivo_rechazo = motivo_anulacion  # Usar el nuevo campo 'motivo_rechazo'
+        requerimiento.fecha_rechazado = timezone.now()
+        requerimiento.rechazado_por = request.user
         requerimiento.save()
 
         messages.success(request, "Requerimiento anulado exitosamente.")

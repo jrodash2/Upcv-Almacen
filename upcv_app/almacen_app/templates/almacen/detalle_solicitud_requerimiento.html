@@ -24,7 +24,36 @@
               <div class="col-md-4"><span class="text-muted d-block">Fecha</span><strong>{{ solicitud.creado_en|date:"d/m/Y H:i" }}</strong></div>
             </div>
             <div class="mb-3"><span class="text-muted d-block">Observaciones</span>{{ solicitud.observaciones|default:"-" }}</div>
-            {% if solicitud.motivo_rechazo %}<div class="alert alert-danger mb-3"><strong>Motivo de rechazo:</strong> {{ solicitud.motivo_rechazo }}</div>{% endif %}
+            {% if solicitud.estado == 'convertida' and solicitud.convertido_en %}
+              <div class="alert alert-success border-0 shadow-sm mb-3">
+                <strong>Convertida el:</strong> {{ solicitud.convertido_en|date:"d/m/Y H:i" }}
+                {% if solicitud.convertido_por %}<span class="d-block"><strong>Convertida por:</strong> {{ solicitud.convertido_por.get_full_name|default:solicitud.convertido_por.username }}</span>{% endif %}
+              </div>
+            {% endif %}
+            {% if solicitud.estado == 'rechazada' and solicitud.rechazado_en %}
+              <div class="alert alert-danger border-0 shadow-sm mb-3">
+                <strong>Rechazada el:</strong> {{ solicitud.rechazado_en|date:"d/m/Y H:i" }}
+                {% if solicitud.rechazado_por %}<span class="d-block"><strong>Rechazada por:</strong> {{ solicitud.rechazado_por.get_full_name|default:solicitud.rechazado_por.username }}</span>{% endif %}
+                {% if solicitud.motivo_rechazo %}<span class="d-block"><strong>Motivo:</strong> {{ solicitud.motivo_rechazo }}</span>{% endif %}
+              </div>
+            {% elif solicitud.motivo_rechazo %}<div class="alert alert-danger mb-3"><strong>Motivo de rechazo:</strong> {{ solicitud.motivo_rechazo }}</div>{% endif %}
+
+            {% if solicitud.requerimiento %}
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+              <div class="card-header bg-white border-0">
+                <h6 class="mb-0 fw-bold"><i class="fa fa-check-circle me-2 text-success"></i>Requerimiento generado</h6>
+              </div>
+              <div class="card-body">
+                <p class="mb-1"><strong>No. Requerimiento:</strong> #{{ solicitud.requerimiento.id }}</p>
+                <p class="mb-1"><strong>Estado:</strong> {{ solicitud.requerimiento.get_estado_display|default:solicitud.requerimiento.estado }}</p>
+                {% if solicitud.requerimiento.fecha_despachado %}<p class="mb-1"><strong>Despachado el:</strong> {{ solicitud.requerimiento.fecha_despachado|date:"d/m/Y H:i" }}</p>{% endif %}
+                {% if solicitud.requerimiento.despachado_por %}<p class="mb-1"><strong>Despachado por:</strong> {{ solicitud.requerimiento.despachado_por.get_full_name|default:solicitud.requerimiento.despachado_por.username }}</p>{% endif %}
+                {% if solicitud.requerimiento.fecha_rechazado %}<p class="mb-1"><strong>Rechazado el:</strong> {{ solicitud.requerimiento.fecha_rechazado|date:"d/m/Y H:i" }}</p>{% endif %}
+                {% if solicitud.requerimiento.rechazado_por %}<p class="mb-1"><strong>Rechazado por:</strong> {{ solicitud.requerimiento.rechazado_por.get_full_name|default:solicitud.requerimiento.rechazado_por.username }}</p>{% endif %}
+                <a href="{% url 'almacen:detalle_requerimiento' requerimiento_id=solicitud.requerimiento.id %}" class="btn btn-outline-success btn-sm mt-2"><i class="fa fa-eye me-1"></i>Ver requerimiento</a>
+              </div>
+            </div>
+            {% endif %}
 
             <div class="table-responsive">
               <table class="table table-bordered table-hover align-middle mb-0">

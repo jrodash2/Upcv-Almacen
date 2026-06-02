@@ -97,7 +97,7 @@
               <table class="table table-hover align-middle" id="basic-9">
                 <thead class="table-light">
                   <tr>
-                    <th>#</th><th>Departamento</th><th>Creado por</th><th>Fecha</th><th>Estado</th><th class="text-center">Acciones</th>
+                    <th>#</th><th>Departamento</th><th>Creado por</th><th>Fecha</th><th>Estado</th><th>Fecha resolución</th><th class="text-center">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -109,10 +109,21 @@
                     <td>{{ req.fecha_creacion|date:"d/m/Y H:i" }}</td>
                     <td>
                       {% if req.estado == 'despachado' %}<span class="badge rounded-pill bg-success px-3 py-2">Despachado</span>
+                        {% if req.despachado_por %}<small class="text-muted d-block mt-1">Por {{ req.despachado_por.get_full_name|default:req.despachado_por.username }}</small>{% endif %}
                       {% elif req.estado == 'rechazado' %}<span class="badge rounded-pill bg-danger px-3 py-2">Rechazado</span>
+                        {% if req.rechazado_por %}<small class="text-muted d-block mt-1">Por {{ req.rechazado_por.get_full_name|default:req.rechazado_por.username }}</small>{% endif %}
                       {% elif req.estado == 'enviado' %}<span class="badge rounded-pill bg-info px-3 py-2">Enviado</span>
                       {% elif req.estado == 'parcial' %}<span class="badge rounded-pill bg-warning text-dark px-3 py-2">Parcial</span>
                       {% else %}<span class="badge rounded-pill bg-warning text-dark px-3 py-2">Pendiente</span>{% endif %}
+                    </td>
+                    <td>
+                      {% if req.estado == 'despachado' and req.fecha_despachado %}
+                        {{ req.fecha_despachado|date:"d/m/Y H:i" }}
+                      {% elif req.estado == 'rechazado' and req.fecha_rechazado %}
+                        {{ req.fecha_rechazado|date:"d/m/Y H:i" }}
+                      {% else %}
+                        <span class="text-muted">-</span>
+                      {% endif %}
                     </td>
                     <td class="text-center">
                       <div class="btn-group">
@@ -123,7 +134,7 @@
                     </td>
                   </tr>
                   {% empty %}
-                  <tr><td colspan="6" class="text-center text-muted py-4">No hay requerimientos para mostrar.</td></tr>
+                  <tr><td colspan="7" class="text-center text-muted py-4">No hay requerimientos para mostrar.</td></tr>
                   {% endfor %}
                 </tbody>
               </table>

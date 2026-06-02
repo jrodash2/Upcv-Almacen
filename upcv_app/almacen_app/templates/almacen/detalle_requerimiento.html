@@ -109,6 +109,60 @@ table.order-details th {
     {% endif %}
     
     <div class="container-fluid">
+      {% if es_gestor %}
+        <div class="alert alert-info border-0 shadow-sm">
+          <i class="fa fa-eye me-1"></i> Usted está visualizando este requerimiento en modo solo lectura.
+        </div>
+      {% endif %}
+
+      <div class="row g-3 mb-4">
+        <div class="col-md-3">
+          <div class="card border-0 shadow-sm rounded-4"><div class="card-body">
+            <small class="text-muted">Estado</small>
+            <h6 class="mb-0">{{ requerimiento.get_estado_display|default:requerimiento.estado }}</h6>
+          </div></div>
+        </div>
+        <div class="col-md-3">
+          <div class="card border-0 shadow-sm rounded-4"><div class="card-body">
+            <small class="text-muted">Fecha creación</small>
+            <h6 class="mb-0">{{ requerimiento.fecha_creacion|date:"d/m/Y H:i" }}</h6>
+          </div></div>
+        </div>
+        {% if requerimiento.fecha_despachado %}
+        <div class="col-md-3">
+          <div class="card border-0 shadow-sm rounded-4"><div class="card-body">
+            <small class="text-muted">Despachado el</small>
+            <h6 class="mb-0">{{ requerimiento.fecha_despachado|date:"d/m/Y H:i" }}</h6>
+            {% if requerimiento.despachado_por %}<small class="text-muted">Por {{ requerimiento.despachado_por.get_full_name|default:requerimiento.despachado_por.username }}</small>{% endif %}
+          </div></div>
+        </div>
+        {% endif %}
+        {% if requerimiento.fecha_rechazado %}
+        <div class="col-md-3">
+          <div class="card border-0 shadow-sm rounded-4"><div class="card-body">
+            <small class="text-muted">Rechazado el</small>
+            <h6 class="mb-0">{{ requerimiento.fecha_rechazado|date:"d/m/Y H:i" }}</h6>
+            {% if requerimiento.rechazado_por %}<small class="text-muted">Por {{ requerimiento.rechazado_por.get_full_name|default:requerimiento.rechazado_por.username }}</small>{% endif %}
+          </div></div>
+        </div>
+        {% endif %}
+      </div>
+
+      {% if solicitud_relacionada %}
+      <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-header bg-white border-0">
+          <h6 class="mb-0 fw-bold"><i class="fa fa-link me-2 text-primary"></i>Solicitud relacionada</h6>
+        </div>
+        <div class="card-body">
+          <p class="mb-1"><strong>No. Solicitud:</strong> #{{ solicitud_relacionada.id }}</p>
+          <p class="mb-1"><strong>Solicitante:</strong> {{ solicitud_relacionada.usuario_solicitante }}</p>
+          <p class="mb-1"><strong>Fecha:</strong> {{ solicitud_relacionada.creado_en|date:"d/m/Y H:i" }}</p>
+          <p class="mb-1"><strong>Estado:</strong> {{ solicitud_relacionada.get_estado_display|default:solicitud_relacionada.estado }}</p>
+          <a href="{% url 'almacen:detalle_solicitud_requerimiento' solicitud_id=solicitud_relacionada.id %}" class="btn btn-outline-primary btn-sm mt-2"><i class="fa fa-file-text-o me-1"></i>Ver solicitud</a>
+        </div>
+      </div>
+      {% endif %}
+
       <table class="table-wrapper invoice-1" id="tabla-detalles-requerimiento">
         <tbody>
           <tr>
@@ -186,6 +240,8 @@ table.order-details th {
                     <td style="width: 40%">
                       <span style="opacity: 0.8">Estado</span>
                       <h6>{{ requerimiento.get_estado_display }}</h6>
+                      {% if requerimiento.estado == 'despachado' and requerimiento.fecha_despachado %}<small class="text-muted d-block">Despachado el {{ requerimiento.fecha_despachado|date:"d/m/Y H:i" }}</small>{% endif %}
+                      {% if requerimiento.estado == 'rechazado' and requerimiento.fecha_rechazado %}<small class="text-muted d-block">Rechazado el {{ requerimiento.fecha_rechazado|date:"d/m/Y H:i" }}</small>{% endif %}
                     </td>
                   </tr>
                   <tr>
@@ -306,6 +362,7 @@ table.order-details th {
   </div>
 </div>
 
+{% if puede_anular_requerimiento %}
 <!-- Modal de Anulación con nuevo formato -->
 <div class="modal fade" id="modalAnular" tabindex="-1" aria-labelledby="modalAnularLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -352,6 +409,9 @@ table.order-details th {
 
 
 
+{% endif %}
+
+{% if puede_despachar_requerimiento %}
 <!-- Modal de Despacho -->
 <!-- Modal de Despacho con nuevo formato -->
 <div class="modal fade" id="modalDespachar" tabindex="-1" aria-labelledby="modalDespacharLabel" aria-hidden="true">
@@ -425,6 +485,9 @@ table.order-details th {
   </div>
 </div>
 
+{% endif %}
+
+{% if puede_gestionar_requerimiento %}
 <!-- Modal para Agregar Detalle (con estilo decorativo e imagen) -->
 <div class="modal fade" id="agregarDetalleModal" tabindex="-1" aria-labelledby="agregarDetalleModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg">
@@ -619,6 +682,9 @@ table.order-details th {
   </div>
 </div>
 
+{% endif %}
+
+{% if puede_gestionar_requerimiento %}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   // Cuando se hace click en editar
@@ -718,5 +784,6 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 </script>
 
+{% endif %}
 
 {% endblock %}
