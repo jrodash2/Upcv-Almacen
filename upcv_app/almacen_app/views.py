@@ -724,6 +724,23 @@ def detalle_requerimiento(request, requerimiento_id):
     # Lista de detalles ya agregados al requerimiento
     detalles_requerimiento = DetalleRequerimiento.objects.filter(requerimiento=requerimiento)
 
+    asignaciones_ubicacion = []
+    if es_admin or es_almacen or tiene_departamento_asignado:
+        for asignacion in (
+            AsignacionDetalleFactura.objects
+            .filter(destino=requerimiento.departamento)
+            .select_related('articulo', 'destino')
+            .order_by('-fecha_asignacion')
+        ):
+            asignaciones_ubicacion.append({
+                'articulo': asignacion.articulo,
+                'ubicacion': asignacion.destino,
+                'cantidad_asignada': asignacion.cantidad_asignada,
+                'disponible': stock_disponible.get(str(asignacion.articulo_id), 0),
+                'observacion': asignacion.descripcion,
+                'fecha_asignacion': asignacion.fecha_asignacion,
+            })
+
     # Pasar motivo de rechazo al contexto si el estado es 'rechazado'
     motivo_rechazo = None
     if requerimiento.estado == 'rechazado':
@@ -767,6 +784,8 @@ def detalle_requerimiento(request, requerimiento_id):
         'puede_gestionar_requerimiento': puede_gestionar_requerimiento,
         'puede_despachar_requerimiento': puede_despachar_requerimiento,
         'puede_anular_requerimiento': puede_anular_requerimiento,
+        'puede_imprimir_requerimiento': (not es_gestor) and (es_admin or es_almacen or tiene_departamento_asignado),
+        'asignaciones_ubicacion': asignaciones_ubicacion,
         'solicitud_relacionada': solicitud_relacionada,
         'motivo_rechazo': motivo_rechazo,  # Agregar el motivo de rechazo al contexto
     })
@@ -947,8 +966,18 @@ def exportar_kardex_pdf(request, articulo_id):
 
 
 
+@login_required
 def exportar_requerimiento_pdf(request, requerimiento_id):
     requerimiento = get_object_or_404(Requerimiento, id=requerimiento_id)
+    es_admin = request.user.is_superuser or request.user.groups.filter(name='Administrador').exists()
+    es_almacen = request.user.groups.filter(name='Almacen').exists()
+    tiene_departamento_asignado = UsuarioDepartamento.objects.filter(
+        usuario=request.user,
+        departamento=requerimiento.departamento
+    ).exists()
+    if request.user.groups.filter(name='Gestor').exists() or not (es_admin or es_almacen or tiene_departamento_asignado):
+        messages.error(request, "No tiene permiso para imprimir requerimientos.")
+        return redirect('almacen:seguimiento_requerimientos')
     detalles = requerimiento.detalles.all()
     institucion = Institucion.objects.first()  # ✅ Agregamos esto
 

@@ -115,39 +115,6 @@ table.order-details th {
         </div>
       {% endif %}
 
-      <div class="row g-3 mb-4">
-        <div class="col-md-3">
-          <div class="card border-0 shadow-sm rounded-4"><div class="card-body">
-            <small class="text-muted">Estado</small>
-            <h6 class="mb-0">{{ requerimiento.get_estado_display|default:requerimiento.estado }}</h6>
-          </div></div>
-        </div>
-        <div class="col-md-3">
-          <div class="card border-0 shadow-sm rounded-4"><div class="card-body">
-            <small class="text-muted">Fecha creación</small>
-            <h6 class="mb-0">{{ requerimiento.fecha_creacion|date:"d/m/Y H:i" }}</h6>
-          </div></div>
-        </div>
-        {% if requerimiento.fecha_despachado %}
-        <div class="col-md-3">
-          <div class="card border-0 shadow-sm rounded-4"><div class="card-body">
-            <small class="text-muted">Despachado el</small>
-            <h6 class="mb-0">{{ requerimiento.fecha_despachado|date:"d/m/Y H:i" }}</h6>
-            {% if requerimiento.despachado_por %}<small class="text-muted">Por {{ requerimiento.despachado_por.get_full_name|default:requerimiento.despachado_por.username }}</small>{% endif %}
-          </div></div>
-        </div>
-        {% endif %}
-        {% if requerimiento.fecha_rechazado %}
-        <div class="col-md-3">
-          <div class="card border-0 shadow-sm rounded-4"><div class="card-body">
-            <small class="text-muted">Rechazado el</small>
-            <h6 class="mb-0">{{ requerimiento.fecha_rechazado|date:"d/m/Y H:i" }}</h6>
-            {% if requerimiento.rechazado_por %}<small class="text-muted">Por {{ requerimiento.rechazado_por.get_full_name|default:requerimiento.rechazado_por.username }}</small>{% endif %}
-          </div></div>
-        </div>
-        {% endif %}
-      </div>
-
       {% if solicitud_relacionada %}
       <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-header bg-white border-0">
@@ -159,6 +126,43 @@ table.order-details th {
           <p class="mb-1"><strong>Fecha:</strong> {{ solicitud_relacionada.creado_en|date:"d/m/Y H:i" }}</p>
           <p class="mb-1"><strong>Estado:</strong> {{ solicitud_relacionada.get_estado_display|default:solicitud_relacionada.estado }}</p>
           <a href="{% url 'almacen:detalle_solicitud_requerimiento' solicitud_id=solicitud_relacionada.id %}" class="btn btn-outline-primary btn-sm mt-2"><i class="fa fa-file-text-o me-1"></i>Ver solicitud</a>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if asignaciones_ubicacion %}
+      <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-header bg-white border-0 py-3">
+          <h5 class="mb-0 fw-bold"><i class="fa fa-map-marker me-2 text-primary"></i>Detalle asignado a la ubicación</h5>
+          <small class="text-muted">Artículos disponibles/asignados para la ubicación actual.</small>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Artículo</th>
+                  <th>Ubicación</th>
+                  <th>Cantidad asignada</th>
+                  <th>Disponible</th>
+                  <th>Observación</th>
+                  <th>Fecha asignación</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for asignacion in asignaciones_ubicacion %}
+                <tr>
+                  <td>{{ asignacion.articulo.nombre }}</td>
+                  <td>{{ asignacion.ubicacion.nombre }}</td>
+                  <td>{{ asignacion.cantidad_asignada }}</td>
+                  <td>{{ asignacion.disponible }}</td>
+                  <td>{{ asignacion.observacion|default:"-" }}</td>
+                  <td>{{ asignacion.fecha_asignacion|date:"d/m/Y H:i" }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
       {% endif %}
@@ -207,9 +211,11 @@ table.order-details th {
 
 
 
-<a href="{% url 'almacen:exportar_requerimiento_pdf' requerimiento.id %}" target="_blank" class="btn btn-outline-secondary">
+{% if puede_imprimir_requerimiento %}
+<a href="{% url 'almacen:exportar_requerimiento_pdf' requerimiento.id %}" target="_blank" class="btn btn-outline-secondary action-btn">
   <i class="fa fa-file-pdf-o"></i> Imprimir
 </a>
+{% endif %}
 
 
 
