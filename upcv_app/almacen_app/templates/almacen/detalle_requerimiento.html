@@ -79,7 +79,11 @@ table.order-details th {
 }
 
 
-  
+
+.modern-card { border: 0; border-radius: 18px; box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08); }
+.form-control, .form-select { border-radius: 12px; min-height: 42px; }
+.table thead th { font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; color: #64748b; }
+.action-btn { border-radius: 10px; }
 </style>
 
 <div class="page-body">
@@ -105,6 +109,60 @@ table.order-details th {
     {% endif %}
     
     <div class="container-fluid">
+      {% if es_gestor %}
+        <div class="alert alert-info border-0 shadow-sm">
+          <i class="fa fa-eye me-1"></i> Usted está visualizando este requerimiento en modo solo lectura.
+        </div>
+      {% endif %}
+
+      <div class="row g-3 mb-4">
+        <div class="col-md-3">
+          <div class="card border-0 shadow-sm rounded-4"><div class="card-body">
+            <small class="text-muted">Estado</small>
+            <h6 class="mb-0">{{ requerimiento.get_estado_display|default:requerimiento.estado }}</h6>
+          </div></div>
+        </div>
+        <div class="col-md-3">
+          <div class="card border-0 shadow-sm rounded-4"><div class="card-body">
+            <small class="text-muted">Fecha creación</small>
+            <h6 class="mb-0">{{ requerimiento.fecha_creacion|date:"d/m/Y H:i" }}</h6>
+          </div></div>
+        </div>
+        {% if requerimiento.fecha_despachado %}
+        <div class="col-md-3">
+          <div class="card border-0 shadow-sm rounded-4"><div class="card-body">
+            <small class="text-muted">Despachado el</small>
+            <h6 class="mb-0">{{ requerimiento.fecha_despachado|date:"d/m/Y H:i" }}</h6>
+            {% if requerimiento.despachado_por %}<small class="text-muted">Por {{ requerimiento.despachado_por.get_full_name|default:requerimiento.despachado_por.username }}</small>{% endif %}
+          </div></div>
+        </div>
+        {% endif %}
+        {% if requerimiento.fecha_rechazado %}
+        <div class="col-md-3">
+          <div class="card border-0 shadow-sm rounded-4"><div class="card-body">
+            <small class="text-muted">Rechazado el</small>
+            <h6 class="mb-0">{{ requerimiento.fecha_rechazado|date:"d/m/Y H:i" }}</h6>
+            {% if requerimiento.rechazado_por %}<small class="text-muted">Por {{ requerimiento.rechazado_por.get_full_name|default:requerimiento.rechazado_por.username }}</small>{% endif %}
+          </div></div>
+        </div>
+        {% endif %}
+      </div>
+
+      {% if solicitud_relacionada %}
+      <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-header bg-white border-0">
+          <h6 class="mb-0 fw-bold"><i class="fa fa-link me-2 text-primary"></i>Solicitud relacionada</h6>
+        </div>
+        <div class="card-body">
+          <p class="mb-1"><strong>No. Solicitud:</strong> #{{ solicitud_relacionada.id }}</p>
+          <p class="mb-1"><strong>Solicitante:</strong> {{ solicitud_relacionada.usuario_solicitante }}</p>
+          <p class="mb-1"><strong>Fecha:</strong> {{ solicitud_relacionada.creado_en|date:"d/m/Y H:i" }}</p>
+          <p class="mb-1"><strong>Estado:</strong> {{ solicitud_relacionada.get_estado_display|default:solicitud_relacionada.estado }}</p>
+          <a href="{% url 'almacen:detalle_solicitud_requerimiento' solicitud_id=solicitud_relacionada.id %}" class="btn btn-outline-primary btn-sm mt-2"><i class="fa fa-file-text-o me-1"></i>Ver solicitud</a>
+        </div>
+      </div>
+      {% endif %}
+
       <table class="table-wrapper invoice-1" id="tabla-detalles-requerimiento">
         <tbody>
           <tr>
@@ -116,11 +174,10 @@ table.order-details th {
                     <div class="product-hover">
                       <div class="m-t-15 btn-showcase">
 
-{% if requerimiento.estado == 'pendiente' and not es_admin and not es_almacen %}
-  <a class="btn btn-outline-warning btn-lg"
+{% if puede_gestionar_requerimiento and requerimiento.estado == 'pendiente' %}
+  <a class="btn btn-outline-warning btn-lg action-btn"
      href="{% url 'almacen:enviar_requerimiento' requerimiento.id %}"
-     title="Enviar Requerimiento"
-     
+     title="Enviar Requerimiento">
     <i class="fa fa-paper-plane"></i> Enviar
   </a>
 {% elif requerimiento.estado == 'enviado' %}
@@ -134,32 +191,16 @@ table.order-details th {
 {% endif %}
 
 <!-- Botón para abrir modal de despachar -->
-{% if es_admin and requerimiento.estado == 'enviado' %}
-  <button type="button" class="btn btn-outline-warning btn-lg" data-bs-toggle="modal" data-bs-target="#modalDespachar">
-    <i class="fa fa-truck"></i> Despachar Requerimiento
-  </button>
-{% elif es_almacen and requerimiento.estado == 'enviado' %}
-  <button type="button" class="btn btn-outline-warning btn-lg" data-bs-toggle="modal" data-bs-target="#modalDespachar">
+{% if puede_despachar_requerimiento and requerimiento.estado == 'enviado' %}
+  <button type="button" class="btn btn-outline-warning btn-lg action-btn" data-bs-toggle="modal" data-bs-target="#modalDespachar">
     <i class="fa fa-truck"></i> Despachar Requerimiento
   </button>
 {% endif %}
 
 
 <!-- Botón para abrir modal de anulación -->
-{% if es_admin and requerimiento.estado == 'pendiente' %}
-  <button type="button" class="btn btn-outline-warning btn-lg" data-bs-toggle="modal" data-bs-target="#modalAnular">
-    <i class="fa fa-times-circle"></i> Rechazar Requerimiento
-  </button>
-{% elif es_admin and requerimiento.estado == 'enviado' %}
-  <button type="button" class="btn btn-outline-warning btn-lg" data-bs-toggle="modal" data-bs-target="#modalAnular">
-    <i class="fa fa-times-circle"></i> Rechazar Requerimiento
-  </button>
-{% elif es_almacen and requerimiento.estado == 'pendiente' %}
-  <button type="button" class="btn btn-outline-warning btn-lg" data-bs-toggle="modal" data-bs-target="#modalAnular">
-    <i class="fa fa-times-circle"></i> Rechazar Requerimiento
-  </button>
-{% elif es_almacen and requerimiento.estado == 'enviado' %}
-  <button type="button" class="btn btn-outline-warning btn-lg" data-bs-toggle="modal" data-bs-target="#modalAnular">
+{% if puede_anular_requerimiento %}
+  <button type="button" class="btn btn-outline-warning btn-lg action-btn" data-bs-toggle="modal" data-bs-target="#modalAnular">
     <i class="fa fa-times-circle"></i> Rechazar Requerimiento
   </button>
 {% endif %}
@@ -199,6 +240,8 @@ table.order-details th {
                     <td style="width: 40%">
                       <span style="opacity: 0.8">Estado</span>
                       <h6>{{ requerimiento.get_estado_display }}</h6>
+                      {% if requerimiento.estado == 'despachado' and requerimiento.fecha_despachado %}<small class="text-muted d-block">Despachado el {{ requerimiento.fecha_despachado|date:"d/m/Y H:i" }}</small>{% endif %}
+                      {% if requerimiento.estado == 'rechazado' and requerimiento.fecha_rechazado %}<small class="text-muted d-block">Rechazado el {{ requerimiento.fecha_rechazado|date:"d/m/Y H:i" }}</small>{% endif %}
                     </td>
                   </tr>
                   <tr>
@@ -265,7 +308,7 @@ table.order-details th {
                         <span>{{ detalle.observacion }}</span>
                       </td>
                       <td style="text-align: center; vertical-align: middle;">
-{% if requerimiento.estado != 'rechazado' and requerimiento.estado != 'enviado' and requerimiento.estado != 'despachado' and requerimiento.estado != 'parcial' %}
+{% if puede_gestionar_requerimiento and requerimiento.estado != 'rechazado' and requerimiento.estado != 'enviado' and requerimiento.estado != 'despachado' and requerimiento.estado != 'parcial' %}
   <i class="fa fa-edit editar-detalle-btn fa-2x" 
      style="cursor: pointer;" 
      data-id="{{ detalle.id }}" 
@@ -302,7 +345,7 @@ table.order-details th {
 
         </tbody>
       </table>
-{% if requerimiento.estado != 'rechazado' and requerimiento.estado != 'enviado' and requerimiento.estado != 'despachado' and requerimiento.estado != 'parcial' %}
+{% if puede_gestionar_requerimiento and requerimiento.estado != 'rechazado' and requerimiento.estado != 'enviado' and requerimiento.estado != 'despachado' and requerimiento.estado != 'parcial' %}
   <div style="display: flex; gap: 10px;">
     <button
       class="btn btn-primary"
@@ -319,6 +362,7 @@ table.order-details th {
   </div>
 </div>
 
+{% if puede_anular_requerimiento %}
 <!-- Modal de Anulación con nuevo formato -->
 <div class="modal fade" id="modalAnular" tabindex="-1" aria-labelledby="modalAnularLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -365,6 +409,9 @@ table.order-details th {
 
 
 
+{% endif %}
+
+{% if puede_despachar_requerimiento %}
 <!-- Modal de Despacho -->
 <!-- Modal de Despacho con nuevo formato -->
 <div class="modal fade" id="modalDespachar" tabindex="-1" aria-labelledby="modalDespacharLabel" aria-hidden="true">
@@ -438,6 +485,9 @@ table.order-details th {
   </div>
 </div>
 
+{% endif %}
+
+{% if puede_gestionar_requerimiento %}
 <!-- Modal para Agregar Detalle (con estilo decorativo e imagen) -->
 <div class="modal fade" id="agregarDetalleModal" tabindex="-1" aria-labelledby="agregarDetalleModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg">
@@ -632,6 +682,9 @@ table.order-details th {
   </div>
 </div>
 
+{% endif %}
+
+{% if puede_gestionar_requerimiento %}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   // Cuando se hace click en editar
@@ -647,7 +700,7 @@ document.addEventListener('DOMContentLoaded', function () {
           document.getElementById('editarDetalleId').value = data.id;
           document.getElementById('editarArticulo').value = data.articulo_id;
           document.getElementById('editarCantidad').value = data.cantidad;
-          document.getElementById('editarObservaciones').value = data.observaciones || '';
+          document.getElementById('editarObservaciones').value = data.observacion || '';
 
           // Mostrar modal con Bootstrap 5
           var editarModal = new bootstrap.Modal(document.getElementById('editarDetalleModal'));
@@ -731,5 +784,6 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 </script>
 
+{% endif %}
 
 {% endblock %}
