@@ -1,5 +1,6 @@
 {% extends 'almacen/base.html' %}
 {% load static %}
+{% load estado_tags %}
 {% block content %}
 {% load custom_filters %}
 
@@ -130,7 +131,7 @@ table.order-details th {
               <p class="mb-1"><strong>No. Solicitud:</strong> #{{ solicitud_relacionada.id }}</p>
               <p class="mb-1"><strong>Solicitante:</strong> {{ solicitud_relacionada.usuario_solicitante }}</p>
               <p class="mb-1"><strong>Fecha:</strong> {{ solicitud_relacionada.creado_en|date:"d/m/Y H:i" }}</p>
-              <p class="mb-0"><strong>Estado:</strong> {{ solicitud_relacionada.get_estado_display|default:solicitud_relacionada.estado }}</p>
+              <p class="mb-0"><strong>Estado:</strong> <span class="estado-badge {% estado_badge_class solicitud_relacionada.estado %}">{{ solicitud_relacionada.get_estado_display|default:solicitud_relacionada.estado }}</span></p>
             </div>
             <a href="{% url 'almacen:detalle_solicitud_requerimiento' solicitud_id=solicitud_relacionada.id %}" class="btn btn-outline-primary btn-sm gestor-btn"><i class="fa fa-eye me-1"></i>Ver solicitud</a>
           </div>
@@ -216,7 +217,7 @@ table.order-details th {
                     </td>
                     <td style="width: 40%">
                       <span style="opacity: 0.8">Estado</span>
-                      <h6>{{ requerimiento.get_estado_display }}</h6>
+                      <h6><span class="estado-badge {% estado_badge_class requerimiento.estado %}">{{ requerimiento.get_estado_display|default:requerimiento.estado }}</span></h6>
                       {% if requerimiento.estado == 'despachado' and requerimiento.fecha_despachado %}<small class="text-muted d-block">Despachado el {{ requerimiento.fecha_despachado|date:"d/m/Y H:i" }}</small>{% endif %}
                       {% if requerimiento.estado == 'rechazado' and requerimiento.fecha_rechazado %}<small class="text-muted d-block">Rechazado el {{ requerimiento.fecha_rechazado|date:"d/m/Y H:i" }}</small>{% endif %}
                     </td>

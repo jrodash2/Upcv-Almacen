@@ -166,3 +166,69 @@
   .gestor-header { align-items: flex-start; flex-direction: column; }
   .gestor-card .card-body, .gestor-card .card-header { padding: 1rem !important; }
 }
+
+.estado-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .35rem;
+  min-width: 92px;
+  padding: .45rem .75rem;
+  border-radius: 999px;
+  font-size: .72rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+.estado-pendiente {
+  background: #fef3c7 !important;
+  color: #92400e !important;
+  border-color: #fde68a !important;
+}
+
+.estado-en-proceso,
+.estado-proceso {
+  background: #dbeafe !important;
+  color: #1e40af !important;
+  border-color: #bfdbfe !important;
+}
+
+.estado-aprobado,
+.estado-convertida,
+.estado-convertido {
+  background: #dcfce7 !important;
+  color: #166534 !important;
+  border-color: #bbf7d0 !important;
+}
+
+.estado-despachado,
+.estado-finalizado,
+.estado-entregado {
+  background: #d1fae5 !important;
+  color: #065f46 !important;
+  border-color: #a7f3d0 !important;
+}
+
+.estado-rechazado,
+.estado-anulado,
+.estado-cancelado {
+  background: #fee2e2 !important;
+  color: #991b1b !important;
+  border-color: #fecaca !important;
+}
+
+.estado-borrador {
+  background: #f1f5f9 !important;
+  color: #334155 !important;
+  border-color: #e2e8f0 !important;
+}
+
+.estado-default {
+  background: #e5e7eb !important;
+  color: #374151 !important;
+  border-color: #d1d5db !important;
+}

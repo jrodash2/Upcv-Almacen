@@ -1,4 +1,5 @@
 {% extends 'almacen/base.html' %}
+{% load estado_tags %}
 {% block content %}
 <div class="page-body gestor-page">
   <div class="container-fluid">
@@ -22,10 +23,7 @@
                   <td>#{{ s.id }}</td>
                   <td>{{ s.departamento }}</td>
                   <td>
-                    {% if s.estado == 'pendiente' %}<span class="badge gestor-badge gestor-badge-warning">Pendiente</span>
-                    {% elif s.estado == 'convertida' %}<span class="badge gestor-badge gestor-badge-success">Convertida</span>
-                    {% elif s.estado == 'rechazada' %}<span class="badge gestor-badge gestor-badge-danger">Rechazada</span>
-                    {% else %}<span class="badge gestor-badge gestor-badge-secondary">{{ s.get_estado_display }}</span>{% endif %}
+                    <span class="estado-badge {% estado_badge_class s.estado %}">{{ s.get_estado_display|default:s.estado }}</span>
                   </td>
                   <td>{{ s.creado_en|date:"d/m/Y H:i" }}</td>
                   <td>

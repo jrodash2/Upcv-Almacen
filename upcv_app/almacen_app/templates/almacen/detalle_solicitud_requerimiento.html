@@ -1,4 +1,5 @@
 {% extends 'almacen/base.html' %}
+{% load estado_tags %}
 {% block content %}
 <div class="page-body gestor-page">
   <div class="container-fluid">
@@ -12,10 +13,7 @@
           <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Solicitud #{{ solicitud.id }}</h5>
             <div>
-              {% if solicitud.estado == 'pendiente' %}<span class="badge gestor-badge gestor-badge-warning">Pendiente</span>
-              {% elif solicitud.estado == 'convertida' %}<span class="badge gestor-badge gestor-badge-success">Convertida</span>
-              {% elif solicitud.estado == 'rechazada' %}<span class="badge gestor-badge gestor-badge-danger">Rechazada</span>
-              {% else %}<span class="badge gestor-badge gestor-badge-secondary">{{ solicitud.get_estado_display }}</span>{% endif %}
+              <span class="estado-badge {% estado_badge_class solicitud.estado %}">{{ solicitud.get_estado_display|default:solicitud.estado }}</span>
             </div>
           </div>
           <div class="card-body p-4">
@@ -48,7 +46,7 @@
                     <h5 class="fw-bold mb-1">Requerimiento generado</h5>
                     <p class="text-muted mb-2">Esta solicitud ya fue convertida en requerimiento.</p>
                     <p class="mb-1"><strong>No. Requerimiento:</strong> #{{ solicitud.requerimiento.id }}</p>
-                    <p class="mb-1"><strong>Estado:</strong> {{ solicitud.requerimiento.get_estado_display|default:solicitud.requerimiento.estado }}</p>
+                    <p class="mb-1"><strong>Estado:</strong> <span class="estado-badge {% estado_badge_class solicitud.requerimiento.estado %}">{{ solicitud.requerimiento.get_estado_display|default:solicitud.requerimiento.estado }}</span></p>
                     {% if solicitud.requerimiento.fecha_despachado %}<p class="mb-1"><strong>Despachado el:</strong> {{ solicitud.requerimiento.fecha_despachado|date:"d/m/Y H:i" }}</p>{% endif %}
                     {% if solicitud.requerimiento.despachado_por %}<p class="mb-1"><strong>Despachado por:</strong> {{ solicitud.requerimiento.despachado_por.get_full_name|default:solicitud.requerimiento.despachado_por.username }}</p>{% endif %}
                     {% if solicitud.requerimiento.fecha_rechazado %}<p class="mb-1"><strong>Rechazado el:</strong> {{ solicitud.requerimiento.fecha_rechazado|date:"d/m/Y H:i" }}</p>{% endif %}
