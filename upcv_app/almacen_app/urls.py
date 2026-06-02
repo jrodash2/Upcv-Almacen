@@ -95,6 +95,7 @@ urlpatterns = [
     
   
     path('requerimientos/crear/', views.crear_requerimiento, name='crear_requerimiento'),
+    path('requerimientos/seguimiento/', views.crear_requerimiento, name='seguimiento_requerimientos'),
     path('solicitudes-requerimiento/crear/', views.crear_solicitud_requerimiento, name='crear_solicitud_requerimiento'),
     path('solicitudes-requerimiento/mis-solicitudes/', views.listado_solicitudes_gestor, name='listado_solicitudes_gestor'),
     path('solicitudes-requerimiento/bandeja/', views.bandeja_solicitudes_requerimiento, name='bandeja_solicitudes_requerimiento'),
