@@ -9,7 +9,7 @@
 <script src="{% static 'assets/js/datatable/datatables/jquery.dataTables.min.js' %}"></script>
 <script src="{% static 'assets/js/datatable/datatables/datatable.custom.js' %}"></script>
 
-<div class="page-body">
+<div class="page-body gestor-page">
   <div class="container-fluid">
     <div class="page-title">
       <div class="row">
@@ -31,15 +31,16 @@
         </div>
       </div>
     </div>
+    <div class="gestor-header mb-4 gestor-animate"><div><span class="gestor-eyebrow">Consulta</span><h4 class="gestor-title">Artículos Asignados</h4><p class="gestor-subtitle">Consulta de productos asignados al departamento seleccionado.</p></div></div>
 
     <!-- Nuevo resumen: Asignado - Despachado = Disponible -->
-    <div class="card mt-4">
+    <div class="card gestor-card border-0 shadow-sm rounded-4 mt-4 gestor-animate">
       <div class="card-header">
         <h5>Resumen de Stock Asignado - Despachado</h5>
       </div>
       <div class="card-body">
-        <div class="table-responsive custom-scrollbar">
-          <table class="display" id="basic-10">
+        <div class="table-responsive custom-scrollbar gestor-table-wrapper">
+          <table class="display gestor-table" id="basic-10">
             <thead>
               <tr>
                 <th>Artículo</th>
@@ -65,13 +66,13 @@
 
     {% if tiene_acceso %}
     <!-- Detalle de asignaciones -->
-    <div class="card mt-4">
+    <div class="card gestor-card border-0 shadow-sm rounded-4 mt-4 gestor-animate">
       <div class="card-header">
         <h5>Detalle de Asignaciones</h5>
       </div>
       <div class="card-body">
-        <div class="table-responsive custom-scrollbar">
-          <table class="display" id="basic-12">
+        <div class="table-responsive custom-scrollbar gestor-table-wrapper">
+          <table class="display gestor-table" id="basic-12">
             <thead>
               <tr>
                 <th>Artículo</th>
@@ -91,7 +92,7 @@
                 <td>
                   {% if es_administrador %}
                   <!-- Botón para Transferir -->
-                  <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#transferirModal"
+                  <button class="btn btn-warning gestor-btn" data-bs-toggle="modal" data-bs-target="#transferirModal"
                           data-articulo-id="{{ a.articulo.id }}" data-nombre-articulo="{{ a.articulo.nombre }}"
                           data-cantidad="{{ a.cantidad_asignada }}">
                     Transferir
@@ -111,13 +112,13 @@
     </div>
 
     <!-- NUEVO: Historial de Transferencias -->
-    <div class="card mt-4">
+    <div class="card gestor-card border-0 shadow-sm rounded-4 mt-4 gestor-animate">
       <div class="card-header">
         <h5>Historial de Transferencias</h5>
       </div>
       <div class="card-body">
-        <div class="table-responsive custom-scrollbar">
-          <table class="display" id="basic-13">
+        <div class="table-responsive custom-scrollbar gestor-table-wrapper">
+          <table class="display gestor-table" id="basic-13">
             <thead>
               <tr>
                 <th>Artículo</th>
@@ -151,7 +152,7 @@
       </div>
     </div>
 
-    <a href="{% url 'almacen:lista_departamentos' %}" class="btn btn-primary mt-3">← Volver a la lista</a>
+    <a href="{% url 'almacen:lista_departamentos' %}" class="btn btn-primary gestor-btn mt-3">← Volver a la lista</a>
     {% endif %}
 
   </div>
