@@ -466,6 +466,22 @@ class Requerimiento(models.Model):
     motivo_rechazo = models.TextField(max_length=255, blank=True, null=True)  # Nuevo campo
     creado_por = models.ForeignKey(User, on_delete=models.CASCADE)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_despachado = models.DateTimeField(null=True, blank=True)
+    fecha_rechazado = models.DateTimeField(null=True, blank=True)
+    despachado_por = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='requerimientos_despachados'
+    )
+    rechazado_por = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='requerimientos_rechazados'
+    )
     estado = models.CharField(max_length=20, choices=[
         ('pendiente', 'Pendiente'),
         ('despachado', 'Despachado'),
