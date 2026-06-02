@@ -130,43 +130,6 @@ table.order-details th {
       </div>
       {% endif %}
 
-      {% if asignaciones_ubicacion %}
-      <div class="card border-0 shadow-sm rounded-4 mb-4">
-        <div class="card-header bg-white border-0 py-3">
-          <h5 class="mb-0 fw-bold"><i class="fa fa-map-marker me-2 text-primary"></i>Detalle asignado a la ubicación</h5>
-          <small class="text-muted">Artículos disponibles/asignados para la ubicación actual.</small>
-        </div>
-        <div class="card-body">
-          <div class="table-responsive">
-            <table class="table table-hover align-middle">
-              <thead class="table-light">
-                <tr>
-                  <th>Artículo</th>
-                  <th>Ubicación</th>
-                  <th>Cantidad asignada</th>
-                  <th>Disponible</th>
-                  <th>Observación</th>
-                  <th>Fecha asignación</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for asignacion in asignaciones_ubicacion %}
-                <tr>
-                  <td>{{ asignacion.articulo.nombre }}</td>
-                  <td>{{ asignacion.ubicacion.nombre }}</td>
-                  <td>{{ asignacion.cantidad_asignada }}</td>
-                  <td>{{ asignacion.disponible }}</td>
-                  <td>{{ asignacion.observacion|default:"-" }}</td>
-                  <td>{{ asignacion.fecha_asignacion|date:"d/m/Y H:i" }}</td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      {% endif %}
-
       <table class="table-wrapper invoice-1" id="tabla-detalles-requerimiento">
         <tbody>
           <tr>

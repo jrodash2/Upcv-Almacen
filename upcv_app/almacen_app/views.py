@@ -785,7 +785,6 @@ def detalle_requerimiento(request, requerimiento_id):
         'puede_despachar_requerimiento': puede_despachar_requerimiento,
         'puede_anular_requerimiento': puede_anular_requerimiento,
         'puede_imprimir_requerimiento': (not es_gestor) and (es_admin or es_almacen or tiene_departamento_asignado),
-        'asignaciones_ubicacion': asignaciones_ubicacion,
         'solicitud_relacionada': solicitud_relacionada,
         'motivo_rechazo': motivo_rechazo,  # Agregar el motivo de rechazo al contexto
     })
