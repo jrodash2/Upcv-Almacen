@@ -425,29 +425,49 @@ from django.db.models import Q
 
 @login_required
 def crear_requerimiento(request):
-    if request.user.groups.filter(name='Gestor').exists():
-        messages.error(request, "No tiene permiso para realizar esta acción.")
+    es_admin = request.user.is_superuser or request.user.groups.filter(name='Administrador').exists()
+    es_almacen = request.user.groups.filter(name='Almacen').exists()
+    es_departamento = request.user.groups.filter(name='Departamento').exists()
+    es_gestor = request.user.groups.filter(name='Gestor').exists()
+
+    if not (es_admin or es_almacen or es_departamento or es_gestor):
+        messages.error(request, "No tiene permiso para consultar requerimientos.")
         return redirect('almacen:acceso_denegado')
+
+    puede_crear_requerimiento = es_admin or es_departamento
+
+    if request.method == "POST" and not puede_crear_requerimiento:
+        messages.error(request, "No tiene permiso para crear requerimientos directos.")
+        return redirect('almacen:seguimiento_requerimientos' if es_gestor else 'almacen:crear_requerimiento')
+
     form = RequerimientoForm(request.POST or None, usuario=request.user)
 
-    if request.user.groups.filter(name__in=['Administrador', 'Almacen']).exists():
+    if es_admin or es_almacen:
         requerimientos = Requerimiento.objects.filter(
             estado__in=['enviado', 'despachado', 'rechazado', 'parcial', 'pendiente']
         ).order_by('-fecha_creacion')
     else:
-        # Obtener los departamentos a los que pertenece el usuario
         departamentos_usuario = UsuarioDepartamento.objects.filter(usuario=request.user).values_list('departamento', flat=True)
+        filtros = Q(departamento__in=departamentos_usuario)
+        if es_departamento:
+            filtros |= Q(creado_por=request.user)
+        if es_gestor:
+            filtros |= Q(solicitudes_origen__usuario_solicitante=request.user)
 
-        # Filtrar requerimientos creados por el usuario o pertenecientes a sus departamentos
-        requerimientos = Requerimiento.objects.filter(
-            Q(creado_por=request.user) | Q(departamento__in=departamentos_usuario)
-        ).distinct().order_by('-fecha_creacion')
+        requerimientos = Requerimiento.objects.filter(filtros).distinct().order_by('-fecha_creacion')
+
+    resumen_requerimientos = {
+        'total': requerimientos.count(),
+        'pendientes': requerimientos.filter(estado='pendiente').count(),
+        'enviados': requerimientos.filter(estado='enviado').count(),
+        'despachados': requerimientos.filter(estado='despachado').count(),
+        'rechazados': requerimientos.filter(estado='rechazado').count(),
+    }
 
     if request.method == "POST":
         if form.is_valid():
             nuevo = form.save(commit=False)
             nuevo.creado_por = request.user
-            # Asignar el departamento si no lo trae el form automáticamente
             if not nuevo.departamento_id:
                 asignacion = UsuarioDepartamento.objects.filter(usuario=request.user).first()
                 if asignacion:
@@ -455,13 +475,18 @@ def crear_requerimiento(request):
             nuevo.save()
             messages.success(request, "Requerimiento creado exitosamente.")
             return redirect('almacen:detalle_requerimiento', requerimiento_id=nuevo.id)
-        else:
-            messages.error(request, "Por favor revisa el formulario.")
+        messages.error(request, "Por favor revisa el formulario.")
 
     return render(request, 'almacen/crear_requerimiento.html', {
         'form': form,
         'requerimientos': requerimientos,
         'mostrar_modal': request.method == "POST" and not form.is_valid(),
+        'es_admin': es_admin,
+        'es_almacen': es_almacen,
+        'es_departamento': es_departamento,
+        'es_gestor': es_gestor,
+        'puede_crear_requerimiento': puede_crear_requerimiento,
+        'resumen_requerimientos': resumen_requerimientos,
     })
 
 
@@ -527,15 +552,35 @@ def bandeja_solicitudes_requerimiento(request):
 @login_required
 def detalle_solicitud_requerimiento(request, solicitud_id):
     solicitud = get_object_or_404(SolicitudRequerimiento, id=solicitud_id)
-    if request.user.groups.filter(name='Gestor').exists() and solicitud.usuario_solicitante != request.user:
+    es_admin = request.user.is_superuser or request.user.groups.filter(name='Administrador').exists()
+    es_almacen = request.user.groups.filter(name='Almacen').exists()
+    es_departamento = request.user.groups.filter(name='Departamento').exists()
+    es_gestor = request.user.groups.filter(name='Gestor').exists()
+    tiene_departamento_asignado = UsuarioDepartamento.objects.filter(
+        usuario=request.user,
+        departamento=solicitud.departamento
+    ).exists()
+
+    if not (es_admin or es_almacen or (es_departamento and tiene_departamento_asignado) or (es_gestor and solicitud.usuario_solicitante == request.user)):
+        messages.error(request, "No tiene permiso para consultar esta solicitud.")
         return redirect('almacen:acceso_denegado')
-    return render(request, 'almacen/detalle_solicitud_requerimiento.html', {'solicitud': solicitud})
+
+    return render(request, 'almacen/detalle_solicitud_requerimiento.html', {
+        'solicitud': solicitud,
+        'puede_procesar_solicitud': es_admin or es_almacen or (es_departamento and tiene_departamento_asignado),
+    })
 
 
 @login_required
 @grupo_requerido('Administrador', 'Almacen', 'Departamento')
 def convertir_solicitud_en_requerimiento(request, solicitud_id):
     solicitud = get_object_or_404(SolicitudRequerimiento, id=solicitud_id)
+    es_admin = request.user.is_superuser or request.user.groups.filter(name='Administrador').exists()
+    es_almacen = request.user.groups.filter(name='Almacen').exists()
+    tiene_departamento_asignado = UsuarioDepartamento.objects.filter(usuario=request.user, departamento=solicitud.departamento).exists()
+    if not (es_admin or es_almacen or tiene_departamento_asignado):
+        messages.error(request, "No tiene permiso para convertir esta solicitud.")
+        return redirect('almacen:acceso_denegado')
     if solicitud.estado != 'pendiente':
         messages.warning(request, "La solicitud ya fue procesada.")
         return redirect('almacen:bandeja_solicitudes_requerimiento')
@@ -573,6 +618,12 @@ def convertir_solicitud_en_requerimiento(request, solicitud_id):
 @grupo_requerido('Administrador', 'Almacen', 'Departamento')
 def rechazar_solicitud_requerimiento(request, solicitud_id):
     solicitud = get_object_or_404(SolicitudRequerimiento, id=solicitud_id)
+    es_admin = request.user.is_superuser or request.user.groups.filter(name='Administrador').exists()
+    es_almacen = request.user.groups.filter(name='Almacen').exists()
+    tiene_departamento_asignado = UsuarioDepartamento.objects.filter(usuario=request.user, departamento=solicitud.departamento).exists()
+    if not (es_admin or es_almacen or tiene_departamento_asignado):
+        messages.error(request, "No tiene permiso para rechazar esta solicitud.")
+        return redirect('almacen:acceso_denegado')
     if solicitud.estado != 'pendiente':
         messages.warning(request, "La solicitud ya fue procesada.")
         return redirect('almacen:bandeja_solicitudes_requerimiento')
@@ -607,16 +658,26 @@ def enviar_requerimiento(request, requerimiento_id):
 @login_required
 def detalle_requerimiento(request, requerimiento_id):
     requerimiento = get_object_or_404(Requerimiento, id=requerimiento_id)
-    es_admin = request.user.groups.filter(name='Administrador').exists()
+    es_admin = request.user.is_superuser or request.user.groups.filter(name='Administrador').exists()
     es_almacen = request.user.groups.filter(name='Almacen').exists()
+    es_departamento = request.user.groups.filter(name='Departamento').exists()
+    es_gestor = request.user.groups.filter(name='Gestor').exists()
     tiene_departamento_asignado = UsuarioDepartamento.objects.filter(
         usuario=request.user,
         departamento=requerimiento.departamento
     ).exists()
+    solicitud_origen_propia = SolicitudRequerimiento.objects.filter(
+        requerimiento=requerimiento,
+        usuario_solicitante=request.user
+    ).exists()
 
-    if not (es_admin or es_almacen or tiene_departamento_asignado):
+    if not (es_admin or es_almacen or tiene_departamento_asignado or (es_gestor and solicitud_origen_propia)):
         messages.error(request, "No tiene permiso para realizar esta acción.")
         return redirect('almacen:acceso_denegado')
+
+    puede_gestionar_requerimiento = es_admin or (es_departamento and tiene_departamento_asignado)
+    puede_despachar_requerimiento = es_admin or es_almacen
+    puede_anular_requerimiento = puede_despachar_requerimiento and requerimiento.estado in ['pendiente', 'enviado']
 
     # Asignaciones
     asignaciones_qs = (
@@ -662,8 +723,8 @@ def detalle_requerimiento(request, requerimiento_id):
         motivo_rechazo = requerimiento.motivo_rechazo
 
     if request.method == 'POST':
-        if request.user.groups.filter(name='Gestor').exists():
-            messages.error(request, "No tiene permiso para realizar esta acción.")
+        if not puede_gestionar_requerimiento:
+            messages.error(request, "No tiene permiso para modificar requerimientos.")
             return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
         articulo_id = request.POST.get('articulo')
         cantidad = int(request.POST.get('cantidad', 0))
@@ -693,13 +754,22 @@ def detalle_requerimiento(request, requerimiento_id):
         'detalles_requerimiento': detalles_requerimiento,
         'stock_disponible': stock_disponible,
         'es_admin': es_admin,
+        'es_almacen': es_almacen,
+        'es_departamento': es_departamento,
+        'es_gestor': es_gestor,
+        'puede_gestionar_requerimiento': puede_gestionar_requerimiento,
+        'puede_despachar_requerimiento': puede_despachar_requerimiento,
+        'puede_anular_requerimiento': puede_anular_requerimiento,
         'motivo_rechazo': motivo_rechazo,  # Agregar el motivo de rechazo al contexto
     })
 
 
 
+@login_required
 @require_GET
 def detalle_requerimiento_api(request, detalle_id):
+    if request.user.groups.filter(name='Gestor').exists() or not request.user.groups.filter(name__in=['Administrador', 'Departamento']).exists():
+        return JsonResponse({'error': 'No tiene permiso para consultar esta acción administrativa.'}, status=403)
     try:
         detalle = DetalleRequerimiento.objects.get(id=detalle_id)
         data = {
@@ -1536,9 +1606,12 @@ def agregar_detalle_factura(request, form1h_id):
 
 
 
+@login_required
 @require_POST
 @grupo_requerido('Administrador', 'Almacen', 'Departamento')
 def eliminar_detalle_requerimiento(request, pk):
+    if request.user.groups.filter(name='Gestor').exists():
+        return JsonResponse({'error': 'No tiene permiso para eliminar detalles.'}, status=403)
     if request.method == 'POST':
         try:
             detalle = DetalleRequerimiento.objects.get(pk=pk)

@@ -1,180 +1,177 @@
-{% extends 'almacen/base.html' %} {% load static %} {% block content %}
+{% extends 'almacen/base.html' %}
+{% load static %}
+{% block content %}
 
-<!-- Cargar jQuery y DataTables -->
 <script src="{% static 'assets/js/jquery.min.js' %}"></script>
 <script src="{% static 'assets/js/datatable/datatables/jquery.dataTables.min.js' %}"></script>
 <script src="{% static 'assets/js/datatable/datatables/datatable.custom.js' %}"></script>
 
+<style>
+  .modern-card { border: 0; border-radius: 18px; box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08); }
+  .modern-card .card-header { background: #fff; border-bottom: 1px solid #eef2f7; }
+  .summary-card { border: 0; border-radius: 16px; box-shadow: 0 8px 22px rgba(15, 23, 42, 0.07); }
+  .summary-icon { width: 46px; height: 46px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; }
+  .summary-icon.primary { background: rgba(13, 110, 253, .12); color: #0d6efd; }
+  .summary-icon.warning { background: rgba(255, 193, 7, .18); color: #b58100; }
+  .summary-icon.info { background: rgba(13, 202, 240, .16); color: #0aa2c0; }
+  .summary-icon.success { background: rgba(25, 135, 84, .14); color: #198754; }
+  .summary-icon.danger { background: rgba(220, 53, 69, .12); color: #dc3545; }
+  .form-control, .form-select { border-radius: 12px; min-height: 42px; }
+  .form-control:focus, .form-select:focus { box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, .15); }
+  .table thead th { font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; color: #64748b; white-space: nowrap; }
+  .action-btn { border-radius: 10px; }
+</style>
+
 <div class="page-body">
   <div class="container-fluid">
     <div class="page-title">
-      <div class="row">
-        <div class="col-6">
-          <h4 class="card-title mb-0">Requerimientos</h4>
+      <div class="row align-items-center">
+        <div class="col-12 col-md-6">
+          <h4 class="mb-0">{% if es_gestor %}Seguimiento de Requerimientos{% else %}Requerimientos{% endif %}</h4>
         </div>
-        <div class="col-6">
-          <ol class="breadcrumb">
+        <div class="col-12 col-md-6">
+          <ol class="breadcrumb justify-content-md-end">
             <li class="breadcrumb-item">
-              <a href="">
-                <svg class="stroke-icon">
-                  <use href="{% static 'assets/svg/icon-sprite.svg#stroke-home' %}"></use>
-                </svg>
+              <a href="{% url 'almacen:dahsboard' %}">
+                <svg class="stroke-icon"><use href="{% static 'assets/svg/icon-sprite.svg#stroke-home' %}"></use></svg>
               </a>
             </li>
-            <li class="breadcrumb-item">Dashboard</li>
-            <li class="breadcrumb-item active">Requerimientos</li>
+            <li class="breadcrumb-item">Almacén</li>
+            <li class="breadcrumb-item active">{% if es_gestor %}Seguimiento{% else %}Requerimientos{% endif %}</li>
           </ol>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Container-fluid starts -->
   <div class="container-fluid">
-    <div class="edit-profile">
-      <div class="row">
-        <div class="col-xl-12">
-          <div class="card">
+    <div class="row g-3 mb-4">
+      <div class="col-sm-6 col-xl">
+        <div class="card summary-card h-100"><div class="card-body d-flex align-items-center justify-content-between">
+          <div><small class="text-muted">Total</small><h3 class="mb-0 fw-bold">{{ resumen_requerimientos.total }}</h3></div>
+          <span class="summary-icon primary"><i class="fa fa-tasks"></i></span>
+        </div></div>
+      </div>
+      <div class="col-sm-6 col-xl">
+        <div class="card summary-card h-100"><div class="card-body d-flex align-items-center justify-content-between">
+          <div><small class="text-muted">Pendientes</small><h3 class="mb-0 fw-bold">{{ resumen_requerimientos.pendientes }}</h3></div>
+          <span class="summary-icon warning"><i class="fa fa-clock-o"></i></span>
+        </div></div>
+      </div>
+      <div class="col-sm-6 col-xl">
+        <div class="card summary-card h-100"><div class="card-body d-flex align-items-center justify-content-between">
+          <div><small class="text-muted">Enviados</small><h3 class="mb-0 fw-bold">{{ resumen_requerimientos.enviados }}</h3></div>
+          <span class="summary-icon info"><i class="fa fa-paper-plane"></i></span>
+        </div></div>
+      </div>
+      <div class="col-sm-6 col-xl">
+        <div class="card summary-card h-100"><div class="card-body d-flex align-items-center justify-content-between">
+          <div><small class="text-muted">Despachados</small><h3 class="mb-0 fw-bold">{{ resumen_requerimientos.despachados }}</h3></div>
+          <span class="summary-icon success"><i class="fa fa-check-circle"></i></span>
+        </div></div>
+      </div>
+      <div class="col-sm-6 col-xl">
+        <div class="card summary-card h-100"><div class="card-body d-flex align-items-center justify-content-between">
+          <div><small class="text-muted">Rechazados</small><h3 class="mb-0 fw-bold">{{ resumen_requerimientos.rechazados }}</h3></div>
+          <span class="summary-icon danger"><i class="fa fa-times-circle"></i></span>
+        </div></div>
+      </div>
+    </div>
 
-            <div class="card-header">
-              <div class="card-body">
-                <div class="text-end">
-                  <!-- Botón para abrir el modal -->
-                 {% if not request.user.groups.all.0.name == 'Administrador' %}
-{% if not es_admin and not es_almacen %}
-  <button
-    type="button"
-    class="btn btn-primary"
-    data-bs-toggle="modal"
-    data-bs-target="#crearRequerimientoModal"
-  >
-    Crear Requerimiento
-  </button>
-{% endif %}
-
-{% endif %}
-
-                </div>
-              </div>
-         
-            <!-- Tabla para mostrar los requerimientos -->
-            <div class="mt-4">
-              <h5>Requerimientos Existentes</h5>
-              <div class="table-responsive custom-scrollbar">
-                 <table class="display" id="basic-9">
-                  <thead>
-                    <tr>
-                      <th># Requerimiento</th>
-                      <th>Departamento</th>
-                      <th>Creado Por</th>
-                      <th>Fecha</th>
-                      <th>Estado</th>
-                      <th>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for req in requerimientos %}
-                    <tr>
-                      <td>{{ req.id }}</td>
-                      <td>{{ req.departamento.nombre }}</td>
-                      <td>{{ req.creado_por.username }}</td>
-                      <td>{{ req.fecha_creacion|date:"Y-m-d H:i" }}</td>
-                      <td>
-{% if req.estado == 'despachado' %}
-  📦 Despachado
-{% elif req.estado == 'rechazado' %}
-  ❌ Rechazado
-{% elif req.estado == 'enviado' %}
-  📤 Enviado
-{% elif req.estado == 'parcial' %}
-  🟡 Parcial
-{% else %}
-  ⏳ Pendiente
-{% endif %}
-
-
-                      </td>
-                      <td>
-                        <a href="{% url 'almacen:detalle_requerimiento' requerimiento_id=req.id %}" class="btn btn-info btn-sm">Ver Detalle</a>
-                    </tr>
-                    {% endfor %}
-                  </tbody>
-                  <tfoot>
-                    <tr>
-                      <th># Requerimiento</th>
-                      <th>Departamento</th>
-                      <th>Creado Por</th>
-                      <th>Fecha</th>
-                      <th>Estado</th>
-                      <th>
-                        Acciones
-                      </th>
-             
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
+    <div class="row justify-content-center">
+      <div class="col-xl-11 col-lg-12">
+        <div class="card modern-card">
+          <div class="card-header py-3 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div>
+              <h5 class="mb-0 fw-bold text-dark"><i class="fa fa-tasks me-2 text-primary"></i>{% if es_gestor %}Seguimiento de Requerimientos{% else %}Listado de Requerimientos{% endif %}</h5>
+              <small class="text-muted">{% if es_gestor %}Consulta en modo lectura los requerimientos asociados a tus departamentos o solicitudes convertidas.{% else %}Administra y consulta los requerimientos registrados según tus permisos.{% endif %}</small>
             </div>
-
+            {% if puede_crear_requerimiento %}
+              <button type="button" class="btn btn-primary action-btn" data-bs-toggle="modal" data-bs-target="#crearRequerimientoModal">
+                <i class="fa fa-plus-circle me-1"></i> Crear Requerimiento
+              </button>
+            {% endif %}
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle" id="basic-9">
+                <thead class="table-light">
+                  <tr>
+                    <th>#</th><th>Departamento</th><th>Creado por</th><th>Fecha</th><th>Estado</th><th class="text-center">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for req in requerimientos %}
+                  <tr>
+                    <td class="fw-semibold">#{{ req.id }}</td>
+                    <td>{{ req.departamento.nombre }}</td>
+                    <td>{{ req.creado_por.get_full_name|default:req.creado_por.username }}</td>
+                    <td>{{ req.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                    <td>
+                      {% if req.estado == 'despachado' %}<span class="badge rounded-pill bg-success px-3 py-2">Despachado</span>
+                      {% elif req.estado == 'rechazado' %}<span class="badge rounded-pill bg-danger px-3 py-2">Rechazado</span>
+                      {% elif req.estado == 'enviado' %}<span class="badge rounded-pill bg-info px-3 py-2">Enviado</span>
+                      {% elif req.estado == 'parcial' %}<span class="badge rounded-pill bg-warning text-dark px-3 py-2">Parcial</span>
+                      {% else %}<span class="badge rounded-pill bg-warning text-dark px-3 py-2">Pendiente</span>{% endif %}
+                    </td>
+                    <td class="text-center">
+                      <div class="btn-group">
+                        <a href="{% url 'almacen:detalle_requerimiento' requerimiento_id=req.id %}" class="btn btn-outline-primary btn-sm action-btn">
+                          <i class="fa fa-eye me-1"></i> Ver seguimiento
+                        </a>
+                      </div>
+                    </td>
+                  </tr>
+                  {% empty %}
+                  <tr><td colspan="6" class="text-center text-muted py-4">No hay requerimientos para mostrar.</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
-  <!-- Container-fluid Ends -->
 </div>
 
-<!-- Modal -->
+{% if puede_crear_requerimiento %}
 <div class="modal fade" id="crearRequerimientoModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content dark-sign-up">
-      <div class="modal-body social-profile text-start p-4">
-        <div class="Riho-demo-img">
-          <div class="title-wrapper pb-3 modal-heading text-center">
-            <h5 class="theme-name mb-0"><span>Crear - </span>Requerimiento</h5>
-            <p>Complete el formulario para generar un nuevo requerimiento.</p>
-          </div>
-          <div class="overflow-hidden text-center mb-4">
-            <img class="img-fluid" src="{% static 'assets/images/logo/logo.png' %}" alt="imagen decorativa" />
-          </div>
-
-         <form method="post">
-  {% csrf_token %}
-  <div class="row justify-content-center">
-    <div class="col-md-8 mb-3">
-      <label for="{{ form.departamento.id_for_label }}" class="form-label">
-        {{ form.departamento.label }}
-      </label>
-      {{ form.departamento }}
-      {% if form.departamento.errors %}
-        <div class="text-danger">{{ form.departamento.errors }}</div>
-      {% endif %}
-    </div>
-
-    <div class="col-md-8 mb-3">
-      <label for="{{ form.motivo.id_for_label }}" class="form-label">
-        {{ form.motivo.label }}
-      </label>
-      {{ form.motivo }}
-      {% if form.motivo.errors %}
-        <div class="text-danger">{{ form.motivo.errors }}</div>
-      {% endif %}
-    </div>
-  </div>
-
-  <div class="text-end">
-    <button type="submit" class="btn btn-primary">Guardar</button>
-  </div>
-</form>
-
-
+    <div class="modal-content border-0 rounded-4">
+      <div class="modal-header border-0 pb-0">
+        <div>
+          <h5 class="modal-title fw-bold"><i class="fa fa-plus-circle text-primary me-2"></i>Crear Requerimiento</h5>
+          <small class="text-muted">Complete el formulario para generar un nuevo requerimiento.</small>
         </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body p-4">
+        <form method="post">
+          {% csrf_token %}
+          <div class="row g-3">
+            <div class="col-md-12">
+              <label for="{{ form.departamento.id_for_label }}" class="form-label fw-semibold">{{ form.departamento.label }}</label>
+              {{ form.departamento }}
+              {% if form.departamento.errors %}<div class="text-danger small mt-1">{{ form.departamento.errors }}</div>{% endif %}
+            </div>
+            <div class="col-md-12">
+              <label for="{{ form.motivo.id_for_label }}" class="form-label fw-semibold">{{ form.motivo.label }}</label>
+              {{ form.motivo }}
+              {% if form.motivo.errors %}<div class="text-danger small mt-1">{{ form.motivo.errors }}</div>{% endif %}
+            </div>
+          </div>
+          <div class="d-flex justify-content-end gap-2 mt-4">
+            <button type="button" class="btn btn-light border action-btn" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary action-btn"><i class="fa fa-save me-1"></i> Guardar</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
 </div>
+{% endif %}
 
-<!-- Script para reabrir modal si hay errores -->
 {% if mostrar_modal %}
 <script>
   document.addEventListener("DOMContentLoaded", function () {
@@ -183,15 +180,11 @@
 </script>
 {% endif %}
 
-<!-- Inicializar DataTables -->
 <script>
   $(document).ready(function () {
-    $('#tabla-requerimientos').DataTable({
-      language: {
-        url: "//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json"
-      }
-    });
+    if ($.fn.DataTable && !$.fn.DataTable.isDataTable('#basic-9')) {
+      $('#basic-9').DataTable({ responsive: true, pageLength: 10, order: [[0, 'desc']] });
+    }
   });
 </script>
-
 {% endblock %}

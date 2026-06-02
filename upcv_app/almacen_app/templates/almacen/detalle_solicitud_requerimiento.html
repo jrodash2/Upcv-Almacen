@@ -40,7 +40,7 @@
             </div>
 
             <div class="d-flex justify-content-end gap-2 mt-4">
-              {% if es_administrador or es_departamento or es_almacen %}
+              {% if puede_procesar_solicitud %}
                 {% if solicitud.estado == 'pendiente' %}
                   <a class="btn btn-success" href="{% url 'almacen:convertir_solicitud_en_requerimiento' solicitud_id=solicitud.id %}">Convertir</a>
                   <a class="btn btn-danger" href="{% url 'almacen:rechazar_solicitud_requerimiento' solicitud_id=solicitud.id %}">Rechazar</a>

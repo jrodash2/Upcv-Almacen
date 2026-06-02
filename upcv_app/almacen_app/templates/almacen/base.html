@@ -281,7 +281,7 @@
                   </svg><span>Asignados</span></a>
 
               </li>
-              <li class="sidebar-list"><i class="fa fa-thumb-tack"></i><a class="sidebar-link " href="{% url 'almacen:crear_requerimiento' %}"><span>Seguimiento Requerimientos</span></a></li>
+              <li class="sidebar-list"><i class="fa fa-thumb-tack"></i><a class="sidebar-link " href="{% url 'almacen:seguimiento_requerimientos' %}"><span>Seguimiento de Requerimientos</span></a></li>
               {% if es_departamento %}
               <li class="sidebar-list"><i class="fa fa-thumb-tack"></i><a class="sidebar-link " href="{% url 'almacen:bandeja_solicitudes_requerimiento' %}"><span>Bandeja de Solicitudes</span></a></li>
               {% endif %}
@@ -290,7 +290,7 @@
   {% endif %}
 
   {% if es_gestor %}
-    <li class="sidebar-list"><i class="fa fa-thumb-tack"></i><a class="sidebar-link " href="{% url 'almacen:crear_solicitud_requerimiento' %}"><span>Solicitudes de Requerimiento</span></a></li>
+    <li class="sidebar-list"><i class="fa fa-thumb-tack"></i><a class="sidebar-link " href="{% url 'almacen:crear_solicitud_requerimiento' %}"><span>Crear Solicitud</span></a></li>
     <li class="sidebar-list"><i class="fa fa-thumb-tack"></i><a class="sidebar-link " href="{% url 'almacen:listado_solicitudes_gestor' %}"><span>Mis Solicitudes</span></a></li>
   {% endif %}
 

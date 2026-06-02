@@ -79,7 +79,11 @@ table.order-details th {
 }
 
 
-  
+
+.modern-card { border: 0; border-radius: 18px; box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08); }
+.form-control, .form-select { border-radius: 12px; min-height: 42px; }
+.table thead th { font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; color: #64748b; }
+.action-btn { border-radius: 10px; }
 </style>
 
 <div class="page-body">
@@ -116,11 +120,10 @@ table.order-details th {
                     <div class="product-hover">
                       <div class="m-t-15 btn-showcase">
 
-{% if requerimiento.estado == 'pendiente' and not es_admin and not es_almacen %}
-  <a class="btn btn-outline-warning btn-lg"
+{% if puede_gestionar_requerimiento and requerimiento.estado == 'pendiente' %}
+  <a class="btn btn-outline-warning btn-lg action-btn"
      href="{% url 'almacen:enviar_requerimiento' requerimiento.id %}"
-     title="Enviar Requerimiento"
-     
+     title="Enviar Requerimiento">
     <i class="fa fa-paper-plane"></i> Enviar
   </a>
 {% elif requerimiento.estado == 'enviado' %}
@@ -134,32 +137,16 @@ table.order-details th {
 {% endif %}
 
 <!-- Botón para abrir modal de despachar -->
-{% if es_admin and requerimiento.estado == 'enviado' %}
-  <button type="button" class="btn btn-outline-warning btn-lg" data-bs-toggle="modal" data-bs-target="#modalDespachar">
-    <i class="fa fa-truck"></i> Despachar Requerimiento
-  </button>
-{% elif es_almacen and requerimiento.estado == 'enviado' %}
-  <button type="button" class="btn btn-outline-warning btn-lg" data-bs-toggle="modal" data-bs-target="#modalDespachar">
+{% if puede_despachar_requerimiento and requerimiento.estado == 'enviado' %}
+  <button type="button" class="btn btn-outline-warning btn-lg action-btn" data-bs-toggle="modal" data-bs-target="#modalDespachar">
     <i class="fa fa-truck"></i> Despachar Requerimiento
   </button>
 {% endif %}
 
 
 <!-- Botón para abrir modal de anulación -->
-{% if es_admin and requerimiento.estado == 'pendiente' %}
-  <button type="button" class="btn btn-outline-warning btn-lg" data-bs-toggle="modal" data-bs-target="#modalAnular">
-    <i class="fa fa-times-circle"></i> Rechazar Requerimiento
-  </button>
-{% elif es_admin and requerimiento.estado == 'enviado' %}
-  <button type="button" class="btn btn-outline-warning btn-lg" data-bs-toggle="modal" data-bs-target="#modalAnular">
-    <i class="fa fa-times-circle"></i> Rechazar Requerimiento
-  </button>
-{% elif es_almacen and requerimiento.estado == 'pendiente' %}
-  <button type="button" class="btn btn-outline-warning btn-lg" data-bs-toggle="modal" data-bs-target="#modalAnular">
-    <i class="fa fa-times-circle"></i> Rechazar Requerimiento
-  </button>
-{% elif es_almacen and requerimiento.estado == 'enviado' %}
-  <button type="button" class="btn btn-outline-warning btn-lg" data-bs-toggle="modal" data-bs-target="#modalAnular">
+{% if puede_anular_requerimiento %}
+  <button type="button" class="btn btn-outline-warning btn-lg action-btn" data-bs-toggle="modal" data-bs-target="#modalAnular">
     <i class="fa fa-times-circle"></i> Rechazar Requerimiento
   </button>
 {% endif %}
@@ -265,7 +252,7 @@ table.order-details th {
                         <span>{{ detalle.observacion }}</span>
                       </td>
                       <td style="text-align: center; vertical-align: middle;">
-{% if requerimiento.estado != 'rechazado' and requerimiento.estado != 'enviado' and requerimiento.estado != 'despachado' and requerimiento.estado != 'parcial' %}
+{% if puede_gestionar_requerimiento and requerimiento.estado != 'rechazado' and requerimiento.estado != 'enviado' and requerimiento.estado != 'despachado' and requerimiento.estado != 'parcial' %}
   <i class="fa fa-edit editar-detalle-btn fa-2x" 
      style="cursor: pointer;" 
      data-id="{{ detalle.id }}" 
@@ -302,7 +289,7 @@ table.order-details th {
 
         </tbody>
       </table>
-{% if requerimiento.estado != 'rechazado' and requerimiento.estado != 'enviado' and requerimiento.estado != 'despachado' and requerimiento.estado != 'parcial' %}
+{% if puede_gestionar_requerimiento and requerimiento.estado != 'rechazado' and requerimiento.estado != 'enviado' and requerimiento.estado != 'despachado' and requerimiento.estado != 'parcial' %}
   <div style="display: flex; gap: 10px;">
     <button
       class="btn btn-primary"
@@ -647,7 +634,7 @@ document.addEventListener('DOMContentLoaded', function () {
           document.getElementById('editarDetalleId').value = data.id;
           document.getElementById('editarArticulo').value = data.articulo_id;
           document.getElementById('editarCantidad').value = data.cantidad;
-          document.getElementById('editarObservaciones').value = data.observaciones || '';
+          document.getElementById('editarObservaciones').value = data.observacion || '';
 
           // Mostrar modal con Bootstrap 5
           var editarModal = new bootstrap.Modal(document.getElementById('editarDetalleModal'));
