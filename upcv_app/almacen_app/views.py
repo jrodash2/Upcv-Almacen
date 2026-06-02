@@ -724,6 +724,23 @@ def detalle_requerimiento(request, requerimiento_id):
     # Lista de detalles ya agregados al requerimiento
     detalles_requerimiento = DetalleRequerimiento.objects.filter(requerimiento=requerimiento)
 
+    asignaciones_ubicacion = []
+    if es_admin or es_almacen or tiene_departamento_asignado:
+        for asignacion in (
+            AsignacionDetalleFactura.objects
+            .filter(destino=requerimiento.departamento)
+            .select_related('articulo', 'destino')
+            .order_by('-fecha_asignacion')
+        ):
+            asignaciones_ubicacion.append({
+                'articulo': asignacion.articulo,
+                'ubicacion': asignacion.destino,
+                'cantidad_asignada': asignacion.cantidad_asignada,
+                'disponible': stock_disponible.get(str(asignacion.articulo_id), 0),
+                'observacion': asignacion.descripcion,
+                'fecha_asignacion': asignacion.fecha_asignacion,
+            })
+
     # Pasar motivo de rechazo al contexto si el estado es 'rechazado'
     motivo_rechazo = None
     if requerimiento.estado == 'rechazado':
