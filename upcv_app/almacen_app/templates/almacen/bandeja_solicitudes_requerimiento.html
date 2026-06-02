@@ -1,26 +1,27 @@
 {% extends 'almacen/base.html' %}
 {% block content %}
-<div class="page-body">
+<div class="page-body gestor-page">
   <div class="container-fluid">
     <div class="page-title"><div class="row"><div class="col-6"><h4 class="mb-0">Bandeja de Solicitudes</h4></div><div class="col-6"><ol class="breadcrumb"><li class="breadcrumb-item">Requerimientos</li><li class="breadcrumb-item active">Bandeja</li></ol></div></div></div>
+    <div class="gestor-header mb-4 gestor-animate"><div><span class="gestor-eyebrow">Revisión</span><h4 class="gestor-title">Bandeja de Solicitudes</h4><p class="gestor-subtitle">Revise solicitudes de requerimiento según sus permisos.</p></div></div>
   </div>
   <div class="container-fluid">
     <div class="row justify-content-center"><div class="col-xl-11 col-lg-12">
-      <div class="card shadow-sm border-0">
+      <div class="card gestor-card shadow-sm border-0 rounded-4 gestor-animate">
         <div class="card-header"><h5 class="mb-0">Solicitudes para revisión</h5></div>
-        <div class="card-body">
-          <div class="table-responsive">
-            <table class="table table-hover table-bordered align-middle mb-0">
+        <div class="card-body p-4">
+          <div class="table-responsive gestor-table-wrapper">
+            <table class="table table-hover align-middle gestor-table mb-0">
               <thead class="table-light"><tr><th>ID</th><th>Solicitante</th><th>Departamento</th><th>Estado</th><th>Fecha</th><th>Fecha resolución</th><th>Requerimiento</th><th class="text-center">Acciones</th></tr></thead>
               <tbody>
               {% for s in solicitudes %}
                 <tr>
                   <td>#{{ s.id }}</td><td>{{ s.usuario_solicitante }}</td><td>{{ s.departamento }}</td>
                   <td>
-                    {% if s.estado == 'pendiente' %}<span class="badge bg-warning text-dark">Pendiente</span>
-                    {% elif s.estado == 'convertida' %}<span class="badge bg-success">Convertida</span>
-                    {% elif s.estado == 'rechazada' %}<span class="badge bg-danger">Rechazada</span>
-                    {% else %}<span class="badge bg-secondary">{{ s.get_estado_display }}</span>{% endif %}
+                    {% if s.estado == 'pendiente' %}<span class="badge gestor-badge gestor-badge-warning">Pendiente</span>
+                    {% elif s.estado == 'convertida' %}<span class="badge gestor-badge gestor-badge-success">Convertida</span>
+                    {% elif s.estado == 'rechazada' %}<span class="badge gestor-badge gestor-badge-danger">Rechazada</span>
+                    {% else %}<span class="badge gestor-badge gestor-badge-secondary">{{ s.get_estado_display }}</span>{% endif %}
                   </td>
                   <td>{{ s.creado_en|date:"d/m/Y H:i" }}</td>
                   <td>
@@ -30,12 +31,12 @@
                   </td>
                   <td>
                     {% if s.requerimiento %}
-                      <a href="{% url 'almacen:detalle_requerimiento' requerimiento_id=s.requerimiento.id %}" class="btn btn-outline-success btn-sm"><i class="fa fa-eye me-1"></i> Ver requerimiento</a>
+                      <a href="{% url 'almacen:detalle_requerimiento' requerimiento_id=s.requerimiento.id %}" class="btn btn-outline-success btn-sm gestor-btn"><i class="fa fa-eye me-1"></i> Ver requerimiento</a>
                     {% else %}
                       <span class="text-muted small">Sin requerimiento generado</span>
                     {% endif %}
                   </td>
-                  <td class="text-center"><a href="{% url 'almacen:detalle_solicitud_requerimiento' solicitud_id=s.id %}" class="btn btn-info btn-sm">Ver detalle</a></td>
+                  <td class="text-center"><a href="{% url 'almacen:detalle_solicitud_requerimiento' solicitud_id=s.id %}" class="btn btn-outline-primary btn-sm gestor-btn">Ver detalle</a></td>
                 </tr>
               {% empty %}
                 <tr><td colspan="8" class="text-center text-muted">No hay solicitudes para mostrar.</td></tr>

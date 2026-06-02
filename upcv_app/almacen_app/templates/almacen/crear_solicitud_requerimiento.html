@@ -1,7 +1,7 @@
 {% extends 'almacen/base.html' %}
 {% load static %}
 {% block content %}
-<div class="page-body">
+<div class="page-body gestor-page">
   <div class="container-fluid">
     <div class="page-title">
       <div class="row">
@@ -14,16 +14,23 @@
         </div>
       </div>
     </div>
+    <div class="gestor-header mb-4 gestor-animate">
+      <div>
+        <span class="gestor-eyebrow">Solicitud</span>
+        <h4 class="gestor-title">Crear Solicitud de Requerimiento</h4>
+        <p class="gestor-subtitle">Seleccione únicamente artículos disponibles para su ubicación/departamento asignado.</p>
+      </div>
+    </div>
   </div>
 
   <div class="container-fluid">
     <div class="row justify-content-center">
       <div class="col-xl-10 col-lg-11 col-md-12">
-        <div class="card shadow-sm border-0">
-          <div class="card-header bg-primary text-white">
+        <div class="card gestor-card shadow-sm border-0 rounded-4 gestor-animate">
+          <div class="card-header bg-white border-0 p-4">
             <h5 class="mb-0"><i class="fa fa-file-text-o me-2"></i>Crear Solicitud de Requerimiento</h5>
           </div>
-          <div class="card-body">
+          <div class="card-body p-4">
             {% if sin_stock_disponible %}
               <div class="alert alert-warning">
                 No tiene artículos asignados disponibles para solicitar. Comuníquese con el administrador o con su departamento.
@@ -49,8 +56,8 @@
                 <div class="alert alert-danger py-2">{{ formset.non_form_errors|striptags }}</div>
               {% endif %}
               {{ formset.management_form }}
-              <div class="table-responsive">
-                <table class="table table-bordered table-hover align-middle">
+              <div class="table-responsive gestor-table-wrapper">
+                <table class="table table-hover align-middle gestor-table">
                   <thead class="table-light">
                     <tr><th>Artículo</th><th style="width:140px;">Disponible</th><th style="width:150px;">Cantidad</th><th>Observación</th><th style="width:90px;">Acción</th></tr>
                   </thead>
@@ -69,8 +76,8 @@
               </div>
 
               <div class="d-flex justify-content-end gap-2 mt-4">
-                <a href="{% url 'almacen:listado_solicitudes_gestor' %}" class="btn btn-light border">Cancelar</a>
-                <button class="btn btn-primary" type="submit" {% if sin_stock_disponible %}disabled{% endif %}>Guardar Solicitud</button>
+                <a href="{% url 'almacen:listado_solicitudes_gestor' %}" class="btn btn-light border gestor-btn">Cancelar</a>
+                <button class="btn btn-primary gestor-btn" type="submit" {% if sin_stock_disponible %}disabled{% endif %}>Guardar Solicitud</button>
               </div>
             </form>
             {{ stock_disponible|json_script:"stock-articulos-data" }}

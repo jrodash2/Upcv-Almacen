@@ -22,7 +22,7 @@
   .action-btn { border-radius: 10px; }
 </style>
 
-<div class="page-body">
+<div class="page-body gestor-page">
   <div class="container-fluid">
     <div class="page-title">
       <div class="row align-items-center">
@@ -42,36 +42,37 @@
         </div>
       </div>
     </div>
+    <div class="gestor-header mb-4 gestor-animate"><div><span class="gestor-eyebrow">Almacén</span><h4 class="gestor-title">{% if es_gestor %}Seguimiento de Requerimientos{% else %}Requerimientos{% endif %}</h4><p class="gestor-subtitle">{% if es_gestor %}Consulte en modo lectura los requerimientos asociados a sus ubicaciones o solicitudes.{% else %}Gestione y consulte requerimientos según sus permisos.{% endif %}</p></div></div>
   </div>
 
   <div class="container-fluid">
     <div class="row g-3 mb-4">
       <div class="col-sm-6 col-xl">
-        <div class="card summary-card h-100"><div class="card-body d-flex align-items-center justify-content-between">
+        <div class="card summary-card gestor-card h-100 gestor-animate"><div class="card-body d-flex align-items-center justify-content-between">
           <div><small class="text-muted">Total</small><h3 class="mb-0 fw-bold">{{ resumen_requerimientos.total }}</h3></div>
           <span class="summary-icon primary"><i class="fa fa-tasks"></i></span>
         </div></div>
       </div>
       <div class="col-sm-6 col-xl">
-        <div class="card summary-card h-100"><div class="card-body d-flex align-items-center justify-content-between">
+        <div class="card summary-card gestor-card h-100 gestor-animate"><div class="card-body d-flex align-items-center justify-content-between">
           <div><small class="text-muted">Pendientes</small><h3 class="mb-0 fw-bold">{{ resumen_requerimientos.pendientes }}</h3></div>
           <span class="summary-icon warning"><i class="fa fa-clock-o"></i></span>
         </div></div>
       </div>
       <div class="col-sm-6 col-xl">
-        <div class="card summary-card h-100"><div class="card-body d-flex align-items-center justify-content-between">
+        <div class="card summary-card gestor-card h-100 gestor-animate"><div class="card-body d-flex align-items-center justify-content-between">
           <div><small class="text-muted">Enviados</small><h3 class="mb-0 fw-bold">{{ resumen_requerimientos.enviados }}</h3></div>
           <span class="summary-icon info"><i class="fa fa-paper-plane"></i></span>
         </div></div>
       </div>
       <div class="col-sm-6 col-xl">
-        <div class="card summary-card h-100"><div class="card-body d-flex align-items-center justify-content-between">
+        <div class="card summary-card gestor-card h-100 gestor-animate"><div class="card-body d-flex align-items-center justify-content-between">
           <div><small class="text-muted">Despachados</small><h3 class="mb-0 fw-bold">{{ resumen_requerimientos.despachados }}</h3></div>
           <span class="summary-icon success"><i class="fa fa-check-circle"></i></span>
         </div></div>
       </div>
       <div class="col-sm-6 col-xl">
-        <div class="card summary-card h-100"><div class="card-body d-flex align-items-center justify-content-between">
+        <div class="card summary-card gestor-card h-100 gestor-animate"><div class="card-body d-flex align-items-center justify-content-between">
           <div><small class="text-muted">Rechazados</small><h3 class="mb-0 fw-bold">{{ resumen_requerimientos.rechazados }}</h3></div>
           <span class="summary-icon danger"><i class="fa fa-times-circle"></i></span>
         </div></div>
@@ -80,21 +81,21 @@
 
     <div class="row justify-content-center">
       <div class="col-xl-11 col-lg-12">
-        <div class="card modern-card">
+        <div class="card modern-card gestor-card gestor-animate">
           <div class="card-header py-3 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
             <div>
               <h5 class="mb-0 fw-bold text-dark"><i class="fa fa-tasks me-2 text-primary"></i>{% if es_gestor %}Seguimiento de Requerimientos{% else %}Listado de Requerimientos{% endif %}</h5>
               <small class="text-muted">{% if es_gestor %}Consulta en modo lectura los requerimientos asociados a tus departamentos o solicitudes convertidas.{% else %}Administra y consulta los requerimientos registrados según tus permisos.{% endif %}</small>
             </div>
             {% if puede_crear_requerimiento %}
-              <button type="button" class="btn btn-primary action-btn" data-bs-toggle="modal" data-bs-target="#crearRequerimientoModal">
+              <button type="button" class="btn btn-primary action-btn gestor-btn" data-bs-toggle="modal" data-bs-target="#crearRequerimientoModal">
                 <i class="fa fa-plus-circle me-1"></i> Crear Requerimiento
               </button>
             {% endif %}
           </div>
-          <div class="card-body">
-            <div class="table-responsive">
-              <table class="table table-hover align-middle" id="basic-9">
+          <div class="card-body p-4">
+            <div class="table-responsive gestor-table-wrapper">
+              <table class="table table-hover align-middle gestor-table" id="basic-9">
                 <thead class="table-light">
                   <tr>
                     <th>#</th><th>Departamento</th><th>Creado por</th><th>Fecha</th><th>Estado</th><th>Fecha resolución</th><th class="text-center">Acciones</th>
@@ -108,13 +109,13 @@
                     <td>{{ req.creado_por.get_full_name|default:req.creado_por.username }}</td>
                     <td>{{ req.fecha_creacion|date:"d/m/Y H:i" }}</td>
                     <td>
-                      {% if req.estado == 'despachado' %}<span class="badge rounded-pill bg-success px-3 py-2">Despachado</span>
+                      {% if req.estado == 'despachado' %}<span class="badge gestor-badge gestor-badge-success">Despachado</span>
                         {% if req.despachado_por %}<small class="text-muted d-block mt-1">Por {{ req.despachado_por.get_full_name|default:req.despachado_por.username }}</small>{% endif %}
-                      {% elif req.estado == 'rechazado' %}<span class="badge rounded-pill bg-danger px-3 py-2">Rechazado</span>
+                      {% elif req.estado == 'rechazado' %}<span class="badge gestor-badge gestor-badge-danger">Rechazado</span>
                         {% if req.rechazado_por %}<small class="text-muted d-block mt-1">Por {{ req.rechazado_por.get_full_name|default:req.rechazado_por.username }}</small>{% endif %}
-                      {% elif req.estado == 'enviado' %}<span class="badge rounded-pill bg-info px-3 py-2">Enviado</span>
-                      {% elif req.estado == 'parcial' %}<span class="badge rounded-pill bg-warning text-dark px-3 py-2">Parcial</span>
-                      {% else %}<span class="badge rounded-pill bg-warning text-dark px-3 py-2">Pendiente</span>{% endif %}
+                      {% elif req.estado == 'enviado' %}<span class="badge gestor-badge gestor-badge-info">Enviado</span>
+                      {% elif req.estado == 'parcial' %}<span class="badge gestor-badge gestor-badge-warning">Parcial</span>
+                      {% else %}<span class="badge gestor-badge gestor-badge-warning">Pendiente</span>{% endif %}
                     </td>
                     <td>
                       {% if req.estado == 'despachado' and req.fecha_despachado %}
@@ -127,7 +128,7 @@
                     </td>
                     <td class="text-center">
                       <div class="btn-group">
-                        <a href="{% url 'almacen:detalle_requerimiento' requerimiento_id=req.id %}" class="btn btn-outline-primary btn-sm action-btn">
+                        <a href="{% url 'almacen:detalle_requerimiento' requerimiento_id=req.id %}" class="btn btn-outline-primary btn-sm action-btn gestor-btn">
                           <i class="fa fa-eye me-1"></i> Ver seguimiento
                         </a>
                       </div>
@@ -174,7 +175,7 @@
           </div>
           <div class="d-flex justify-content-end gap-2 mt-4">
             <button type="button" class="btn btn-light border action-btn" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-primary action-btn"><i class="fa fa-save me-1"></i> Guardar</button>
+            <button type="submit" class="btn btn-primary action-btn gestor-btn"><i class="fa fa-save me-1"></i> Guardar</button>
           </div>
         </form>
       </div>
