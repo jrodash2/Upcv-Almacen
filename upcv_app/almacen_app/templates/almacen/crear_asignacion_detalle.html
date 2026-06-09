@@ -89,6 +89,7 @@
           <div class="card-body pt-2 pb-3 px-3">
             <ul class="mb-0 list-unstyled">
               <li><span class="f-w-600 f-10">Artículo:</span> <span class="f-light f-10">{{ ultima_asignacion.articulo.nombre }}</span></li>
+              <li><span class="f-w-600 f-10">Categoría:</span> <span class="f-light f-10">{{ ultima_asignacion.articulo.categoria.nombre|default:"S/C" }}</span></li>
               <li><span class="f-w-600 f-10">Departamento:</span> <span class="f-light f-10">{{ ultima_asignacion.destino.nombre }}</span></li>
               <li><span class="f-w-600 f-10">Cantidad asignada:</span> <span class="f-light f-10">{{ ultima_asignacion.cantidad_asignada }}</span></li>
               <li><span class="f-w-600 f-10">Fecha:</span> <span class="f-light f-10">{{ ultima_asignacion.fecha_asignacion }}</span></li>
@@ -119,7 +120,7 @@
           sugerenciasDiv.innerHTML = "";
           data.forEach(item => {
             const option = document.createElement("div");
-            option.textContent = item.nombre;
+            option.textContent = item.text || item.nombre;
             option.className = "dropdown-item";
             option.style.cursor = "pointer";
             option.onclick = () => {

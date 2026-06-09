@@ -48,6 +48,7 @@
                   <thead>
                     <tr>
                       <th>Artículo</th>
+                      <th>Categoría</th>
                       <th>Cantidad Lote</th>
                       <th>Stock Restante</th>
                       <th>Precio Unitario</th>
@@ -64,6 +65,13 @@
         <span class="badge bg-warning text-dark" title="Este artículo tiene stock y está por vencer. Dar salida pronto.">
           Con Stock - Dar salida
         </span>
+      {% endif %}
+    </td>
+    <td>
+      {% if detalle.articulo.categoria %}
+        <span class="badge bg-light text-dark border">{{ detalle.articulo.categoria.nombre }}</span>
+      {% else %}
+        <span class="text-muted">S/C</span>
       {% endif %}
     </td>
     <td>{{ detalle.cantidad }}</td>
@@ -84,6 +92,7 @@
                   <tfoot>
                     <tr>
                       <th>Artículo</th>
+                      <th>Categoría</th>
                       <th>Cantidad Lote</th>
                       <th>Stock Restante</th>
                       <th>Precio Unitario</th>
@@ -109,6 +118,7 @@
                   <thead>
                     <tr>
                       <th>Artículo</th>
+                      <th>Categoría</th>
                       <th>Cantidad Lote</th>
                       <th>Stock Restante</th>
                       <th>Precio Unitario</th>
@@ -122,6 +132,13 @@
     <td>
       {{ detalle.articulo.nombre }}
      
+    </td>
+    <td>
+      {% if detalle.articulo.categoria %}
+        <span class="badge bg-light text-dark border">{{ detalle.articulo.categoria.nombre }}</span>
+      {% else %}
+        <span class="text-muted">S/C</span>
+      {% endif %}
     </td>
     <td>{{ detalle.cantidad }}</td>
     <td>
@@ -142,6 +159,7 @@
                   <tfoot>
                     <tr>
                       <th>Artículo</th>
+                      <th>Categoría</th>
                       <th>Cantidad Lote</th>
                       <th>Stock Restante</th>
                       <th>Precio Unitario</th>

@@ -1,14 +1,15 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <style>
-    @page { size: legal portrait; margin: 1.2cm; }
+    @page { size: legal portrait; margin: 1.2cm 1.2cm 2.0cm 1.2cm; }
     body { font-family: Arial, sans-serif; font-size: 11px; color: #000; }
-    .top-area { position: relative; min-height: 95px; margin-bottom: 10px; }
-    .logo-secundario { position: absolute; top: 0; left: 0; width: 85px; height: auto; }
+    .top-area { position: relative; min-height: 125px; margin-bottom: 8px; }
+    .logo-secundario { position: absolute; top: 0; left: 0; width: 135px; height: auto; }
     .numero { position: absolute; top: 0; right: 0; font-size: 13px; font-weight: bold; }
-    .header { text-align: center; font-weight: bold; text-transform: uppercase; line-height: 1.35; margin-bottom: 12px; padding-left: 95px; padding-right: 45px; padding-top: 8px; }
+    .header { text-align: center; font-weight: bold; text-transform: uppercase; line-height: 1.35; margin-bottom: 12px; padding-left: 0; padding-right: 0; padding-top: 8px; }
     .title { font-size: 14px; margin-top: 6px; text-decoration: underline; }
     .row { width: 100%; margin-bottom: 8px; }
     .checkbox { display: inline-block; width: 12px; height: 12px; border: 1px solid #000; text-align: center; line-height: 11px; font-size: 10px; font-weight: bold; margin-left: 12px; margin-right: 4px; }
@@ -18,12 +19,15 @@
     tbody td { border-left: 1px solid #000; border-right: 1px solid #000; border-top: none; border-bottom: none; padding: 4px; vertical-align: top; height: 22px; }
     tbody tr:last-child td { border-bottom: 1px solid #000; }
     .text-center { text-align: center; }
-    .justificacion { border: 1px solid #000; margin-top: 10px; padding: 6px; min-height: 45px; }
+    .justificacion { margin-top: 10px; padding: 0; min-height: 35px; }
     .firmas { margin-top: 35px; width: 100%; }
     .firma-col { width: 48%; display: inline-block; vertical-align: top; }
     .firma-col + .firma-col { margin-left: 3%; }
     .firma-linea { margin-top: 35px; border-top: 1px solid #000; width: 85%; text-align: center; padding-top: 4px; }
     .sello { margin-top: 20px; text-align: center; font-weight: bold; }
+    .nota-cierre { margin-top: 6px; font-size: 10.5px; }
+    .footer-img { position: fixed; bottom: 0.05cm; left: 0; right: 0; text-align: center; }
+    .footer-img img { width: 100%; max-width: 100%; height: auto; }
   </style>
 </head>
 <body>
@@ -54,23 +58,23 @@
     bienes o insumos que a continuación se detallan.
   </div>
 
-  <div><strong>Nota:</strong> cerrar última línea:</div>
-
   <table>
     <thead>
       <tr>
-        <th style="width: 12%;">CÓDIGO</th>
-        <th style="width: 43%;">DESCRIPCIÓN</th>
+        <th style="width: 10%;">CÓDIGO</th>
+        <th style="width: 10%;">RENGLÓN</th>
+        <th style="width: 40%;">DESCRIPCIÓN</th>
         <th style="width: 13%;">UNIDAD<br>DE<br>MEDIDA</th>
-        <th style="width: 14%;">CANTIDAD<br>SOLICITADA</th>
-        <th style="width: 18%;">USO EXCLUSIVO DE LA<br>SECCIÓN DE ALMACÉN</th>
+        <th style="width: 13%;">CANTIDAD<br>SOLICITADA</th>
+        <th style="width: 14%;">USO EXCLUSIVO DE LA<br>SECCIÓN DE ALMACÉN</th>
       </tr>
     </thead>
     <tbody>
       {% for detalle in detalles %}
       <tr>
         <td>{{ detalle.articulo.codigo|default:"-" }}</td>
-        <td>{{ detalle.articulo.nombre|default:detalle.articulo }}</td>
+        <td class="text-center">{{ detalle.articulo.renglon_presupuestario|default:"-" }}</td>
+        <td>{{ detalle.articulo.nombre|default:detalle.articulo }}<br><small>Categoría: {{ detalle.articulo.categoria.nombre|default:"S/C" }}</small></td>
         <td class="text-center">{{ detalle.articulo.unidad_medida|default:"-" }}</td>
         <td class="text-center">{{ detalle.cantidad }}</td>
         <td></td>
@@ -78,11 +82,13 @@
       {% endfor %}
       {% for i in filas_vacias %}
       <tr>
-        <td>&nbsp;</td><td></td><td></td><td></td><td></td>
+        <td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
+
+  <div class="nota-cierre"><strong>Nota:</strong> cerrar última línea:</div>
 
   <div class="justificacion">
     <strong>JUSTIFICACIÓN:</strong><br>
@@ -103,6 +109,10 @@
       <div class="firma-linea">Firma</div>
       <div class="sello">SELLO<br>(NOMBRE Y CARGO)</div>
     </div>
+  </div>
+
+  <div class="footer-img">
+    <img src="{% static 'assets/images/pie.png' %}" alt="Pie de página institucional">
   </div>
 </body>
 </html>
