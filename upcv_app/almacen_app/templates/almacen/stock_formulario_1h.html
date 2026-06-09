@@ -38,6 +38,8 @@
 <table class="display" id="basic-9">
   <thead>
     <tr>
+      <th style="width: 80px;">ID</th>
+      <th>Renglón</th>
       <th>Artículo</th>
       <th>Ingresado</th>
       <th>Asignado</th>
@@ -49,6 +51,16 @@
   <tbody>
     {% for item in stock_list %}
     <tr {% if item.disponible == 0 %}class="table-danger"{% endif %}>
+      <td class="text-center">
+        <span class="badge bg-light text-dark border">{{ item.articulo_id }}</span>
+      </td>
+      <td class="text-center">
+        {% if item.renglon_presupuestario %}
+          <span class="badge bg-light text-dark border">{{ item.renglon_presupuestario }}</span>
+        {% else %}
+          <span class="text-muted">S/R</span>
+        {% endif %}
+      </td>
       <td>{{ item.articulo }}</td>
       <td>{{ item.ingresado }}</td>
       <td>{{ item.asignado }}</td>

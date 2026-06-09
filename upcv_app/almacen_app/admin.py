@@ -80,9 +80,9 @@ admin.site.register(UnidadDeMedida, UnidadDeMedidaAdmin)
 
 # Registrar Articulo
 class ArticuloAdmin(admin.ModelAdmin):
-    list_display = ( 'nombre','categoria', 'unidad_medida', 'ubicacion')
-    search_fields = ( 'nombre',)
-    list_filter = ('categoria',)
+    list_display = ('nombre', 'renglon_presupuestario', 'categoria', 'unidad_medida', 'ubicacion')
+    search_fields = ('nombre', 'renglon_presupuestario')
+    list_filter = ('categoria', 'renglon_presupuestario')
 
 
 admin.site.register(Articulo, ArticuloAdmin)
