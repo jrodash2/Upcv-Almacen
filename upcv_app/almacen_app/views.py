@@ -508,6 +508,7 @@ def crear_solicitud_requerimiento(request):
     formset = DetalleSolicitudRequerimientoFormSet(
         request.POST or None,
         queryset=DetalleSolicitudRequerimiento.objects.none(),
+        prefix='detalles',
         departamento=departamento,
         stock_disponible=stock_disponible
     )
@@ -530,6 +531,7 @@ def crear_solicitud_requerimiento(request):
         'form': form,
         'formset': formset,
         'stock_disponible': {str(k): str(v) for k, v in stock_disponible.items()},
+        'stock_dict': {str(k): str(v) for k, v in stock_disponible.items()},
         'sin_stock_disponible': not bool(stock_disponible),
     })
 
