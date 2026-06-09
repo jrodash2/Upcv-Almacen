@@ -573,6 +573,57 @@ def detalle_solicitud_requerimiento(request, solicitud_id):
     })
 
 
+def usuario_puede_ver_solicitud_requerimiento(user, solicitud):
+    es_admin = user.is_superuser or user.groups.filter(name='Administrador').exists()
+    es_almacen = user.groups.filter(name='Almacen').exists()
+    es_departamento = user.groups.filter(name='Departamento').exists()
+    es_gestor = user.groups.filter(name='Gestor').exists()
+    tiene_departamento_asignado = UsuarioDepartamento.objects.filter(
+        usuario=user,
+        departamento=solicitud.departamento
+    ).exists()
+
+    return (
+        es_admin
+        or es_almacen
+        or (es_departamento and tiene_departamento_asignado)
+        or (es_gestor and solicitud.usuario_solicitante_id == user.id)
+    )
+
+
+@login_required
+def solicitud_requerimiento_pdf(request, solicitud_id):
+    solicitud = get_object_or_404(
+        SolicitudRequerimiento.objects.select_related('departamento', 'usuario_solicitante'),
+        id=solicitud_id
+    )
+
+    if not usuario_puede_ver_solicitud_requerimiento(request.user, solicitud):
+        messages.error(request, "No tiene permiso para imprimir esta solicitud.")
+        return redirect('almacen:listado_solicitudes_gestor')
+
+    detalles = list(solicitud.detalles.select_related('articulo', 'articulo__unidad_medida').all())
+    min_filas = 10
+    filas_vacias = range(max(0, min_filas - len(detalles)))
+
+    html_string = render_to_string(
+        'almacen/solicitudes/solicitud_requerimiento_pdf.html',
+        {
+            'solicitud': solicitud,
+            'detalles': detalles,
+            'filas_vacias': filas_vacias,
+            'cargo_solicitante': '',
+            'institucion': Institucion.objects.first(),
+        },
+        request=request
+    )
+
+    pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf()
+    response = HttpResponse(pdf_file, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="solicitud_{solicitud.id}.pdf"'
+    return response
+
+
 @login_required
 @grupo_requerido('Administrador', 'Almacen', 'Departamento')
 def convertir_solicitud_en_requerimiento(request, solicitud_id):
@@ -590,7 +641,7 @@ def convertir_solicitud_en_requerimiento(request, solicitud_id):
         with transaction.atomic():
             requerimiento = Requerimiento.objects.create(
             departamento=solicitud.departamento,
-            motivo=solicitud.observaciones,
+            motivo=solicitud.justificacion or solicitud.observaciones,
             creado_por=solicitud.usuario_solicitante,
             estado='pendiente'
             )

@@ -534,7 +534,14 @@ DetalleRequerimientoFormSet = modelformset_factory(
 class SolicitudRequerimientoForm(forms.ModelForm):
     class Meta:
         model = SolicitudRequerimiento
-        fields = ['departamento', 'observaciones']
+        fields = ['departamento', 'tipo_solicitud', 'justificacion']
+        labels = {
+            'tipo_solicitud': 'Tipo de solicitud',
+            'justificacion': 'Justificación',
+        }
+        widgets = {
+            'tipo_solicitud': forms.RadioSelect(choices=SolicitudRequerimiento.TIPO_SOLICITUD_CHOICES),
+        }
 
     def __init__(self, *args, **kwargs):
         usuario = kwargs.pop('usuario', None)
@@ -544,7 +551,9 @@ class SolicitudRequerimientoForm(forms.ModelForm):
                 usuariodepartamento__usuario=usuario
             ).distinct()
         for name, field in self.fields.items():
-            if isinstance(field.widget, forms.Select):
+            if name == 'tipo_solicitud':
+                field.widget.attrs.update({'class': 'form-check-input'})
+            elif isinstance(field.widget, forms.Select):
                 field.widget.attrs.update({'class': 'form-select'})
             elif isinstance(field.widget, forms.Textarea):
                 field.widget.attrs.update({'class': 'form-control', 'rows': 3})
