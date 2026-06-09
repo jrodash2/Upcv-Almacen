@@ -103,6 +103,7 @@
                           <th>ID</th>
                           <th>Renglón</th>
                           <th>Artículo</th>
+                          <th>Categoría</th>
                           <th>Cantidad Asignada</th>
                           <th>Acción</th>
                         </tr>
@@ -143,6 +144,7 @@
                 <td>${articulo.id}</td>
                 <td><span class="badge bg-light text-dark border">${articulo.renglon_presupuestario || 'S/R'}</span></td>
                 <td>${articulo.nombre}</td>
+                <td><span class="badge bg-light text-dark border">${articulo.categoria || 'S/C'}</span></td>
                 <td>${articulo.cantidad_asignada || articulo.cantidad_disponible || 0}</td>
                 <td><button class="btn btn-success btn-sm transferir-btn" data-articulo-id="${articulo.id}" data-articulo-nombre="${articulo.nombre}">Transferir</button></td>
               `;
@@ -151,7 +153,7 @@
             // Inicializar DataTable (si es necesario)
             $('#articulos-table').DataTable();
           } else {
-            articulosList.innerHTML = '<tr><td colspan="5">No hay artículos asignados a este departamento.</td></tr>';
+            articulosList.innerHTML = '<tr><td colspan="6">No hay artículos asignados a este departamento.</td></tr>';
           }
         });
     } else {

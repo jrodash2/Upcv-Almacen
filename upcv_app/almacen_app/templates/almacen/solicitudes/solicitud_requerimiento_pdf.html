@@ -74,7 +74,7 @@
       <tr>
         <td>{{ detalle.articulo.codigo|default:"-" }}</td>
         <td class="text-center">{{ detalle.articulo.renglon_presupuestario|default:"-" }}</td>
-        <td>{{ detalle.articulo.nombre|default:detalle.articulo }}</td>
+        <td>{{ detalle.articulo.nombre|default:detalle.articulo }}<br><small>Categoría: {{ detalle.articulo.categoria|default:"S/C" }}</small></td>
         <td class="text-center">{{ detalle.articulo.unidad_medida|default:"-" }}</td>
         <td class="text-center">{{ detalle.cantidad }}</td>
         <td></td>

@@ -243,6 +243,9 @@ table.order-details th {
                     <span style="color: #fff">Descripción</span>
                   </th>
                     <th style="padding: 18px 15px; text-align: left">
+                      <span style="color: #fff">Categoría</span>
+                    </th>
+                    <th style="padding: 18px 15px; text-align: left">
                       <span style="color: #fff">Precio Unitario</span>
                     </th>
                     <th style="padding: 18px 15px; text-align: left">
@@ -299,6 +302,13 @@ table.order-details th {
                       <span>{{ detalle.articulo.nombre }}</span>
                     </td>
                     <td style="padding: 18px 15px">
+                      {% if detalle.articulo.categoria %}
+                        <span class="badge bg-light text-dark border">{{ detalle.articulo.categoria }}</span>
+                      {% else %}
+                        <span class="text-muted">S/C</span>
+                      {% endif %}
+                    </td>
+                    <td style="padding: 18px 15px">
                       <span>Q{{ detalle.precio_unitario }}</span>
                     </td>
                     <td style="padding: 18px 15px">
@@ -323,7 +333,7 @@ table.order-details th {
                   {% empty %}
                   <tr>
                     <td
-                      colspan="4"
+                      colspan="7"
                       class="text-center"
                       style="padding: 18px 15px"
                     >
@@ -334,7 +344,7 @@ table.order-details th {
                   <!-- Mostrar total de la factura -->
                   <tr>
                     <td
-                      colspan="4"
+                      colspan="6"
                       style="text-align: right; font-weight: bold"
                     >
                       Total:
@@ -435,7 +445,7 @@ table.order-details th {
                       value="{{ articulo.id }}"
                       data-requiere-vencimiento="{{ articulo.requiere_vencimiento|yesno:'true,false' }}"
                       data-requiere-inventario="{{ articulo.requiere_inventario_individual|yesno:'true,false' }}">
-                      {{ articulo.nombre }}
+                      {{ articulo.nombre }} — Categoría: {{ articulo.categoria|default:"S/C" }} — Renglón: {{ articulo.renglon_presupuestario|default:"S/R" }}
                     </option>
                   {% endfor %}
                 </select>
@@ -515,7 +525,13 @@ table.order-details th {
                 <tr>
                   <td>{{ articulo.id }}</td>
                   <td>{{ articulo.nombre }}</td>
-                  <td>{{ articulo.categoria }}</td>
+                  <td>
+                    {% if articulo.categoria %}
+                      <span class="badge bg-light text-dark border">{{ articulo.categoria }}</span>
+                    {% else %}
+                      <span class="text-muted">S/C</span>
+                    {% endif %}
+                  </td>
                   <td>{{ articulo.unidad_medida }}</td>
                   <td>{{ articulo.ubicacion }}</td>
                   <td>
@@ -800,7 +816,7 @@ document.querySelectorAll('.seleccionar-articulo').forEach(button => {
       value="{{ articulo.id }}"
       data-requiere-vencimiento="{{ articulo.requiere_vencimiento|yesno:'true,false' }}"
     >
-      {{ articulo.nombre }}
+      {{ articulo.nombre }} — Categoría: {{ articulo.categoria|default:"S/C" }} — Renglón: {{ articulo.renglon_presupuestario|default:"S/R" }}
     </option>
   {% endfor %}
 </select>

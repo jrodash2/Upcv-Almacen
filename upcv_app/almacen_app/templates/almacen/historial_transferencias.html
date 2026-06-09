@@ -10,6 +10,7 @@
       <thead>
         <tr>
           <th>Artículo</th>
+          <th>Categoría</th>
           <th>Cantidad</th>
           <th>Departamento Origen</th>
           <th>Departamento Destino</th>
@@ -21,6 +22,13 @@
         {% for transferencia in transferencias %}
           <tr>
             <td>{{ transferencia.articulo.nombre }}</td>
+            <td>
+              {% if transferencia.articulo.categoria %}
+                <span class="badge bg-light text-dark border">{{ transferencia.articulo.categoria }}</span>
+              {% else %}
+                <span class="text-muted">S/C</span>
+              {% endif %}
+            </td>
             <td>{{ transferencia.cantidad }}</td>
             <td>{{ transferencia.departamento_origen.nombre }}</td>
             <td>{{ transferencia.departamento_destino.nombre }}</td>

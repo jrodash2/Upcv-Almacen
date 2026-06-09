@@ -308,6 +308,7 @@ def articulos_asignados(request, departamento_id):
                 {
                     'id': articulo.id,
                     'nombre': articulo.nombre,
+                    'categoria': str(articulo.categoria) if articulo.categoria else 'S/C',
                     'renglon_presupuestario': articulo.renglon_presupuestario or 'S/R',
                     'cantidad_disponible': str(stock_disponible.get(articulo.id, 0)),
                     'cantidad_asignada': str(stock_disponible.get(articulo.id, 0))
@@ -1064,7 +1065,7 @@ def historial_kardex_articulo(request, articulo_id):
 def ver_stock_formulario_1h(request):
     ingresos = DetalleFactura.objects.filter(
         form1h__estado='confirmado'
-    ).values('articulo__id', 'articulo__nombre', 'articulo__renglon_presupuestario').annotate(
+    ).values('articulo__id', 'articulo__nombre', 'articulo__categoria__nombre', 'articulo__renglon_presupuestario').annotate(
         total_ingresado=Sum('cantidad')
     )
 
@@ -1096,6 +1097,7 @@ def ver_stock_formulario_1h(request):
             ingreso_dict[articulo_id] = {
                 'articulo__id': articulo_id,
                 'articulo__nombre': articulo.nombre,
+                'articulo__categoria__nombre': str(articulo.categoria) if articulo.categoria else None,
                 'articulo__renglon_presupuestario': articulo.renglon_presupuestario,
                 'total_ingresado': 0,
                 'total_asignado': item['total_asignado'],
@@ -1111,6 +1113,7 @@ def ver_stock_formulario_1h(request):
         stock_list.append({
             'articulo_id': item['articulo__id'],
             'renglon_presupuestario': item.get('articulo__renglon_presupuestario'),
+            'categoria': item.get('articulo__categoria__nombre'),
             'articulo': item['articulo__nombre'],
             'ingresado': total_ingresado,
             'asignado': total_asignado,
@@ -1208,7 +1211,7 @@ def detalle_departamento(request, pk):
         asignaciones_agrupadas = (
             AsignacionDetalleFactura.objects
             .filter(destino=departamento)
-            .values('articulo__id', 'articulo__nombre', 'articulo__renglon_presupuestario')
+            .values('articulo__id', 'articulo__nombre', 'articulo__categoria__nombre', 'articulo__renglon_presupuestario')
             .annotate(total_asignado=Sum('cantidad_asignada'))
             .order_by('articulo__nombre')
         )
@@ -1231,6 +1234,7 @@ def detalle_departamento(request, pk):
             resumen_stock.append({
                 'articulo_id': articulo_id,
                 'renglon_presupuestario': item.get('articulo__renglon_presupuestario'),
+                'categoria': item.get('articulo__categoria__nombre'),
                 'nombre_articulo': item['articulo__nombre'],
                 'asignado': total_asignado,
                 'despachado': total_despachado,
@@ -1384,7 +1388,7 @@ def crear_asignacion_detalle_articulo(request):
     # Calcular stock ingresado
     ingresos = DetalleFactura.objects.filter(
         form1h__estado='confirmado'
-    ).values('articulo__id', 'articulo__nombre', 'articulo__renglon_presupuestario').annotate(
+    ).values('articulo__id', 'articulo__nombre', 'articulo__categoria__nombre', 'articulo__renglon_presupuestario').annotate(
         total_ingresado=Sum('cantidad')
     )
 
@@ -1419,6 +1423,7 @@ def crear_asignacion_detalle_articulo(request):
             ingreso_dict[articulo_id] = {
                 'articulo__id': articulo_id,
                 'articulo__nombre': articulo.nombre,
+                'articulo__categoria__nombre': str(articulo.categoria) if articulo.categoria else None,
                 'articulo__renglon_presupuestario': articulo.renglon_presupuestario,
                 'total_ingresado': 0,
                 'total_asignado': item['total_asignado'],
@@ -1435,6 +1440,7 @@ def crear_asignacion_detalle_articulo(request):
         stock_list.append({
             'articulo_id': item['articulo__id'],
             'renglon_presupuestario': item.get('articulo__renglon_presupuestario'),
+            'categoria': item.get('articulo__categoria__nombre'),
             'articulo': item['articulo__nombre'],
             'ingresado': total_ingresado,
             'asignado': total_asignado,
@@ -1460,7 +1466,8 @@ def buscar_articulos(request):
         {
             'id': art.id,
             'nombre': art.nombre,
-            'text': f"{art.nombre} | Renglón: {art.renglon_presupuestario or 'S/R'}",
+            'text': f"{art.nombre} — Categoría: {art.categoria or 'S/C'} — Renglón: {art.renglon_presupuestario or 'S/R'}",
+            'categoria': str(art.categoria) if art.categoria else 'S/C',
             'renglon_presupuestario': art.renglon_presupuestario,
         }
         for art in articulos

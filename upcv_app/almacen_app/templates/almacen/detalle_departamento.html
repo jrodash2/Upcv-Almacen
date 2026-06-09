@@ -46,6 +46,7 @@
                 <th>ID</th>
                 <th>Renglón</th>
                 <th>Artículo</th>
+                <th>Categoría</th>
                 <th>Total Asignado</th>
                 <th>Total Despachado</th>
                 <th>Disponible para Requerimientos</th>
@@ -63,6 +64,13 @@
                   {% endif %}
                 </td>
                 <td>{{ item.nombre_articulo }}</td>
+                <td>
+                  {% if item.categoria %}
+                    <span class="badge bg-light text-dark border">{{ item.categoria }}</span>
+                  {% else %}
+                    <span class="text-muted">S/C</span>
+                  {% endif %}
+                </td>
                 <td>{{ item.asignado }}</td>
                 <td>{{ item.despachado }}</td>
                 <td>{{ item.disponible }}</td>
@@ -88,6 +96,7 @@
                 <th>ID</th>
                 <th>Renglón</th>
                 <th>Artículo</th>
+                <th>Categoría</th>
                 <th>Cantidad Asignada</th>
                 <th>Descripción</th>
                 <th>Fecha</th>
@@ -106,6 +115,13 @@
                   {% endif %}
                 </td>
                 <td>{{ a.articulo.nombre }}</td>
+                <td>
+                  {% if a.articulo.categoria %}
+                    <span class="badge bg-light text-dark border">{{ a.articulo.categoria }}</span>
+                  {% else %}
+                    <span class="text-muted">S/C</span>
+                  {% endif %}
+                </td>
                 <td>{{ a.cantidad_asignada }}</td>
                 <td>{{ a.descripcion }}</td>
                 <td>{{ a.fecha_asignacion|date:"d M Y H:i" }}</td>
@@ -122,7 +138,7 @@
               </tr>
               {% empty %}
               <tr>
-                <td colspan="5" class="text-center">Este departamento aún no tiene asignaciones.</td>
+                <td colspan="8" class="text-center">Este departamento aún no tiene asignaciones.</td>
               </tr>
               {% endfor %}
             </tbody>
@@ -142,6 +158,7 @@
             <thead>
               <tr>
                 <th>Artículo</th>
+                <th>Categoría</th>
                 <th>Cantidad</th>
                 <th>Departamento Origen</th>
                 <th>Departamento Destino</th>
@@ -154,6 +171,13 @@
               {% for transferencia in historial_transferencias %}
               <tr>
                 <td>{{ transferencia.articulo.nombre }}</td>
+                <td>
+                  {% if transferencia.articulo.categoria %}
+                    <span class="badge bg-light text-dark border">{{ transferencia.articulo.categoria }}</span>
+                  {% else %}
+                    <span class="text-muted">S/C</span>
+                  {% endif %}
+                </td>
                 <td>{{ transferencia.cantidad }}</td>
                 <td>{{ transferencia.departamento_origen.nombre }}</td>
                 <td>{{ transferencia.departamento_destino.nombre }}</td>
@@ -163,7 +187,7 @@
               </tr>
               {% empty %}
               <tr>
-                <td colspan="7" class="text-center">No hay transferencias registradas para este departamento.</td>
+                <td colspan="8" class="text-center">No hay transferencias registradas para este departamento.</td>
               </tr>
               {% endfor %}
             </tbody>

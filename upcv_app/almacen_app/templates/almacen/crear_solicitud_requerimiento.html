@@ -81,6 +81,7 @@
                   <thead class="table-light">
                     <tr>
                       <th>Artículo</th>
+                      <th style="width: 140px;">Categoría</th>
                       <th style="width: 120px;">Disponible</th>
                       <th style="width: 160px;">Cantidad</th>
                       <th style="width: 110px;">Acción</th>
@@ -97,6 +98,9 @@
                           {% for error in detalle_form.non_field_errors %}
                             <div class="text-danger small">{{ error }}</div>
                           {% endfor %}
+                        </td>
+                        <td class="text-center">
+                          <span class="badge bg-light text-dark border categoria-articulo">S/C</span>
                         </td>
                         <td class="text-center">
                           <span class="badge bg-light text-dark border cantidad-disponible">0</span>
@@ -125,6 +129,9 @@
               <template id="empty-form-template">
                 <tr class="detalle-form-row">
                   <td>{{ formset.empty_form.articulo }}</td>
+                  <td class="text-center">
+                    <span class="badge bg-light text-dark border categoria-articulo">S/C</span>
+                  </td>
                   <td class="text-center">
                     <span class="badge bg-light text-dark border cantidad-disponible">0</span>
                   </td>
@@ -161,6 +168,21 @@ document.addEventListener("DOMContentLoaded", function () {
   const totalForms = document.getElementById("id_detalles-TOTAL_FORMS");
   const template = document.getElementById("empty-form-template");
 
+  function obtenerCategoria(select) {
+    const articuloId = select.value;
+    const articulo = articulosDepartamento
+      ? articulosDepartamento.find((item) => String(item.id) === String(articuloId))
+      : null;
+
+    if (articulo && articulo.categoria) {
+      return articulo.categoria;
+    }
+
+    const optionText = select.selectedOptions.length ? select.selectedOptions[0].textContent : "";
+    const match = optionText.match(/Categoría:\s*(.*?)\s*—/);
+    return match ? match[1].trim() : "S/C";
+  }
+
   function actualizarDisponible(select) {
     const articuloId = select.value;
     const disponible = Number(stockData[articuloId] || 0);
@@ -169,10 +191,15 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!row) return;
 
     const disponibleEl = row.querySelector(".cantidad-disponible");
+    const categoriaEl = row.querySelector(".categoria-articulo");
     const cantidadInput = row.querySelector(".cantidad-solicitada");
 
     if (disponibleEl) {
       disponibleEl.textContent = disponible;
+    }
+
+    if (categoriaEl) {
+      categoriaEl.textContent = obtenerCategoria(select);
     }
 
     if (cantidadInput) {
@@ -188,7 +215,7 @@ document.addEventListener("DOMContentLoaded", function () {
     items.forEach((item) => {
       const option = document.createElement("option");
       option.value = item.id;
-      option.textContent = item.nombre + " — Renglón: " + (item.renglon_presupuestario || "S/R") + " — Disponible: " + item.cantidad_disponible;
+      option.textContent = item.nombre + " — Categoría: " + (item.categoria || "S/C") + " — Renglón: " + (item.renglon_presupuestario || "S/R") + " — Disponible: " + item.cantidad_disponible;
       select.appendChild(option);
     });
 

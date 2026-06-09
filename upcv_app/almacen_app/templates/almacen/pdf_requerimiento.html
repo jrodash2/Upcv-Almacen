@@ -256,7 +256,7 @@
          <tr>
   <td class="small-cell">{{ detalle.cantidad }}</td>
   <td class="small-cell">{{ detalle.articulo.unidad_medida }}</td>
-  <td class="descripcion-Articulo">{{ detalle.articulo.nombre }}</td>
+  <td class="descripcion-Articulo">{{ detalle.articulo.nombre }}<br><small>Categoría: {{ detalle.articulo.categoria|default:"S/C" }}</small></td>
   <td class="small-cell">
     {% if requerimiento.estado != 'pendiente' %}
       {{ detalle.cantidad_despachada }}

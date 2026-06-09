@@ -8,6 +8,7 @@ body = f"""
     <p>Se te ha asignado el siguiente artículo a tu departamento:</p>
     <ul>
       <li><strong>Artículo:</strong> {self.articulo.nombre}</li>
+      <li><strong>Categoría:</strong> {self.articulo.categoria or "S/C"}</li>
       <li><strong>Cantidad:</strong> {self.cantidad_asignada}</li>
       <li><strong>Departamento:</strong> {self.destino.nombre}</li>
       <li><strong>Fecha de asignación:</strong> {self.fecha_asignacion}</li>

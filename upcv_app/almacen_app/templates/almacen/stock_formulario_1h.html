@@ -41,6 +41,7 @@
       <th style="width: 80px;">ID</th>
       <th>Renglón</th>
       <th>Artículo</th>
+      <th>Categoría</th>
       <th>Ingresado</th>
       <th>Asignado</th>
       <th>Departamento(s)</th>
@@ -62,6 +63,13 @@
         {% endif %}
       </td>
       <td>{{ item.articulo }}</td>
+      <td>
+        {% if item.categoria %}
+          <span class="badge bg-light text-dark border">{{ item.categoria }}</span>
+        {% else %}
+          <span class="text-muted">S/C</span>
+        {% endif %}
+      </td>
       <td>{{ item.ingresado }}</td>
       <td>{{ item.asignado }}</td>
       <td>{{ item.departamentos }}</td>

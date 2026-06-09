@@ -112,8 +112,19 @@ class UserEditForm(forms.ModelForm):
 
 
 
+class ArticuloChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        categoria = obj.categoria or 'S/C'
+        renglon = obj.renglon_presupuestario or 'S/R'
+        disponible = getattr(obj, 'cantidad_disponible', None)
+        texto = f"{obj.nombre} — Categoría: {categoria} — Renglón: {renglon}"
+        if disponible is not None:
+            texto += f" — Disponible: {disponible}"
+        return texto
+
+
 class AsignacionDetalleFacturaForm(forms.ModelForm):
-    articulo = forms.ModelChoiceField(
+    articulo = ArticuloChoiceField(
         queryset=Articulo.objects.none(),  # Inicialmente vacío, se llenará en __init__
         label='Artículo'
     )
@@ -499,6 +510,8 @@ class ProgramaForm(forms.ModelForm):
                 field.widget.attrs['class'] = field.widget.attrs.get('class', '') + ' form-control'
 
 class DetalleRequerimientoForm(forms.ModelForm):
+    articulo = ArticuloChoiceField(queryset=Articulo.objects.all())
+
     class Meta:
         model = DetalleRequerimiento
         fields = ['articulo', 'cantidad', 'observacion']
@@ -566,11 +579,13 @@ class SolicitudRequerimientoForm(forms.ModelForm):
 class DetalleSolicitudRequerimientoForm(forms.ModelForm):
     class ArticuloAsignadoChoiceField(forms.ModelChoiceField):
         def label_from_instance(self, obj):
-            disponible = getattr(obj, 'cantidad_disponible', None)
+            categoria = obj.categoria or 'S/C'
             renglon = obj.renglon_presupuestario or 'S/R'
+            disponible = getattr(obj, 'cantidad_disponible', None)
+            texto = f"{obj.nombre} — Categoría: {categoria} — Renglón: {renglon}"
             if disponible is not None:
-                return f"{obj.nombre} — Renglón: {renglon} — Disponible: {disponible}"
-            return f"{obj.nombre} — Renglón: {renglon}"
+                texto += f" — Disponible: {disponible}"
+            return texto
 
     articulo = ArticuloAsignadoChoiceField(queryset=Articulo.objects.none())
 
