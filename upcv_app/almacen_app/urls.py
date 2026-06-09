@@ -100,6 +100,7 @@ urlpatterns = [
     path('solicitudes-requerimiento/mis-solicitudes/', views.listado_solicitudes_gestor, name='listado_solicitudes_gestor'),
     path('solicitudes-requerimiento/bandeja/', views.bandeja_solicitudes_requerimiento, name='bandeja_solicitudes_requerimiento'),
     path('solicitudes-requerimiento/<int:solicitud_id>/', views.detalle_solicitud_requerimiento, name='detalle_solicitud_requerimiento'),
+    path('solicitudes-requerimiento/<int:solicitud_id>/pdf/', views.solicitud_requerimiento_pdf, name='solicitud_requerimiento_pdf'),
     path('solicitudes-requerimiento/<int:solicitud_id>/convertir/', views.convertir_solicitud_en_requerimiento, name='convertir_solicitud_en_requerimiento'),
     path('solicitudes-requerimiento/<int:solicitud_id>/rechazar/', views.rechazar_solicitud_requerimiento, name='rechazar_solicitud_requerimiento'),
     path('requerimientos/<int:requerimiento_id>/', views.detalle_requerimiento, name='detalle_requerimiento'),
