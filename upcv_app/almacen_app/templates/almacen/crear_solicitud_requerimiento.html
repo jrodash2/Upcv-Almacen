@@ -65,7 +65,13 @@
                 </div>
               </div>
 
-              <h6 class="mt-2 mb-3">Detalle de artículos solicitados</h6>
+              <div class="d-flex justify-content-between align-items-center mt-2 mb-3">
+                <h6 class="fw-bold mb-0">Detalle de artículos solicitados</h6>
+                <button type="button" id="agregar-item" class="btn btn-outline-primary gestor-btn" {% if sin_stock_disponible %}disabled{% endif %}>
+                  <i class="fa fa-plus-circle me-1"></i>
+                  Agregar ítem
+                </button>
+              </div>
               {% if formset.non_form_errors %}
                 <div class="alert alert-danger py-2">{{ formset.non_form_errors|striptags }}</div>
               {% endif %}
@@ -73,28 +79,72 @@
               <div class="table-responsive gestor-table-wrapper">
                 <table class="table table-hover align-middle gestor-table">
                   <thead class="table-light">
-                    <tr><th>Artículo</th><th style="width:140px;">Disponible</th><th style="width:150px;">Cantidad</th><th>Observación</th><th style="width:90px;">Acción</th></tr>
+                    <tr>
+                      <th>Artículo</th>
+                      <th style="width: 120px;">Disponible</th>
+                      <th style="width: 160px;">Cantidad</th>
+                      <th style="width: 110px;">Acción</th>
+                    </tr>
                   </thead>
-                  <tbody>
-                    {% for f in formset %}
-                      <tr>
-                        <td>{{ f.articulo }}{% if f.articulo.errors %}<div class="text-danger small">{{ f.articulo.errors|striptags }}</div>{% endif %}</td>
-                        <td class="cantidad-disponible text-center">-</td>
-                        <td>{{ f.cantidad }}{% if f.cantidad.errors %}<div class="text-danger small">{{ f.cantidad.errors|striptags }}</div>{% endif %}</td>
-                        <td>{{ f.observacion }}{% if f.observacion.errors %}<div class="text-danger small">{{ f.observacion.errors|striptags }}</div>{% endif %}</td>
-                        <td class="text-center">{% if f.DELETE %}<div class="form-check">{{ f.DELETE }}<label class="form-check-label ms-1">Quitar</label></div>{% else %}-{% endif %}</td>
+                  <tbody id="detalle-formset-body">
+                    {% for detalle_form in formset %}
+                      <tr class="detalle-form-row">
+                        <td>
+                          {{ detalle_form.articulo }}
+                          {% for error in detalle_form.articulo.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                          {% endfor %}
+                          {% for error in detalle_form.non_field_errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                          {% endfor %}
+                        </td>
+                        <td class="text-center">
+                          <span class="badge bg-light text-dark border cantidad-disponible">0</span>
+                        </td>
+                        <td>
+                          {{ detalle_form.cantidad }}
+                          {% for error in detalle_form.cantidad.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                          {% endfor %}
+                        </td>
+                        <td class="text-center">
+                          {% if detalle_form.DELETE %}
+                            <div class="d-none">{{ detalle_form.DELETE }}</div>
+                          {% endif %}
+                          <button type="button" class="btn btn-outline-danger btn-sm quitar-item">
+                            <i class="fa fa-trash"></i>
+                            Quitar
+                          </button>
+                        </td>
                       </tr>
                     {% endfor %}
                   </tbody>
                 </table>
               </div>
 
+              <template id="empty-form-template">
+                <tr class="detalle-form-row">
+                  <td>{{ formset.empty_form.articulo }}</td>
+                  <td class="text-center">
+                    <span class="badge bg-light text-dark border cantidad-disponible">0</span>
+                  </td>
+                  <td>{{ formset.empty_form.cantidad }}</td>
+                  <td class="text-center">
+                    <div class="d-none">{{ formset.empty_form.DELETE }}</div>
+                    <button type="button" class="btn btn-outline-danger btn-sm quitar-item">
+                      <i class="fa fa-trash"></i>
+                      Quitar
+                    </button>
+                  </td>
+                </tr>
+              </template>
+
               <div class="d-flex justify-content-end gap-2 mt-4">
                 <a href="{% url 'almacen:listado_solicitudes_gestor' %}" class="btn btn-light border gestor-btn">Cancelar</a>
                 <button class="btn btn-primary gestor-btn" type="submit" {% if sin_stock_disponible %}disabled{% endif %}>Guardar Solicitud</button>
               </div>
             </form>
-            {{ stock_disponible|json_script:"stock-articulos-data" }}
+            {{ stock_dict|json_script:"stock-articulos-data" }}
           </div>
         </div>
       </div>
@@ -102,51 +152,122 @@
   </div>
 </div>
 <script>
-  const stockData = JSON.parse(document.getElementById("stock-articulos-data").textContent || "{}");
+document.addEventListener("DOMContentLoaded", function () {
+  let stockData = JSON.parse(document.getElementById("stock-articulos-data").textContent || "{}");
+  let articulosDepartamento = null;
   const endpointBase = "{% url 'almacen:articulos_asignados' 0 %}".replace(/0\/$/, "");
-  function actualizarFila(row) {
-    const select = row.querySelector(".select-articulo");
-    const disponibleCell = row.querySelector(".cantidad-disponible");
+  const addButton = document.getElementById("agregar-item");
+  const formsetBody = document.getElementById("detalle-formset-body");
+  const totalForms = document.getElementById("id_detalles-TOTAL_FORMS");
+  const template = document.getElementById("empty-form-template");
+
+  function actualizarDisponible(select) {
+    const articuloId = select.value;
+    const disponible = Number(stockData[articuloId] || 0);
+    const row = select.closest(".detalle-form-row");
+
+    if (!row) return;
+
+    const disponibleEl = row.querySelector(".cantidad-disponible");
     const cantidadInput = row.querySelector(".cantidad-solicitada");
-    if (!select || !disponibleCell || !cantidadInput) return;
-    const disponible = Number(stockData[select.value] || 0);
-    disponibleCell.textContent = disponible;
-    cantidadInput.max = disponible > 0 ? disponible : "";
-    cantidadInput.placeholder = disponible > 0 ? `Máximo ${disponible}` : "Sin disponibilidad";
-  }
-  document.querySelectorAll("tbody tr").forEach(actualizarFila);
-  document.addEventListener("change", function(e) {
-    if (e.target.classList.contains("select-articulo")) {
-      actualizarFila(e.target.closest("tr"));
+
+    if (disponibleEl) {
+      disponibleEl.textContent = disponible;
     }
-  });
-  const deptSelect = document.getElementById("id_departamento");
-  if (deptSelect) {
-    deptSelect.addEventListener("change", async function() {
-      const deptId = this.value;
-      if (!deptId) return;
-      const resp = await fetch(`${endpointBase}${deptId}/`);
-      if (!resp.ok) return;
-      const payload = await resp.json();
-      const items = payload.articulos || [];
-      const rows = document.querySelectorAll("tbody tr");
-      rows.forEach((row) => {
-        const select = row.querySelector(".select-articulo");
-        const disponibleCell = row.querySelector(".cantidad-disponible");
-        if (!select) return;
-        const current = select.value;
-        select.innerHTML = '<option value="">---------</option>';
-        items.forEach((it) => {
-          const option = document.createElement("option");
-          option.value = it.id;
-          option.textContent = `${it.nombre} — Disponible en esta ubicación: ${it.cantidad_disponible}`;
-          select.appendChild(option);
-        });
-        if ([...select.options].some(o => o.value === current)) select.value = current;
-        if (disponibleCell) disponibleCell.textContent = "-";
-        actualizarFila(row);
-      });
+
+    if (cantidadInput) {
+      cantidadInput.max = disponible > 0 ? disponible : "";
+      cantidadInput.placeholder = disponible > 0 ? "Máximo " + disponible : "Sin disponible";
+    }
+  }
+
+  function actualizarOpcionesSelect(select, items) {
+    const current = select.value;
+    select.innerHTML = '<option value="">---------</option>';
+
+    items.forEach((item) => {
+      const option = document.createElement("option");
+      option.value = item.id;
+      option.textContent = item.nombre + " — Disponible: " + item.cantidad_disponible;
+      select.appendChild(option);
+    });
+
+    if ([...select.options].some((option) => option.value === current)) {
+      select.value = current;
+    }
+
+    actualizarDisponible(select);
+  }
+
+  function actualizarOpcionesFilas(items) {
+    document.querySelectorAll(".select-articulo").forEach((select) => {
+      actualizarOpcionesSelect(select, items);
     });
   }
+
+  if (addButton && formsetBody && totalForms && template) {
+    addButton.addEventListener("click", function () {
+      const formIndex = parseInt(totalForms.value, 10);
+      const newRowHtml = template.innerHTML.replace(/__prefix__/g, formIndex);
+
+      formsetBody.insertAdjacentHTML("beforeend", newRowHtml);
+      totalForms.value = formIndex + 1;
+
+      const newRow = formsetBody.querySelector(".detalle-form-row:last-child");
+      const newSelect = newRow ? newRow.querySelector(".select-articulo") : null;
+      if (newSelect && articulosDepartamento) {
+        actualizarOpcionesSelect(newSelect, articulosDepartamento);
+      } else if (newSelect) {
+        actualizarDisponible(newSelect);
+      }
+    });
+  }
+
+  document.addEventListener("click", function (event) {
+    const button = event.target.closest(".quitar-item");
+
+    if (!button) return;
+
+    const row = button.closest(".detalle-form-row");
+    if (!row) return;
+
+    const deleteInput = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
+
+    if (deleteInput) {
+      deleteInput.checked = true;
+      row.style.display = "none";
+    } else {
+      row.remove();
+    }
+  });
+
+  document.addEventListener("change", function (event) {
+    if (event.target.classList.contains("select-articulo")) {
+      actualizarDisponible(event.target);
+    }
+  });
+
+  document.querySelectorAll(".select-articulo").forEach(actualizarDisponible);
+
+  const deptSelect = document.getElementById("id_departamento");
+  if (deptSelect) {
+    deptSelect.addEventListener("change", async function () {
+      const deptId = this.value;
+      if (!deptId) return;
+
+      const resp = await fetch(`${endpointBase}${deptId}/`);
+      if (!resp.ok) return;
+
+      const payload = await resp.json();
+      articulosDepartamento = payload.articulos || [];
+      stockData = {};
+      articulosDepartamento.forEach((item) => {
+        stockData[String(item.id)] = item.cantidad_disponible;
+      });
+
+      actualizarOpcionesFilas(articulosDepartamento);
+    });
+  }
+});
 </script>
 {% endblock %}
