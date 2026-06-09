@@ -69,7 +69,7 @@
     </td>
     <td>
       {% if detalle.articulo.categoria %}
-        <span class="badge bg-light text-dark border">{{ detalle.articulo.categoria }}</span>
+        <span class="badge bg-light text-dark border">{{ detalle.articulo.categoria.nombre }}</span>
       {% else %}
         <span class="text-muted">S/C</span>
       {% endif %}
@@ -135,7 +135,7 @@
     </td>
     <td>
       {% if detalle.articulo.categoria %}
-        <span class="badge bg-light text-dark border">{{ detalle.articulo.categoria }}</span>
+        <span class="badge bg-light text-dark border">{{ detalle.articulo.categoria.nombre }}</span>
       {% else %}
         <span class="text-muted">S/C</span>
       {% endif %}

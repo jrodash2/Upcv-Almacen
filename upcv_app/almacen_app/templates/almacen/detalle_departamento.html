@@ -117,7 +117,7 @@
                 <td>{{ a.articulo.nombre }}</td>
                 <td>
                   {% if a.articulo.categoria %}
-                    <span class="badge bg-light text-dark border">{{ a.articulo.categoria }}</span>
+                    <span class="badge bg-light text-dark border">{{ a.articulo.categoria.nombre }}</span>
                   {% else %}
                     <span class="text-muted">S/C</span>
                   {% endif %}
@@ -173,7 +173,7 @@
                 <td>{{ transferencia.articulo.nombre }}</td>
                 <td>
                   {% if transferencia.articulo.categoria %}
-                    <span class="badge bg-light text-dark border">{{ transferencia.articulo.categoria }}</span>
+                    <span class="badge bg-light text-dark border">{{ transferencia.articulo.categoria.nombre }}</span>
                   {% else %}
                     <span class="text-muted">S/C</span>
                   {% endif %}

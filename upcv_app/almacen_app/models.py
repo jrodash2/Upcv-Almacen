@@ -81,7 +81,7 @@ class Articulo(models.Model):
     requiere_inventario_individual = models.BooleanField(default=False)
 
     def __str__(self):
-        return f'{self.nombre} ({self.categoria})'
+        return self.nombre
 
 
 # Modelo de Departamento

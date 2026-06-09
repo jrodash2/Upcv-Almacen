@@ -76,7 +76,7 @@
                     <td>{{ d.articulo.nombre }}</td>
                     <td>
                       {% if d.articulo.categoria %}
-                        <span class="badge bg-light text-dark border">{{ d.articulo.categoria }}</span>
+                        <span class="badge bg-light text-dark border">{{ d.articulo.categoria.nombre }}</span>
                       {% else %}
                         <span class="text-muted">S/C</span>
                       {% endif %}

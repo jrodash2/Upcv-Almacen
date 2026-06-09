@@ -303,7 +303,7 @@ table.order-details th {
                     </td>
                     <td style="padding: 18px 15px">
                       {% if detalle.articulo.categoria %}
-                        <span class="badge bg-light text-dark border">{{ detalle.articulo.categoria }}</span>
+                        <span class="badge bg-light text-dark border">{{ detalle.articulo.categoria.nombre }}</span>
                       {% else %}
                         <span class="text-muted">S/C</span>
                       {% endif %}
@@ -445,7 +445,7 @@ table.order-details th {
                       value="{{ articulo.id }}"
                       data-requiere-vencimiento="{{ articulo.requiere_vencimiento|yesno:'true,false' }}"
                       data-requiere-inventario="{{ articulo.requiere_inventario_individual|yesno:'true,false' }}">
-                      {{ articulo.nombre }} — Categoría: {{ articulo.categoria|default:"S/C" }} — Renglón: {{ articulo.renglon_presupuestario|default:"S/R" }}
+                      {{ articulo.nombre }} — Categoría: {{ articulo.categoria.nombre|default:"S/C" }} — Renglón: {{ articulo.renglon_presupuestario|default:"S/R" }}
                     </option>
                   {% endfor %}
                 </select>
@@ -527,7 +527,7 @@ table.order-details th {
                   <td>{{ articulo.nombre }}</td>
                   <td>
                     {% if articulo.categoria %}
-                      <span class="badge bg-light text-dark border">{{ articulo.categoria }}</span>
+                      <span class="badge bg-light text-dark border">{{ articulo.categoria.nombre }}</span>
                     {% else %}
                       <span class="text-muted">S/C</span>
                     {% endif %}
@@ -816,7 +816,7 @@ document.querySelectorAll('.seleccionar-articulo').forEach(button => {
       value="{{ articulo.id }}"
       data-requiere-vencimiento="{{ articulo.requiere_vencimiento|yesno:'true,false' }}"
     >
-      {{ articulo.nombre }} — Categoría: {{ articulo.categoria|default:"S/C" }} — Renglón: {{ articulo.renglon_presupuestario|default:"S/R" }}
+      {{ articulo.nombre }} — Categoría: {{ articulo.categoria.nombre|default:"S/C" }} — Renglón: {{ articulo.renglon_presupuestario|default:"S/R" }}
     </option>
   {% endfor %}
 </select>

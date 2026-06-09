@@ -114,7 +114,7 @@ class UserEditForm(forms.ModelForm):
 
 class ArticuloChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, obj):
-        categoria = obj.categoria or 'S/C'
+        categoria = obj.categoria.nombre if obj.categoria else 'S/C'
         renglon = obj.renglon_presupuestario or 'S/R'
         disponible = getattr(obj, 'cantidad_disponible', None)
         texto = f"{obj.nombre} — Categoría: {categoria} — Renglón: {renglon}"
@@ -579,7 +579,7 @@ class SolicitudRequerimientoForm(forms.ModelForm):
 class DetalleSolicitudRequerimientoForm(forms.ModelForm):
     class ArticuloAsignadoChoiceField(forms.ModelChoiceField):
         def label_from_instance(self, obj):
-            categoria = obj.categoria or 'S/C'
+            categoria = obj.categoria.nombre if obj.categoria else 'S/C'
             renglon = obj.renglon_presupuestario or 'S/R'
             disponible = getattr(obj, 'cantidad_disponible', None)
             texto = f"{obj.nombre} — Categoría: {categoria} — Renglón: {renglon}"

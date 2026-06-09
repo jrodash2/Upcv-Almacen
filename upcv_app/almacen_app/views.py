@@ -308,7 +308,7 @@ def articulos_asignados(request, departamento_id):
                 {
                     'id': articulo.id,
                     'nombre': articulo.nombre,
-                    'categoria': str(articulo.categoria) if articulo.categoria else 'S/C',
+                    'categoria': articulo.categoria.nombre if articulo.categoria else 'S/C',
                     'renglon_presupuestario': articulo.renglon_presupuestario or 'S/R',
                     'cantidad_disponible': str(stock_disponible.get(articulo.id, 0)),
                     'cantidad_asignada': str(stock_disponible.get(articulo.id, 0))
@@ -1097,7 +1097,7 @@ def ver_stock_formulario_1h(request):
             ingreso_dict[articulo_id] = {
                 'articulo__id': articulo_id,
                 'articulo__nombre': articulo.nombre,
-                'articulo__categoria__nombre': str(articulo.categoria) if articulo.categoria else None,
+                'articulo__categoria__nombre': articulo.categoria.nombre if articulo.categoria else None,
                 'articulo__renglon_presupuestario': articulo.renglon_presupuestario,
                 'total_ingresado': 0,
                 'total_asignado': item['total_asignado'],
@@ -1423,7 +1423,7 @@ def crear_asignacion_detalle_articulo(request):
             ingreso_dict[articulo_id] = {
                 'articulo__id': articulo_id,
                 'articulo__nombre': articulo.nombre,
-                'articulo__categoria__nombre': str(articulo.categoria) if articulo.categoria else None,
+                'articulo__categoria__nombre': articulo.categoria.nombre if articulo.categoria else None,
                 'articulo__renglon_presupuestario': articulo.renglon_presupuestario,
                 'total_ingresado': 0,
                 'total_asignado': item['total_asignado'],
@@ -1466,8 +1466,8 @@ def buscar_articulos(request):
         {
             'id': art.id,
             'nombre': art.nombre,
-            'text': f"{art.nombre} — Categoría: {art.categoria or 'S/C'} — Renglón: {art.renglon_presupuestario or 'S/R'}",
-            'categoria': str(art.categoria) if art.categoria else 'S/C',
+            'text': f"{art.nombre} — Categoría: {art.categoria.nombre if art.categoria else 'S/C'} — Renglón: {art.renglon_presupuestario or 'S/R'}",
+            'categoria': art.categoria.nombre if art.categoria else 'S/C',
             'renglon_presupuestario': art.renglon_presupuestario,
         }
         for art in articulos

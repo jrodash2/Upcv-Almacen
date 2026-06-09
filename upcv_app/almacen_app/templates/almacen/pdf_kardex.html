@@ -81,7 +81,7 @@
 
 {% for hoja in hojas %}
 <div class="kardex-page">
-   <h2>Historial de movimientos para: {{ articulo.nombre }} — Categoría: {{ articulo.categoria|default:"S/C" }}</h2>
+   <h2>Historial de movimientos para: {{ articulo.nombre }} — Categoría: {{ articulo.categoria.nombre|default:"S/C" }}</h2>
 <p style="text-align: center; font-size: 10pt; margin: 0 0 10px 0;">
     <strong>KARDEX N° {{ hoja.numero_kardex }}</strong>
 </p>
