@@ -61,12 +61,31 @@
 
             <div class="table-responsive gestor-table-wrapper">
               <table class="table table-hover align-middle gestor-table mb-0">
-                <thead class="table-light"><tr><th>Artículo</th><th style="width:150px;">Cantidad</th><th>Observación</th></tr></thead>
+                <thead class="table-light"><tr><th>Código</th><th>Renglón</th><th>Artículo</th><th>Categoría</th><th>Unidad de medida</th><th style="width:150px;">Cantidad</th></tr></thead>
                 <tbody>
                   {% for d in solicitud.detalles.all %}
-                  <tr><td>{{ d.articulo }}</td><td>{{ d.cantidad }}</td><td>{{ d.observacion|default:'-' }}</td></tr>
+                  <tr>
+                    <td>{{ d.articulo.codigo|default:"-" }}</td>
+                    <td>
+                      {% if d.articulo.renglon_presupuestario %}
+                        <span class="badge bg-light text-dark border">{{ d.articulo.renglon_presupuestario }}</span>
+                      {% else %}
+                        <span class="text-muted">S/R</span>
+                      {% endif %}
+                    </td>
+                    <td>{{ d.articulo.nombre }}</td>
+                    <td>
+                      {% if d.articulo.categoria %}
+                        <span class="badge bg-light text-dark border">{{ d.articulo.categoria }}</span>
+                      {% else %}
+                        <span class="text-muted">S/C</span>
+                      {% endif %}
+                    </td>
+                    <td>{{ d.articulo.unidad_medida|default:"-" }}</td>
+                    <td>{{ d.cantidad }}</td>
+                  </tr>
                   {% empty %}
-                  <tr><td colspan="3" class="text-center text-muted">Sin detalles cargados.</td></tr>
+                  <tr><td colspan="6" class="text-center text-muted">Sin detalles cargados.</td></tr>
                   {% endfor %}
                 </tbody>
               </table>

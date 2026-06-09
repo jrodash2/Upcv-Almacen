@@ -260,6 +260,12 @@ table.order-details th {
                       <span style="color: #fff">Artículo</span>
                     </th>
                     <th style="padding: 18px 15px; text-align: left;">
+                      <span style="color: #fff">Renglón</span>
+                    </th>
+                    <th style="padding: 18px 15px; text-align: left;">
+                      <span style="color: #fff">Categoría</span>
+                    </th>
+                    <th style="padding: 18px 15px; text-align: left;">
                       <span style="color: #fff">Cantidad</span>
                     </th>
                     <th style="padding: 18px 15px; text-align: left;">
@@ -278,6 +284,22 @@ table.order-details th {
   <span style="min-width: 7px; height: 7px; border: 4px solid #006666; background: #fff; border-radius: 100%; display: inline-block;"></span>
   <span style="word-wrap: break-word; white-space: normal;">{{ detalle.articulo.nombre }}</span>
 </td>
+
+                      <td style="padding: 18px 15px;">
+                        {% if detalle.articulo.renglon_presupuestario %}
+                          <span class="badge bg-light text-dark border">{{ detalle.articulo.renglon_presupuestario }}</span>
+                        {% else %}
+                          <span class="text-muted">S/R</span>
+                        {% endif %}
+                      </td>
+
+                      <td style="padding: 18px 15px;">
+                        {% if detalle.articulo.categoria %}
+                          <span class="badge bg-light text-dark border">{{ detalle.articulo.categoria }}</span>
+                        {% else %}
+                          <span class="text-muted">S/C</span>
+                        {% endif %}
+                      </td>
 
                       <td style="padding: 18px 15px;">
                         <span>{{ detalle.cantidad }}</span>
@@ -303,7 +325,7 @@ table.order-details th {
                     </tr>
                   {% empty %}
                     <tr>
-                      <td colspan="5" class="text-center" style="padding: 18px 15px;">
+                      <td colspan="6" class="text-center" style="padding: 18px 15px;">
                         No hay detalles agregados aún.
                       </td>
                     </tr>
@@ -422,6 +444,8 @@ table.order-details th {
                     <thead >
                       <tr>
                         <th>Artículo</th>
+                        <th>Renglón</th>
+                        <th>Categoría</th>
                         <th>Cantidad requerida</th>
                         <th>Cantidad a despachar</th>
                       </tr>
@@ -430,6 +454,8 @@ table.order-details th {
                       {% for detalle in detalles_requerimiento %}
                       <tr>
                         <td>{{ detalle.articulo.nombre }}</td>
+                        <td>{{ detalle.articulo.renglon_presupuestario|default:"S/R" }}</td>
+                        <td>{{ detalle.articulo.categoria|default:"S/C" }}</td>
                         <td>{{ detalle.cantidad }}</td>
                         <td>
                           <input
@@ -505,7 +531,7 @@ table.order-details th {
   {% for articulo in articulos %}
     <option value="{{ articulo.id }}"
             data-stock="{{ stock_disponible|get_item:articulo.id|default:0 }}">
-      {{ articulo.nombre }} (Disponible: {{ stock_disponible|get_item:articulo.id|default:0 }})
+      {{ articulo.nombre }} — Categoría: {{ articulo.categoria|default:"S/C" }} — Renglón: {{ articulo.renglon_presupuestario|default:"S/R" }} — Disponible: {{ stock_disponible|get_item:articulo.id|default:0 }}
     </option>
   {% endfor %}
 </select>
@@ -592,7 +618,7 @@ table.order-details th {
             <label for="editarArticulo" class="form-label">Artículo</label>
             <select class="form-control" id="editarArticulo" name="articulo" required>
               {% for articulo in articulos %}
-                <option value="{{ articulo.id }}">{{ articulo.nombre }}</option>
+                <option value="{{ articulo.id }}">{{ articulo.nombre }} — Categoría: {{ articulo.categoria|default:"S/C" }} — Renglón: {{ articulo.renglon_presupuestario|default:"S/R" }}</option>
               {% endfor %}
             </select>
           </div>
