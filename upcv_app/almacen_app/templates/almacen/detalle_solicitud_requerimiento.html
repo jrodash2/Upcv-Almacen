@@ -23,7 +23,7 @@
               <div class="col-md-3"><span class="text-muted d-block">Fecha</span><strong>{{ solicitud.creado_en|date:"d/m/Y H:i" }}</strong></div>
               <div class="col-md-3"><span class="text-muted d-block">Tipo de solicitud</span><strong>{{ solicitud.get_tipo_solicitud_display }}</strong></div>
             </div>
-            <div class="mb-3"><span class="text-muted d-block">Justificación / Observaciones</span>{{ solicitud.observaciones|default:"-" }}</div>
+            <div class="mb-3"><span class="text-muted d-block">Justificación</span>{{ solicitud.justificacion|default:solicitud.observaciones|default:"-" }}</div>
             {% if solicitud.estado == 'convertida' and solicitud.convertido_en %}
               <div class="alert alert-success border-0 shadow-sm mb-3">
                 <strong>Convertida el:</strong> {{ solicitud.convertido_en|date:"d/m/Y H:i" }}

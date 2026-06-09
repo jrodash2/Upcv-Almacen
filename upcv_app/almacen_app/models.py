@@ -528,6 +528,7 @@ class SolicitudRequerimiento(models.Model):
     departamento = models.ForeignKey(Departamento, on_delete=models.CASCADE)
     tipo_solicitud = models.CharField(max_length=20, choices=TIPO_SOLICITUD_CHOICES, default='suministros')
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='pendiente')
+    justificacion = models.TextField(blank=True, null=True)
     observaciones = models.TextField(blank=True, null=True)
     motivo_rechazo = models.TextField(blank=True, null=True)
     requerimiento = models.ForeignKey(Requerimiento, on_delete=models.SET_NULL, blank=True, null=True, related_name='solicitudes_origen')

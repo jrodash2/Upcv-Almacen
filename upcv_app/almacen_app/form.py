@@ -534,10 +534,10 @@ DetalleRequerimientoFormSet = modelformset_factory(
 class SolicitudRequerimientoForm(forms.ModelForm):
     class Meta:
         model = SolicitudRequerimiento
-        fields = ['departamento', 'tipo_solicitud', 'observaciones']
+        fields = ['departamento', 'tipo_solicitud', 'justificacion']
         labels = {
             'tipo_solicitud': 'Tipo de solicitud',
-            'observaciones': 'Justificación / Observaciones',
+            'justificacion': 'Justificación',
         }
         widgets = {
             'tipo_solicitud': forms.RadioSelect(choices=SolicitudRequerimiento.TIPO_SOLICITUD_CHOICES),

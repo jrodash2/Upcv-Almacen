@@ -613,6 +613,7 @@ def solicitud_requerimiento_pdf(request, solicitud_id):
             'detalles': detalles,
             'filas_vacias': filas_vacias,
             'cargo_solicitante': '',
+            'institucion': Institucion.objects.first(),
         },
         request=request
     )
@@ -640,7 +641,7 @@ def convertir_solicitud_en_requerimiento(request, solicitud_id):
         with transaction.atomic():
             requerimiento = Requerimiento.objects.create(
             departamento=solicitud.departamento,
-            motivo=solicitud.observaciones,
+            motivo=solicitud.justificacion or solicitud.observaciones,
             creado_por=solicitud.usuario_solicitante,
             estado='pendiente'
             )
