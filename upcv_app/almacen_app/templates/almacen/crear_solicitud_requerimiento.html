@@ -45,6 +45,20 @@
                   {% if form.departamento.errors %}<div class="text-danger small">{{ form.departamento.errors|striptags }}</div>{% endif %}
                 </div>
                 <div class="col-md-6 mb-3">
+                  <label class="form-label fw-semibold d-block">{{ form.tipo_solicitud.label }}</label>
+                  <div class="d-flex gap-4 align-items-center flex-wrap">
+                    {% for radio in form.tipo_solicitud %}
+                      <div class="form-check">
+                        {{ radio.tag }}
+                        <label class="form-check-label fw-semibold" for="{{ radio.id_for_label }}">
+                          {{ radio.choice_label }}
+                        </label>
+                      </div>
+                    {% endfor %}
+                  </div>
+                  {% if form.tipo_solicitud.errors %}<div class="text-danger small">{{ form.tipo_solicitud.errors|striptags }}</div>{% endif %}
+                </div>
+                <div class="col-12 mb-3">
                   <label class="form-label fw-semibold" for="{{ form.observaciones.id_for_label }}">{{ form.observaciones.label }}</label>
                   {{ form.observaciones }}
                   {% if form.observaciones.errors %}<div class="text-danger small">{{ form.observaciones.errors|striptags }}</div>{% endif %}
