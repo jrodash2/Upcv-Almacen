@@ -308,7 +308,9 @@ def articulos_asignados(request, departamento_id):
                 {
                     'id': articulo.id,
                     'nombre': articulo.nombre,
-                    'cantidad_disponible': str(stock_disponible.get(articulo.id, 0))
+                    'renglon_presupuestario': articulo.renglon_presupuestario or 'S/R',
+                    'cantidad_disponible': str(stock_disponible.get(articulo.id, 0)),
+                    'cantidad_asignada': str(stock_disponible.get(articulo.id, 0))
                 }
                 for articulo in articulos
             ]
@@ -1062,7 +1064,7 @@ def historial_kardex_articulo(request, articulo_id):
 def ver_stock_formulario_1h(request):
     ingresos = DetalleFactura.objects.filter(
         form1h__estado='confirmado'
-    ).values('articulo__id', 'articulo__nombre').annotate(
+    ).values('articulo__id', 'articulo__nombre', 'articulo__renglon_presupuestario').annotate(
         total_ingresado=Sum('cantidad')
     )
 
@@ -1090,9 +1092,11 @@ def ver_stock_formulario_1h(request):
         if articulo_id in ingreso_dict:
             ingreso_dict[articulo_id]['total_asignado'] = item['total_asignado']
         else:
+            articulo = Articulo.objects.get(id=articulo_id)
             ingreso_dict[articulo_id] = {
                 'articulo__id': articulo_id,
-                'articulo__nombre': Articulo.objects.get(id=articulo_id).nombre,
+                'articulo__nombre': articulo.nombre,
+                'articulo__renglon_presupuestario': articulo.renglon_presupuestario,
                 'total_ingresado': 0,
                 'total_asignado': item['total_asignado'],
             }
@@ -1106,6 +1110,7 @@ def ver_stock_formulario_1h(request):
 
         stock_list.append({
             'articulo_id': item['articulo__id'],
+            'renglon_presupuestario': item.get('articulo__renglon_presupuestario'),
             'articulo': item['articulo__nombre'],
             'ingresado': total_ingresado,
             'asignado': total_asignado,
@@ -1203,7 +1208,7 @@ def detalle_departamento(request, pk):
         asignaciones_agrupadas = (
             AsignacionDetalleFactura.objects
             .filter(destino=departamento)
-            .values('articulo__id', 'articulo__nombre')
+            .values('articulo__id', 'articulo__nombre', 'articulo__renglon_presupuestario')
             .annotate(total_asignado=Sum('cantidad_asignada'))
             .order_by('articulo__nombre')
         )
@@ -1224,6 +1229,8 @@ def detalle_departamento(request, pk):
             disponible = total_asignado - total_despachado
 
             resumen_stock.append({
+                'articulo_id': articulo_id,
+                'renglon_presupuestario': item.get('articulo__renglon_presupuestario'),
                 'nombre_articulo': item['articulo__nombre'],
                 'asignado': total_asignado,
                 'despachado': total_despachado,
@@ -1377,7 +1384,7 @@ def crear_asignacion_detalle_articulo(request):
     # Calcular stock ingresado
     ingresos = DetalleFactura.objects.filter(
         form1h__estado='confirmado'
-    ).values('articulo__id', 'articulo__nombre').annotate(
+    ).values('articulo__id', 'articulo__nombre', 'articulo__renglon_presupuestario').annotate(
         total_ingresado=Sum('cantidad')
     )
 
@@ -1408,9 +1415,11 @@ def crear_asignacion_detalle_articulo(request):
         if articulo_id in ingreso_dict:
             ingreso_dict[articulo_id]['total_asignado'] = item['total_asignado']
         else:
+            articulo = Articulo.objects.get(id=articulo_id)
             ingreso_dict[articulo_id] = {
                 'articulo__id': articulo_id,
-                'articulo__nombre': Articulo.objects.get(id=articulo_id).nombre,
+                'articulo__nombre': articulo.nombre,
+                'articulo__renglon_presupuestario': articulo.renglon_presupuestario,
                 'total_ingresado': 0,
                 'total_asignado': item['total_asignado'],
             }
@@ -1425,6 +1434,7 @@ def crear_asignacion_detalle_articulo(request):
 
         stock_list.append({
             'articulo_id': item['articulo__id'],
+            'renglon_presupuestario': item.get('articulo__renglon_presupuestario'),
             'articulo': item['articulo__nombre'],
             'ingresado': total_ingresado,
             'asignado': total_asignado,
@@ -1446,7 +1456,15 @@ def crear_asignacion_detalle_articulo(request):
 def buscar_articulos(request):
     term = request.GET.get('q', '')
     articulos = Articulo.objects.filter(nombre__icontains=term)[:10]
-    results = [{'id': art.id, 'nombre': art.nombre} for art in articulos]
+    results = [
+        {
+            'id': art.id,
+            'nombre': art.nombre,
+            'text': f"{art.nombre} | Renglón: {art.renglon_presupuestario or 'S/R'}",
+            'renglon_presupuestario': art.renglon_presupuestario,
+        }
+        for art in articulos
+    ]
     return JsonResponse(results, safe=False)
     
 @login_required

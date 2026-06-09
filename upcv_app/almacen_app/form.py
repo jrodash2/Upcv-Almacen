@@ -276,9 +276,10 @@ class DepartamentoForm(forms.ModelForm):
 class ArticuloForm(forms.ModelForm):
     class Meta:
         model = Articulo
-        fields = ['nombre', 'categoria', 'unidad_medida', 'ubicacion', 'requiere_vencimiento', 'requiere_inventario_individual']  # ✅ campo agregado
+        fields = ['nombre', 'renglon_presupuestario', 'categoria', 'unidad_medida', 'ubicacion', 'requiere_vencimiento', 'requiere_inventario_individual']  # ✅ campo agregado
         widgets = {
             'nombre': forms.TextInput(attrs={'placeholder': 'Nombre del artículo', 'class': 'form-control'}),
+            'renglon_presupuestario': forms.TextInput(attrs={'placeholder': 'Ejemplo: 211, 231, 267', 'class': 'form-control'}),
             'categoria': forms.Select(attrs={'class': 'form-control'}),
             'unidad_medida': forms.Select(attrs={'class': 'form-control'}),
             'ubicacion': forms.Select(attrs={'class': 'form-control'}),
@@ -566,9 +567,10 @@ class DetalleSolicitudRequerimientoForm(forms.ModelForm):
     class ArticuloAsignadoChoiceField(forms.ModelChoiceField):
         def label_from_instance(self, obj):
             disponible = getattr(obj, 'cantidad_disponible', None)
+            renglon = obj.renglon_presupuestario or 'S/R'
             if disponible is not None:
-                return f"{obj.nombre} — Disponible: {disponible}"
-            return str(obj)
+                return f"{obj.nombre} — Renglón: {renglon} — Disponible: {disponible}"
+            return f"{obj.nombre} — Renglón: {renglon}"
 
     articulo = ArticuloAsignadoChoiceField(queryset=Articulo.objects.none())
 

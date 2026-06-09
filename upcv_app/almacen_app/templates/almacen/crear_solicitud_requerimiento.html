@@ -188,7 +188,7 @@ document.addEventListener("DOMContentLoaded", function () {
     items.forEach((item) => {
       const option = document.createElement("option");
       option.value = item.id;
-      option.textContent = item.nombre + " — Disponible: " + item.cantidad_disponible;
+      option.textContent = item.nombre + " — Renglón: " + (item.renglon_presupuestario || "S/R") + " — Disponible: " + item.cantidad_disponible;
       select.appendChild(option);
     });
 

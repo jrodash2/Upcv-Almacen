@@ -61,17 +61,19 @@
   <table>
     <thead>
       <tr>
-        <th style="width: 12%;">CÓDIGO</th>
-        <th style="width: 43%;">DESCRIPCIÓN</th>
+        <th style="width: 10%;">CÓDIGO</th>
+        <th style="width: 10%;">RENGLÓN</th>
+        <th style="width: 40%;">DESCRIPCIÓN</th>
         <th style="width: 13%;">UNIDAD<br>DE<br>MEDIDA</th>
-        <th style="width: 14%;">CANTIDAD<br>SOLICITADA</th>
-        <th style="width: 18%;">USO EXCLUSIVO DE LA<br>SECCIÓN DE ALMACÉN</th>
+        <th style="width: 13%;">CANTIDAD<br>SOLICITADA</th>
+        <th style="width: 14%;">USO EXCLUSIVO DE LA<br>SECCIÓN DE ALMACÉN</th>
       </tr>
     </thead>
     <tbody>
       {% for detalle in detalles %}
       <tr>
         <td>{{ detalle.articulo.codigo|default:"-" }}</td>
+        <td class="text-center">{{ detalle.articulo.renglon_presupuestario|default:"-" }}</td>
         <td>{{ detalle.articulo.nombre|default:detalle.articulo }}</td>
         <td class="text-center">{{ detalle.articulo.unidad_medida|default:"-" }}</td>
         <td class="text-center">{{ detalle.cantidad }}</td>
@@ -80,7 +82,7 @@
       {% endfor %}
       {% for i in filas_vacias %}
       <tr>
-        <td>&nbsp;</td><td></td><td></td><td></td><td></td>
+        <td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td>
       </tr>
       {% endfor %}
     </tbody>

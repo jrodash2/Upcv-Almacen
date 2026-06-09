@@ -260,6 +260,9 @@ table.order-details th {
                       <span style="color: #fff">Artículo</span>
                     </th>
                     <th style="padding: 18px 15px; text-align: left;">
+                      <span style="color: #fff">Renglón</span>
+                    </th>
+                    <th style="padding: 18px 15px; text-align: left;">
                       <span style="color: #fff">Cantidad</span>
                     </th>
                     <th style="padding: 18px 15px; text-align: left;">
@@ -278,6 +281,14 @@ table.order-details th {
   <span style="min-width: 7px; height: 7px; border: 4px solid #006666; background: #fff; border-radius: 100%; display: inline-block;"></span>
   <span style="word-wrap: break-word; white-space: normal;">{{ detalle.articulo.nombre }}</span>
 </td>
+
+                      <td style="padding: 18px 15px;">
+                        {% if detalle.articulo.renglon_presupuestario %}
+                          <span class="badge bg-light text-dark border">{{ detalle.articulo.renglon_presupuestario }}</span>
+                        {% else %}
+                          <span class="text-muted">S/R</span>
+                        {% endif %}
+                      </td>
 
                       <td style="padding: 18px 15px;">
                         <span>{{ detalle.cantidad }}</span>
@@ -422,6 +433,7 @@ table.order-details th {
                     <thead >
                       <tr>
                         <th>Artículo</th>
+                        <th>Renglón</th>
                         <th>Cantidad requerida</th>
                         <th>Cantidad a despachar</th>
                       </tr>
@@ -430,6 +442,7 @@ table.order-details th {
                       {% for detalle in detalles_requerimiento %}
                       <tr>
                         <td>{{ detalle.articulo.nombre }}</td>
+                        <td>{{ detalle.articulo.renglon_presupuestario|default:"S/R" }}</td>
                         <td>{{ detalle.cantidad }}</td>
                         <td>
                           <input

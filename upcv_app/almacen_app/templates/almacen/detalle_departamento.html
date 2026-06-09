@@ -43,6 +43,8 @@
           <table class="display gestor-table" id="basic-10">
             <thead>
               <tr>
+                <th>ID</th>
+                <th>Renglón</th>
                 <th>Artículo</th>
                 <th>Total Asignado</th>
                 <th>Total Despachado</th>
@@ -52,6 +54,14 @@
             <tbody>
               {% for item in resumen_stock %}
               <tr>
+                <td>{{ item.articulo_id }}</td>
+                <td>
+                  {% if item.renglon_presupuestario %}
+                    <span class="badge bg-light text-dark border">{{ item.renglon_presupuestario }}</span>
+                  {% else %}
+                    <span class="text-muted">S/R</span>
+                  {% endif %}
+                </td>
                 <td>{{ item.nombre_articulo }}</td>
                 <td>{{ item.asignado }}</td>
                 <td>{{ item.despachado }}</td>
@@ -75,6 +85,8 @@
           <table class="display gestor-table" id="basic-12">
             <thead>
               <tr>
+                <th>ID</th>
+                <th>Renglón</th>
                 <th>Artículo</th>
                 <th>Cantidad Asignada</th>
                 <th>Descripción</th>
@@ -85,6 +97,14 @@
             <tbody>
               {% for a in asignaciones_detalle %}
               <tr>
+                <td>{{ a.articulo.id }}</td>
+                <td>
+                  {% if a.articulo.renglon_presupuestario %}
+                    <span class="badge bg-light text-dark border">{{ a.articulo.renglon_presupuestario }}</span>
+                  {% else %}
+                    <span class="text-muted">S/R</span>
+                  {% endif %}
+                </td>
                 <td>{{ a.articulo.nombre }}</td>
                 <td>{{ a.cantidad_asignada }}</td>
                 <td>{{ a.descripcion }}</td>
