@@ -67,6 +67,12 @@ class Categoria(models.Model):
     
 class Articulo(models.Model):
     nombre = models.CharField(max_length=1085)
+    renglon_presupuestario = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        verbose_name="Renglón presupuestario"
+    )
     categoria = models.ForeignKey(Categoria, on_delete=models.SET_NULL, null=True, blank=True)
     unidad_medida = models.ForeignKey(UnidadDeMedida, on_delete=models.SET_NULL, null=True, blank=True)
     ubicacion = models.ForeignKey(Ubicacion, on_delete=models.SET_NULL, null=True, blank=True)
@@ -75,7 +81,7 @@ class Articulo(models.Model):
     requiere_inventario_individual = models.BooleanField(default=False)
 
     def __str__(self):
-        return f'{self.nombre} ({self.categoria})'
+        return self.nombre
 
 
 # Modelo de Departamento

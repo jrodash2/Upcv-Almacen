@@ -112,8 +112,19 @@ class UserEditForm(forms.ModelForm):
 
 
 
+class ArticuloChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        categoria = obj.categoria.nombre if obj.categoria else 'S/C'
+        renglon = obj.renglon_presupuestario or 'S/R'
+        disponible = getattr(obj, 'cantidad_disponible', None)
+        texto = f"{obj.nombre} — Categoría: {categoria} — Renglón: {renglon}"
+        if disponible is not None:
+            texto += f" — Disponible: {disponible}"
+        return texto
+
+
 class AsignacionDetalleFacturaForm(forms.ModelForm):
-    articulo = forms.ModelChoiceField(
+    articulo = ArticuloChoiceField(
         queryset=Articulo.objects.none(),  # Inicialmente vacío, se llenará en __init__
         label='Artículo'
     )
@@ -276,21 +287,29 @@ class DepartamentoForm(forms.ModelForm):
 class ArticuloForm(forms.ModelForm):
     class Meta:
         model = Articulo
-        fields = ['nombre', 'categoria', 'unidad_medida', 'ubicacion', 'requiere_vencimiento', 'requiere_inventario_individual']  # ✅ campo agregado
+        fields = ['nombre', 'renglon_presupuestario', 'categoria', 'unidad_medida', 'ubicacion', 'requiere_vencimiento', 'requiere_inventario_individual']  # ✅ campo agregado
         widgets = {
             'nombre': forms.TextInput(attrs={'placeholder': 'Nombre del artículo', 'class': 'form-control'}),
-            'categoria': forms.Select(attrs={'class': 'form-control'}),
-            'unidad_medida': forms.Select(attrs={'class': 'form-control'}),
-            'ubicacion': forms.Select(attrs={'class': 'form-control'}),
+            'renglon_presupuestario': forms.TextInput(attrs={'placeholder': 'Ejemplo: 211, 231, 267', 'class': 'form-control'}),
+            'categoria': forms.Select(attrs={'class': 'form-select'}),
+            'unidad_medida': forms.Select(attrs={'class': 'form-select'}),
+            'ubicacion': forms.Select(attrs={'class': 'form-select'}),
             # No se necesita widget personalizado para el checkbox
         }
 
     def __init__(self, *args, **kwargs):
         super(ArticuloForm, self).__init__(*args, **kwargs)
-        for field in self.fields.values():
-            existing_class = field.widget.attrs.get('class', '')
-            if not isinstance(field.widget, forms.CheckboxInput):  # ✅ Evita aplicar form-control al checkbox
-                field.widget.attrs['class'] = f'{existing_class} form-control'
+
+        if 'categoria' in self.fields:
+            self.fields['categoria'].empty_label = 'Seleccione una categoría'
+
+        for field_name, field in self.fields.items():
+            if isinstance(field.widget, forms.CheckboxInput):
+                field.widget.attrs['class'] = 'form-check-input'
+            elif isinstance(field.widget, forms.Select):
+                field.widget.attrs['class'] = 'form-select'
+            else:
+                field.widget.attrs['class'] = 'form-control'
 
 
 class ProveedorForm(forms.ModelForm):
@@ -498,6 +517,8 @@ class ProgramaForm(forms.ModelForm):
                 field.widget.attrs['class'] = field.widget.attrs.get('class', '') + ' form-control'
 
 class DetalleRequerimientoForm(forms.ModelForm):
+    articulo = ArticuloChoiceField(queryset=Articulo.objects.all())
+
     class Meta:
         model = DetalleRequerimiento
         fields = ['articulo', 'cantidad', 'observacion']
@@ -565,16 +586,19 @@ class SolicitudRequerimientoForm(forms.ModelForm):
 class DetalleSolicitudRequerimientoForm(forms.ModelForm):
     class ArticuloAsignadoChoiceField(forms.ModelChoiceField):
         def label_from_instance(self, obj):
+            categoria = obj.categoria.nombre if obj.categoria else 'S/C'
+            renglon = obj.renglon_presupuestario or 'S/R'
             disponible = getattr(obj, 'cantidad_disponible', None)
+            texto = f"{obj.nombre} — Categoría: {categoria} — Renglón: {renglon}"
             if disponible is not None:
-                return f"{obj.nombre} — Disponible: {disponible}"
-            return str(obj)
+                texto += f" — Disponible: {disponible}"
+            return texto
 
     articulo = ArticuloAsignadoChoiceField(queryset=Articulo.objects.none())
 
     class Meta:
         model = DetalleSolicitudRequerimiento
-        fields = ['articulo', 'cantidad', 'observacion']
+        fields = ['articulo', 'cantidad']
 
     def __init__(self, *args, **kwargs):
         self.departamento = kwargs.pop('departamento', None)
@@ -582,23 +606,20 @@ class DetalleSolicitudRequerimientoForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if self.departamento:
             articulos = Articulo.objects.filter(
+                id__in=self.stock_disponible.keys(),
                 asignaciondetallefactura__destino=self.departamento
             ).distinct().order_by('nombre')
             for articulo in articulos:
                 articulo.cantidad_disponible = self.stock_disponible.get(articulo.id, 0)
             self.fields['articulo'].queryset = articulos
-        self.fields['cantidad'].widget.attrs.update({
-            'class': 'form-control cantidad-solicitada',
-            'min': 1
+        self.fields['articulo'].widget.attrs.update({
+            'class': 'form-select rounded-3 select-articulo'
         })
-        for name, field in self.fields.items():
-            if isinstance(field.widget, forms.Select):
-                field.widget.attrs.update({'class': 'form-select select-articulo'})
-            elif isinstance(field.widget, forms.Textarea):
-                field.widget.attrs.update({'class': 'form-control', 'rows': 2})
-            elif name != 'cantidad':
-                field.widget.attrs.update({'class': 'form-control'})
-            field.widget.attrs.setdefault('placeholder', field.label or '')
+        self.fields['cantidad'].widget.attrs.update({
+            'class': 'form-control rounded-3 cantidad-solicitada',
+            'min': '1',
+            'placeholder': 'Cantidad'
+        })
 
     def clean_articulo(self):
         articulo = self.cleaned_data.get('articulo')
@@ -625,26 +646,42 @@ class BaseDetalleSolicitudRequerimientoFormSet(BaseModelFormSet):
         self.stock_disponible = kwargs.pop('stock_disponible', {})
         super().__init__(*args, **kwargs)
 
-    def _construct_form(self, i, **kwargs):
+    def get_form_kwargs(self, index):
+        kwargs = super().get_form_kwargs(index)
         kwargs['departamento'] = self.departamento
         kwargs['stock_disponible'] = self.stock_disponible
-        return super()._construct_form(i, **kwargs)
+        return kwargs
 
     def clean(self):
         super().clean()
         acumulado = defaultdict(float)
+        tiene_detalles = False
+
         for form in self.forms:
             if not getattr(form, 'cleaned_data', None):
                 continue
             if form.cleaned_data.get('DELETE'):
                 continue
+
             articulo = form.cleaned_data.get('articulo')
             cantidad = form.cleaned_data.get('cantidad')
+
+            if not articulo and not cantidad:
+                continue
+
             if articulo and cantidad:
+                tiene_detalles = True
                 acumulado[articulo.id] += float(cantidad)
+
+        if not tiene_detalles:
+            raise forms.ValidationError("Debe agregar al menos un artículo a la solicitud.")
+
         for articulo_id, cantidad_total in acumulado.items():
-            if cantidad_total > float(self.stock_disponible.get(articulo_id, 0)):
-                raise forms.ValidationError("No puede repetir un artículo superando el saldo disponible.")
+            disponible = float(self.stock_disponible.get(articulo_id, 0))
+            if cantidad_total > disponible:
+                raise forms.ValidationError(
+                    f"La cantidad solicitada supera lo disponible para uno de los artículos. Disponible: {disponible:g}"
+                )
 
 
 DetalleSolicitudRequerimientoFormSet = modelformset_factory(
