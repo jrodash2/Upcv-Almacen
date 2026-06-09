@@ -1,14 +1,15 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <style>
-    @page { size: legal portrait; margin: 1.2cm; }
+    @page { size: legal portrait; margin: 1.2cm 1.2cm 2.4cm 1.2cm; }
     body { font-family: Arial, sans-serif; font-size: 11px; color: #000; }
-    .top-area { position: relative; min-height: 95px; margin-bottom: 10px; }
-    .logo-secundario { position: absolute; top: 0; left: 0; width: 85px; height: auto; }
+    .top-area { position: relative; min-height: 120px; margin-bottom: 10px; }
+    .logo-secundario { position: absolute; top: 0; left: 0; width: 120px; height: auto; }
     .numero { position: absolute; top: 0; right: 0; font-size: 13px; font-weight: bold; }
-    .header { text-align: center; font-weight: bold; text-transform: uppercase; line-height: 1.35; margin-bottom: 12px; padding-left: 95px; padding-right: 45px; padding-top: 8px; }
+    .header { text-align: center; font-weight: bold; text-transform: uppercase; line-height: 1.35; margin-bottom: 12px; padding-left: 130px; padding-right: 30px; padding-top: 8px; }
     .title { font-size: 14px; margin-top: 6px; text-decoration: underline; }
     .row { width: 100%; margin-bottom: 8px; }
     .checkbox { display: inline-block; width: 12px; height: 12px; border: 1px solid #000; text-align: center; line-height: 11px; font-size: 10px; font-weight: bold; margin-left: 12px; margin-right: 4px; }
@@ -24,6 +25,8 @@
     .firma-col + .firma-col { margin-left: 3%; }
     .firma-linea { margin-top: 35px; border-top: 1px solid #000; width: 85%; text-align: center; padding-top: 4px; }
     .sello { margin-top: 20px; text-align: center; font-weight: bold; }
+    .footer-img { position: fixed; bottom: 0.3cm; left: 0; right: 0; text-align: center; }
+    .footer-img img { width: 100%; max-width: 100%; height: auto; }
   </style>
 </head>
 <body>
@@ -103,6 +106,10 @@
       <div class="firma-linea">Firma</div>
       <div class="sello">SELLO<br>(NOMBRE Y CARGO)</div>
     </div>
+  </div>
+
+  <div class="footer-img">
+    <img src="{% static 'assets/images/pie.png' %}" alt="Pie de página institucional">
   </div>
 </body>
 </html>
