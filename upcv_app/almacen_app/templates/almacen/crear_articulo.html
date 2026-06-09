@@ -74,8 +74,13 @@
                     <!-- Columna 2 -->
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label for="{{ form.categoria.id_for_label }}">Categoría</label>
-                            {{ form.categoria }}
+                            <label class="form-label fw-semibold" for="{{ form.categoria.id_for_label }}">Categoría</label>
+                            <div class="categoria-select-wrapper">
+                              {{ form.categoria }}
+                            </div>
+                            {% for error in form.categoria.errors %}
+                              <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
                         </div>
                     </div>
                 </div>

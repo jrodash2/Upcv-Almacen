@@ -291,18 +291,25 @@ class ArticuloForm(forms.ModelForm):
         widgets = {
             'nombre': forms.TextInput(attrs={'placeholder': 'Nombre del artículo', 'class': 'form-control'}),
             'renglon_presupuestario': forms.TextInput(attrs={'placeholder': 'Ejemplo: 211, 231, 267', 'class': 'form-control'}),
-            'categoria': forms.Select(attrs={'class': 'form-control'}),
-            'unidad_medida': forms.Select(attrs={'class': 'form-control'}),
-            'ubicacion': forms.Select(attrs={'class': 'form-control'}),
+            'categoria': forms.Select(attrs={'class': 'form-select'}),
+            'unidad_medida': forms.Select(attrs={'class': 'form-select'}),
+            'ubicacion': forms.Select(attrs={'class': 'form-select'}),
             # No se necesita widget personalizado para el checkbox
         }
 
     def __init__(self, *args, **kwargs):
         super(ArticuloForm, self).__init__(*args, **kwargs)
-        for field in self.fields.values():
-            existing_class = field.widget.attrs.get('class', '')
-            if not isinstance(field.widget, forms.CheckboxInput):  # ✅ Evita aplicar form-control al checkbox
-                field.widget.attrs['class'] = f'{existing_class} form-control'
+
+        if 'categoria' in self.fields:
+            self.fields['categoria'].empty_label = 'Seleccione una categoría'
+
+        for field_name, field in self.fields.items():
+            if isinstance(field.widget, forms.CheckboxInput):
+                field.widget.attrs['class'] = 'form-check-input'
+            elif isinstance(field.widget, forms.Select):
+                field.widget.attrs['class'] = 'form-select'
+            else:
+                field.widget.attrs['class'] = 'form-control'
 
 
 class ProveedorForm(forms.ModelForm):
