@@ -1,0 +1,273 @@
+/* Estándar visual del módulo Almacén sobre la plantilla Riho. */
+.page-body .page-title h3,
+.page-body .page-title h4,
+.riho-title {
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+}
+
+.riho-subtitle {
+    color: #64748b;
+    font-size: .92rem;
+}
+
+.riho-card,
+.gestor-card,
+.edit-profile .card,
+.page-body .card:not(.email-wrap):not(.bookmark-wrap) {
+    border: 0;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    overflow: hidden;
+}
+
+.riho-card .card-header,
+.gestor-card .card-header,
+.page-body .card > .card-header {
+    background: #fff;
+    border-bottom: 1px solid #eef2f7;
+    padding: 1.15rem 1.35rem;
+}
+
+.riho-card .card-header h5,
+.gestor-card .card-header h5,
+.page-body .card > .card-header h5 {
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+}
+
+.riho-card .card-body,
+.gestor-card .card-body {
+    padding: 1.35rem;
+}
+
+.riho-table,
+.gestor-table {
+    margin-bottom: 0 !important;
+    width: 100% !important;
+}
+
+.riho-table thead th,
+.gestor-table thead th,
+.table.riho-table thead th,
+.dataTable.riho-table thead th,
+table.dataTable.riho-table thead th,
+table.dataTable.gestor-table thead th {
+    background: #2c323f !important;
+    color: #ffffff !important;
+    font-size: .76rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    border-color: #3d4657 !important;
+    border-bottom: 1px solid #3d4657 !important;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.table.riho-table thead th:first-child,
+.dataTable.riho-table thead th:first-child {
+    border-top-left-radius: 10px;
+}
+
+.table.riho-table thead th:last-child,
+.dataTable.riho-table thead th:last-child {
+    border-top-right-radius: 10px;
+}
+
+table.dataTable.riho-table thead .sorting,
+table.dataTable.riho-table thead .sorting_asc,
+table.dataTable.riho-table thead .sorting_desc,
+table.dataTable.riho-table thead .sorting_asc_disabled,
+table.dataTable.riho-table thead .sorting_desc_disabled,
+table.dataTable.gestor-table thead .sorting,
+table.dataTable.gestor-table thead .sorting_asc,
+table.dataTable.gestor-table thead .sorting_desc,
+table.dataTable.gestor-table thead .sorting_asc_disabled,
+table.dataTable.gestor-table thead .sorting_desc_disabled {
+    color: #ffffff !important;
+    background-image: none !important;
+}
+
+table.dataTable.riho-table thead > tr > th.sorting::before,
+table.dataTable.riho-table thead > tr > th.sorting::after,
+table.dataTable.riho-table thead > tr > th.sorting_asc::before,
+table.dataTable.riho-table thead > tr > th.sorting_asc::after,
+table.dataTable.riho-table thead > tr > th.sorting_desc::before,
+table.dataTable.riho-table thead > tr > th.sorting_desc::after,
+table.dataTable.gestor-table thead > tr > th.sorting::before,
+table.dataTable.gestor-table thead > tr > th.sorting::after,
+table.dataTable.gestor-table thead > tr > th.sorting_asc::before,
+table.dataTable.gestor-table thead > tr > th.sorting_asc::after,
+table.dataTable.gestor-table thead > tr > th.sorting_desc::before,
+table.dataTable.gestor-table thead > tr > th.sorting_desc::after {
+    color: rgba(255, 255, 255, 0.85) !important;
+    opacity: .85 !important;
+}
+
+table.dataTable.riho-table thead > tr > th.sorting_asc::before,
+table.dataTable.riho-table thead > tr > th.sorting_desc::after,
+table.dataTable.gestor-table thead > tr > th.sorting_asc::before,
+table.dataTable.gestor-table thead > tr > th.sorting_desc::after {
+    color: #ffffff !important;
+    opacity: 1 !important;
+}
+
+.riho-table tbody td,
+.gestor-table tbody td {
+    color: #0f172a;
+    font-size: .88rem;
+    vertical-align: middle;
+}
+
+.riho-table tbody tr,
+.gestor-table tbody tr {
+    transition: background-color .18s ease;
+}
+
+.riho-table tbody tr:hover,
+.gestor-table tbody tr:hover {
+    background-color: #f8fafc;
+}
+
+.riho-table td,
+.gestor-table td {
+    max-width: 360px;
+    white-space: normal;
+}
+
+.riho-btn,
+.gestor-btn,
+.page-body .btn:not(.btn-link) {
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: .85rem;
+    padding: .5rem .85rem;
+    transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease;
+}
+
+.riho-btn:hover,
+.gestor-btn:hover,
+.page-body .btn:not(.btn-link):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, .12);
+}
+
+.riho-card .form-control,
+.riho-card .form-select,
+.gestor-card .form-control,
+.gestor-card .form-select,
+.page-body form .form-control,
+.page-body form .form-select {
+    min-height: 42px;
+    border-radius: 12px;
+    border: 1px solid #dbe3ef;
+    font-size: .9rem;
+}
+
+.riho-card .form-control:focus,
+.riho-card .form-select:focus,
+.gestor-card .form-control:focus,
+.gestor-card .form-select:focus,
+.page-body form .form-control:focus,
+.page-body form .form-select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 .2rem rgba(59, 130, 246, .14);
+}
+
+.riho-card .form-label,
+.gestor-card .form-label,
+.page-body form label {
+    font-weight: 700;
+    color: #334155;
+    font-size: .82rem;
+}
+
+.badge-soft {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    padding: .42rem .7rem;
+    font-weight: 700;
+    font-size: .78rem;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    color: #334155;
+}
+
+.badge-categoria {
+    background: #eef2ff;
+    color: #3730a3;
+    border-color: #c7d2fe;
+}
+
+.badge-success-soft {
+    background: #dcfce7;
+    color: #166534;
+    border-color: #bbf7d0;
+}
+
+.badge-warning-soft {
+    background: #fef3c7;
+    color: #92400e;
+    border-color: #fde68a;
+}
+
+.badge-danger-soft {
+    background: #fee2e2;
+    color: #991b1b;
+    border-color: #fecaca;
+}
+
+.estado-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    padding: .38rem .72rem;
+    min-width: 92px;
+    font-weight: 800;
+    font-size: .76rem;
+    border: 1px solid transparent;
+    color: #334155;
+    background: #f8fafc;
+}
+
+.estado-pendiente { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+.estado-aprobada,
+.estado-convertida,
+.estado-despachado { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+.estado-rechazada,
+.estado-cancelada { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+.estado-en-proceso { background: #dbeafe; color: #1d4ed8; border-color: #bfdbfe; }
+
+.dataTables_wrapper .dataTables_length,
+.dataTables_wrapper .dataTables_filter,
+.dataTables_wrapper .dataTables_info,
+.dataTables_wrapper .dataTables_paginate {
+    color: #64748b;
+    font-size: .88rem;
+}
+
+.dataTables_wrapper .dataTables_filter input,
+.dataTables_wrapper .dataTables_length select {
+    border: 1px solid #dbe3ef;
+    border-radius: 10px;
+    min-height: 36px;
+    padding: .35rem .65rem;
+    margin-left: .35rem;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    border-radius: 9px !important;
+    border: 1px solid #e2e8f0 !important;
+    margin: 0 .12rem;
+}
+
+.table-responsive,
+.gestor-table-wrapper {
+    overflow-x: auto;
+}
