@@ -4,9 +4,6 @@
 {% load custom_filters %}
 
 <!-- jQuery y DataTables (igual que en tu ejemplo) -->
-<script src="{% static 'assets/js/jquery.min.js' %}"></script>
-<script src="{% static 'assets/js/datatable/datatables/jquery.dataTables.min.js' %}"></script>
-<script src="{% static 'assets/js/datatable/datatables/datatable.custom.js' %}"></script>
 
 <div class="page-body">
   <div class="container-fluid">
@@ -34,8 +31,8 @@
     <div class="card">
       <div class="card-body">
         <div class="table-responsive custom-scrollbar">
-         <!-- Agrega esto dentro de la tabla, reemplazando la sección <table> completa -->
-<table class="display" id="basic-9">
+         <!-- Tabla principal de stock con DataTables global -->
+<table class="display table table-hover align-middle riho-table datatable" id="tabla-stock">
   <thead>
     <tr>
       <th style="width: 80px;">ID</th>

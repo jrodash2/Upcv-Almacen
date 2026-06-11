@@ -5,10 +5,7 @@
 {% load custom_filters %}
 
 
-<script src="{% static 'assets/js/jquery.min.js' %}"></script>
 <script src="{% static 'assets/js/bootstrap.bundle.min.js' %}"></script>  <!-- Agregar esto -->
-<script src="{% static 'assets/js/datatable/datatables/jquery.dataTables.min.js' %}"></script>
-<script src="{% static 'assets/js/datatable/datatables/datatable.custom.js' %}"></script>
 
 <!-- resto de tu código -->
 
@@ -241,9 +238,9 @@ table.order-details th {
           <tr>
             <td>
               <table
-                class="order-details"
+                class="order-details table table-hover align-middle riho-table datatable"
                 style="width: 100%; border-collapse: separate; border-spacing: 0 10px;"
-              >
+               id="tabla-detalle-requerimiento">
                 <thead>
                   <tr
                     style="
@@ -440,7 +437,7 @@ table.order-details th {
             <div class="row justify-content-center">
               <div class="col-md-12 mb-3">
                 <div class="table-responsive gestor-table-wrapper">
-                  <table class="table table-bordered align-middle text-center">
+                  <table class="table table-bordered align-middle text-center table-hover riho-table datatable" id="tabla-detalle-requerimiento-2">
                     <thead >
                       <tr>
                         <th>Artículo</th>
