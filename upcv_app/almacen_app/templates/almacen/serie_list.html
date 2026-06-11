@@ -3,9 +3,6 @@
 {% block content %}
 
 <!-- Cargar jQuery y DataTables -->
-<script src="{% static 'assets/js/jquery.min.js' %}"></script>
-<script src="{% static 'assets/js/datatable/datatables/jquery.dataTables.min.js' %}"></script>
-<script src="{% static 'assets/js/datatable/datatables/datatable.custom.js' %}"></script>
 
 <div class="page-body">
   <div class="container-fluid">
@@ -96,7 +93,7 @@
               <div class="mt-4">
                 <h5>Series Registradas</h5>
                 <div class="table-responsive custom-scrollbar">
-                  <table class="display" id="basic-9">
+                  <table class="display table table-hover align-middle riho-table datatable" id="tabla-serie-list">
                     <thead>
                       <tr>
                         <th>ID</th>

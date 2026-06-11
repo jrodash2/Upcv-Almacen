@@ -1,7 +1,4 @@
 {% extends 'almacen/base.html' %} {% load static %} {% block content %}
-<script src="{% static 'assets/js/jquery.min.js' %}"></script>
-<script src="{% static 'assets/js/datatable/datatables/jquery.dataTables.min.js' %}"></script>
-<script src="{% static 'assets/js/datatable/datatables/datatable.custom.js' %}"></script>
 
 
 <style>
@@ -209,13 +206,13 @@ table.order-details th {
           <tr>
             <td>
               <table
-                class="order-details"
+                class="order-details table table-hover align-middle riho-table datatable"
                 style="
                   width: 100%;
                   border-collapse: separate;
                   border-spacing: 0 10px;
                 "
-              >
+               id="tabla-agregar-detalle-factura">
                 <thead>
                   <tr
                     style="
@@ -509,7 +506,7 @@ table.order-details th {
         <!-- Tabla de Artículos existentes -->
         <div class="mt-4">
           <h5>Artículos Creados</h5>
-          <table class="display" id="basic-9">
+          <table class="display table table-hover align-middle riho-table datatable" id="tabla-agregar-detalle-factura-2">
             <thead>
               <tr>
                 <th>ID</th>
