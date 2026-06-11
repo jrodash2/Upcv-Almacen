@@ -115,6 +115,68 @@ table.dataTable.gestor-table thead > tr > th.sorting_desc::after {
     opacity: 1 !important;
 }
 
+
+/* Tabla Riho compacta para detalles de requerimiento (sin DataTables). */
+.riho-detail-table-wrapper {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.10);
+    background: #ffffff;
+}
+
+.riho-detail-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-bottom: 0;
+}
+
+.riho-detail-table thead th {
+    background: var(--theme-deafult, #007fbf) !important;
+    color: #ffffff !important;
+    font-weight: 800;
+    font-size: .88rem;
+    border: 0 !important;
+    padding: 1rem;
+    vertical-align: middle;
+}
+
+.riho-detail-table thead th:first-child {
+    border-top-left-radius: 8px;
+}
+
+.riho-detail-table thead th:last-child {
+    border-top-right-radius: 8px;
+}
+
+.riho-detail-table tbody td {
+    background: #ffffff;
+    color: #0f172a;
+    font-size: .92rem;
+    padding: 1rem;
+    border-top: 1px solid #eef2f7;
+    vertical-align: middle;
+}
+
+.riho-detail-table tbody tr:hover td {
+    background: #f8fafc;
+}
+
+.riho-detail-table .riho-btn {
+    min-width: 38px;
+    padding: .42rem .58rem;
+}
+
+.riho-dot {
+    width: 8px;
+    height: 8px;
+    min-width: 8px;
+    border-radius: 50%;
+    background: #007c7c;
+    display: inline-block;
+    box-shadow: 0 0 0 4px rgba(0, 124, 124, .12);
+}
+
 .riho-table tbody td,
 .gestor-table tbody td {
     color: #0f172a;
