@@ -3,9 +3,6 @@
 {% load estado_tags %}
 {% block content %}
 
-<script src="{% static 'assets/js/jquery.min.js' %}"></script>
-<script src="{% static 'assets/js/datatable/datatables/jquery.dataTables.min.js' %}"></script>
-<script src="{% static 'assets/js/datatable/datatables/datatable.custom.js' %}"></script>
 
 <style>
   .modern-card { border: 0; border-radius: 18px; box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08); }
@@ -95,8 +92,8 @@
             {% endif %}
           </div>
           <div class="card-body p-4">
-            <div class="table-responsive gestor-table-wrapper">
-              <table class="table table-hover align-middle gestor-table" id="basic-9">
+            <div class="table-responsive gestor-table-wrapper riho-table-responsive">
+              <table class="table table-hover align-middle gestor-table riho-table datatable" id="tabla-crear-requerimiento">
                 <thead class="table-light">
                   <tr>
                     <th>#</th><th>Departamento</th><th>Creado por</th><th>Fecha</th><th>Estado</th><th>Fecha resolución</th><th class="text-center">Acciones</th>

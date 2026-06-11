@@ -4,10 +4,7 @@
 {% block content %}
 
 <!-- Cargar jQuery -->
-<script src="{% static 'assets/js/jquery.min.js' %}"></script>
 <!-- Cargar DataTables js -->
-<script src="{% static 'assets/js/datatable/datatables/jquery.dataTables.min.js' %}"></script>
-<script src="{% static 'assets/js/datatable/datatables/datatable.custom.js' %}"></script>
 
 <div class="page-body gestor-page">
   <div class="container-fluid">
@@ -39,8 +36,8 @@
         <h5>Resumen de Stock Asignado - Despachado</h5>
       </div>
       <div class="card-body">
-        <div class="table-responsive custom-scrollbar gestor-table-wrapper">
-          <table class="display gestor-table" id="basic-10">
+        <div class="table-responsive custom-scrollbar gestor-table-wrapper riho-table-responsive">
+          <table class="display gestor-table table table-hover align-middle riho-table datatable" id="tabla-detalle-departamento">
             <thead>
               <tr>
                 <th>ID</th>
@@ -89,8 +86,8 @@
         <h5>Detalle de Asignaciones</h5>
       </div>
       <div class="card-body">
-        <div class="table-responsive custom-scrollbar gestor-table-wrapper">
-          <table class="display gestor-table" id="basic-12">
+        <div class="table-responsive custom-scrollbar gestor-table-wrapper riho-table-responsive">
+          <table class="display gestor-table table table-hover align-middle riho-table datatable" id="tabla-detalle-departamento-2">
             <thead>
               <tr>
                 <th>ID</th>
@@ -153,8 +150,8 @@
         <h5>Historial de Transferencias</h5>
       </div>
       <div class="card-body">
-        <div class="table-responsive custom-scrollbar gestor-table-wrapper">
-          <table class="display gestor-table" id="basic-13">
+        <div class="table-responsive custom-scrollbar gestor-table-wrapper riho-table-responsive">
+          <table class="display gestor-table table table-hover align-middle riho-table datatable" id="tabla-detalle-departamento-3">
             <thead>
               <tr>
                 <th>Artículo</th>

@@ -68,6 +68,7 @@
 <!-- Responsive css-->
 <link rel="stylesheet" type="text/css" href="{% static 'assets/css/responsive.css' %}">
 <link rel="stylesheet" type="text/css" href="{% static 'almacen_app/css/gestor.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'almacen_app/css/almacen_riho.css' %}">
 </head>
   <body> 
 
@@ -608,6 +609,9 @@
 <script src="{% static 'assets/js/header-slick.js' %}"></script>
 <!-- calendar js-->
 <script src="{% static 'assets/js/js-datatables/simple-datatables@latest.js' %}"></script>
+<script src="{% static 'assets/js/datatable/datatables/jquery.dataTables.min.js' %}"></script>
+<script>window.ALMACEN_MODAL_LOGO_URL = "{% static 'assets/images/logo/logo.png' %}";</script>
+<script src="{% static 'almacen_app/js/almacen_datatables.js' %}"></script>
 <script src="{% static 'assets/js/custom-list-product.js' %}"></script>
 <script src="{% static 'assets/js/owlcarousel/owl.carousel.js' %}"></script>
 <script src="{% static 'assets/js/ecommerce.js' %}"></script>

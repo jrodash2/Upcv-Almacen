@@ -5,10 +5,7 @@
 {% load custom_filters %}
 
 
-<script src="{% static 'assets/js/jquery.min.js' %}"></script>
 <script src="{% static 'assets/js/bootstrap.bundle.min.js' %}"></script>  <!-- Agregar esto -->
-<script src="{% static 'assets/js/datatable/datatables/jquery.dataTables.min.js' %}"></script>
-<script src="{% static 'assets/js/datatable/datatables/datatable.custom.js' %}"></script>
 
 <!-- resto de tu código -->
 
@@ -240,98 +237,92 @@ table.order-details th {
 
           <tr>
             <td>
-              <table
-                class="order-details"
-                style="width: 100%; border-collapse: separate; border-spacing: 0 10px;"
-              >
-                <thead>
-                  <tr
-                    style="
-                      background: #007fbf;
-                      border-radius: 8px;
-                      overflow: hidden;
-                      box-shadow: 0px 10.9px 10.9px rgba(82, 77, 141, 0.04),
-                                  0px 9.5px 7.6px rgba(82, 77, 141, 0.06),
-                                  0px 5.05px 4.04px rgba(82, 77, 141, 0.048);
-                    "
-                  >
-                    <th style="padding: 18px 15px; border-top-left-radius: 8px; border-bottom-left-radius: 8px; text-align: left;">
-                      
-                      <span style="color: #fff">Artículo</span>
-                    </th>
-                    <th style="padding: 18px 15px; text-align: left;">
-                      <span style="color: #fff">Renglón</span>
-                    </th>
-                    <th style="padding: 18px 15px; text-align: left;">
-                      <span style="color: #fff">Categoría</span>
-                    </th>
-                    <th style="padding: 18px 15px; text-align: left;">
-                      <span style="color: #fff">Cantidad</span>
-                    </th>
-                    <th style="padding: 18px 15px; text-align: left;">
-                      <span style="color: #fff">Observaciones</span>
-                    </th>
-                    <th style="padding: 18px 15px; border-top-right-radius: 8px; border-bottom-right-radius: 8px; text-align: left;">
-                      <span style="color: #fff">Acciones</span>
-                    </th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {% for detalle in detalles_requerimiento %}
-                     <tr style="box-shadow: 0px 10.9px 10.9px rgba(82, 77, 141, 0.04), 0px 9.5px 7.6px rgba(82, 77, 141, 0.06), 0px 5.05px 4.04px rgba(82, 77, 141, 0.048); border-radius: 5.5px;">
-                      <td style="padding: 18px 15px; display: flex; align-items: center; gap: 10px; max-width: 100%; word-wrap: break-word; white-space: normal;">
-  <span style="min-width: 7px; height: 7px; border: 4px solid #006666; background: #fff; border-radius: 100%; display: inline-block;"></span>
-  <span style="word-wrap: break-word; white-space: normal;">{{ detalle.articulo.nombre }}</span>
-</td>
-
-                      <td style="padding: 18px 15px;">
-                        {% if detalle.articulo.renglon_presupuestario %}
-                          <span class="badge bg-light text-dark border">{{ detalle.articulo.renglon_presupuestario }}</span>
-                        {% else %}
-                          <span class="text-muted">S/R</span>
-                        {% endif %}
-                      </td>
-
-                      <td style="padding: 18px 15px;">
-                        {% if detalle.articulo.categoria %}
-                          <span class="badge bg-light text-dark border">{{ detalle.articulo.categoria.nombre }}</span>
-                        {% else %}
-                          <span class="text-muted">S/C</span>
-                        {% endif %}
-                      </td>
-
-                      <td style="padding: 18px 15px;">
-                        <span>{{ detalle.cantidad }}</span>
-                      </td>
-                      <td style="padding: 18px 15px;">
-                        <span>{{ detalle.observacion }}</span>
-                      </td>
-                      <td style="text-align: center; vertical-align: middle;">
-{% if puede_gestionar_requerimiento and requerimiento.estado != 'rechazado' and requerimiento.estado != 'enviado' and requerimiento.estado != 'despachado' and requerimiento.estado != 'parcial' %}
-  <i class="fa fa-edit editar-detalle-btn fa-2x" 
-     style="cursor: pointer;" 
-     data-id="{{ detalle.id }}" 
-     data-bs-toggle="modal" 
-     data-bs-target="#editarDetalleModal"></i>
-
-  <i class="fa fa-trash-o eliminar-detalle-btn fa-2x" 
-     role="button"
-     style="cursor: pointer;" 
-     data-url="{% url 'almacen:eliminar_detalle_requerimiento' detalle.id %}"></i>
-{% endif %}
-
-                      </td>
-                    </tr>
-                  {% empty %}
-                    <tr>
-                      <td colspan="6" class="text-center" style="padding: 18px 15px;">
-                        No hay detalles agregados aún.
-                      </td>
-                    </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
+              <div class="card riho-card mb-4">
+                <div class="card-header">
+                  <h5 class="mb-0">
+                    <i class="fa fa-list me-2 text-primary"></i>
+                    Detalle de artículos
+                  </h5>
+                </div>
+                <div class="card-body p-0">
+                  <div class="table-responsive riho-table-responsive">
+                    <table class="table riho-detail-table align-middle mb-0" id="tabla-detalle-requerimiento">
+                      <thead>
+                        <tr>
+                          <th class="col-articulo">Artículo</th>
+                          <th class="col-renglon">Renglón</th>
+                          <th class="col-categoria">Categoría</th>
+                          <th class="col-cantidad">Cantidad</th>
+                          <th class="col-observacion">Observaciones</th>
+                          {% if puede_gestionar_requerimiento and requerimiento.estado != 'rechazado' and requerimiento.estado != 'enviado' and requerimiento.estado != 'despachado' and requerimiento.estado != 'parcial' %}
+                            <th class="col-acciones text-center">Acciones</th>
+                          {% endif %}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for detalle in detalles_requerimiento %}
+                          <tr>
+                            <td class="col-articulo text-wrap-soft">
+                              <div class="d-flex align-items-start gap-2">
+                                <span class="riho-dot mt-2"></span>
+                                <div>
+                                  <div class="fw-semibold">{{ detalle.articulo.nombre }}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td class="col-renglon">
+                              <span class="badge-soft">
+                                {{ detalle.articulo.renglon_presupuestario|default:"S/R" }}
+                              </span>
+                            </td>
+                            <td class="col-categoria">
+                              <span class="badge-soft badge-categoria">
+                                {% if detalle.articulo.categoria %}{{ detalle.articulo.categoria.nombre }}{% else %}S/C{% endif %}
+                              </span>
+                            </td>
+                            <td class="col-cantidad fw-bold">
+                              {{ detalle.cantidad }}
+                            </td>
+                            <td class="col-observacion text-wrap-soft">
+                              {{ detalle.observacion|default:"-" }}
+                            </td>
+                            {% if puede_gestionar_requerimiento and requerimiento.estado != 'rechazado' and requerimiento.estado != 'enviado' and requerimiento.estado != 'despachado' and requerimiento.estado != 'parcial' %}
+                              <td class="col-acciones text-center">
+                                <div class="d-flex justify-content-center gap-2 flex-wrap">
+                                  <button type="button"
+                                          class="btn btn-outline-warning btn-sm riho-btn editar-detalle-btn"
+                                          data-id="{{ detalle.id }}"
+                                          data-bs-toggle="modal"
+                                          data-bs-target="#editarDetalleModal"
+                                          title="Editar detalle">
+                                    <i class="fa fa-edit"></i>
+                                  </button>
+                                  <button type="button"
+                                          class="btn btn-outline-danger btn-sm riho-btn eliminar-detalle-btn"
+                                          data-url="{% url 'almacen:eliminar_detalle_requerimiento' detalle.id %}"
+                                          title="Eliminar detalle">
+                                    <i class="fa fa-trash-o"></i>
+                                  </button>
+                                </div>
+                              </td>
+                            {% endif %}
+                          </tr>
+                        {% empty %}
+                          <tr>
+                            {% if puede_gestionar_requerimiento and requerimiento.estado != 'rechazado' and requerimiento.estado != 'enviado' and requerimiento.estado != 'despachado' and requerimiento.estado != 'parcial' %}
+                              <td colspan="6" class="text-center text-muted py-4">
+                            {% else %}
+                              <td colspan="5" class="text-center text-muted py-4">
+                            {% endif %}
+                                No hay artículos registrados en este requerimiento.
+                              </td>
+                          </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
             </td>
           </tr>
 
@@ -439,8 +430,8 @@ table.order-details th {
             
             <div class="row justify-content-center">
               <div class="col-md-12 mb-3">
-                <div class="table-responsive gestor-table-wrapper">
-                  <table class="table table-bordered align-middle text-center">
+                <div class="table-responsive gestor-table-wrapper riho-table-responsive">
+                  <table class="table table-bordered align-middle text-center table-hover riho-table datatable" id="tabla-detalle-requerimiento-2">
                     <thead >
                       <tr>
                         <th>Artículo</th>

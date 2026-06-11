@@ -59,8 +59,8 @@
             </div>
             {% endif %}
 
-            <div class="table-responsive gestor-table-wrapper">
-              <table class="table table-hover align-middle gestor-table mb-0">
+            <div class="table-responsive gestor-table-wrapper riho-table-responsive">
+              <table class="table table-hover align-middle gestor-table mb-0 riho-table datatable" id="tabla-detalle-solicitud-requerimiento">
                 <thead class="table-light"><tr><th>Código</th><th>Renglón</th><th>Artículo</th><th>Categoría</th><th>Unidad de medida</th><th style="width:150px;">Cantidad</th></tr></thead>
                 <tbody>
                   {% for d in solicitud.detalles.all %}

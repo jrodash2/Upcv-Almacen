@@ -4,10 +4,7 @@
 {% block content %}
 
 <!-- Cargar jQuery -->
-<script src="{% static 'assets/js/jquery.min.js' %}"></script>
 <!-- Cargar Calendar js -->
-<script src="{% static 'assets/js/datatable/datatables/jquery.dataTables.min.js' %}"></script>
-<script src="{% static 'assets/js/datatable/datatables/datatable.custom.js' %}"></script>
 
 <div class="page-body">
   <div class="container-fluid">
@@ -42,8 +39,8 @@
         <div class="card">
           
           <div class="card-body">
-            <div class="table-responsive custom-scrollbar">
-              <table class="display" id="basic-9">
+            <div class="table-responsive custom-scrollbar riho-table-responsive">
+              <table class="display table table-hover align-middle riho-table datatable" id="tabla-credencial-empleados">
                 <thead>
                   <tr>
                     <th>Nombres</th>
