@@ -55,14 +55,14 @@
 .dataTable.riho-table thead th,
 table.dataTable.riho-table thead th,
 table.dataTable.gestor-table thead th {
-    background: #2c323f !important;
+    background: var(--theme-deafult, #007fbf) !important;
     color: #ffffff !important;
     font-size: .76rem;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: .05em;
-    border-color: #3d4657 !important;
-    border-bottom: 1px solid #3d4657 !important;
+    border-color: #006da3 !important;
+    border-bottom: 1px solid #006da3 !important;
     vertical-align: middle;
     white-space: nowrap;
 }
@@ -271,3 +271,193 @@ table.dataTable.gestor-table thead > tr > th.sorting_desc::after {
 .gestor-table-wrapper {
     overflow-x: auto;
 }
+
+/* Modales Riho globales para confirmaciones y formularios del módulo. */
+.modal-content.riho-modal,
+.modal-content.dark-sign-up.riho-modal,
+.page-body .modal-content.riho-modal {
+    position: relative;
+    border: 0;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.18);
+    background:
+        radial-gradient(circle at 14% 10%, rgba(0, 127, 191, 0.16), transparent 28%),
+        radial-gradient(circle at 88% 16%, rgba(255, 112, 67, 0.14), transparent 26%),
+        linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(239,246,255,0.98) 55%, rgba(255,245,248,0.98) 100%);
+}
+
+.modal-content.riho-modal::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+        linear-gradient(135deg, rgba(255,255,255,.38) 25%, transparent 25%),
+        linear-gradient(225deg, rgba(255,255,255,.28) 25%, transparent 25%);
+    background-size: 28px 28px;
+    opacity: .28;
+}
+
+.riho-modal .modal-header {
+    position: relative;
+    z-index: 1;
+    justify-content: center;
+    border-bottom: 0;
+    padding: 1.6rem 1.5rem .35rem;
+}
+
+.riho-modal .modal-body {
+    position: relative;
+    z-index: 1;
+    padding: 2rem 1.5rem 1.75rem;
+}
+
+.riho-modal .modal-footer {
+    position: relative;
+    z-index: 1;
+    justify-content: center;
+    gap: .65rem;
+    border-top: 1px solid rgba(148, 163, 184, 0.28);
+    padding: 1rem 1.5rem 1.45rem;
+}
+
+.riho-modal .btn-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 2;
+    border-radius: 999px;
+    background-color: rgba(226, 232, 240, .85);
+    background-size: .72rem;
+    padding: .65rem;
+    opacity: .85;
+}
+
+.riho-modal-title,
+.riho-modal .modal-title,
+.riho-modal .modal-heading h4,
+.riho-modal .modal-heading h5,
+.riho-modal .theme-name {
+    font-size: 1.45rem;
+    font-weight: 800;
+    color: #1e293b;
+    margin-bottom: 1rem;
+    text-align: center;
+    letter-spacing: -0.02em;
+}
+
+.riho-modal-logo-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: .25rem auto 1rem;
+}
+
+.riho-modal-logo,
+.riho-modal img.riho-modal-logo {
+    max-width: 110px;
+    max-height: 92px;
+    height: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 8px 16px rgba(15, 23, 42, .12));
+}
+
+.riho-modal-text,
+.riho-modal .modal-body > p,
+.riho-modal .modal-body .modal-message {
+    font-size: 1rem;
+    color: #334155;
+    margin-bottom: 1.25rem;
+    text-align: center;
+    line-height: 1.55;
+}
+
+.riho-modal-divider {
+    width: 100%;
+    height: 1px;
+    background: rgba(148, 163, 184, 0.28);
+    margin: 1rem 0;
+}
+
+.riho-modal .modal-body form {
+    text-align: left;
+}
+
+.riho-modal .modal-body form .text-center,
+.riho-modal .modal-body form .modal-actions,
+.riho-modal .modal-body form .d-flex.justify-content-center {
+    text-align: center;
+}
+
+.riho-modal-btn-secondary,
+.riho-modal-btn-primary,
+.riho-modal-btn-danger,
+.riho-modal .modal-footer .btn,
+.riho-modal .modal-body .btn {
+    border-radius: 14px;
+    font-weight: 700;
+    font-size: .95rem;
+    padding: .72rem 1.3rem;
+    min-width: 120px;
+    border: 0;
+    transition: transform .2s ease, box-shadow .2s ease, background-color .2s ease, color .2s ease;
+}
+
+.riho-modal-btn-secondary,
+.riho-modal .btn-light,
+.riho-modal .btn-secondary,
+.riho-modal .btn-outline-secondary {
+    background: #e2e8f0 !important;
+    color: #334155 !important;
+    border-color: #e2e8f0 !important;
+}
+
+.riho-modal-btn-secondary:hover,
+.riho-modal .btn-light:hover,
+.riho-modal .btn-secondary:hover,
+.riho-modal .btn-outline-secondary:hover {
+    background: #cbd5e1 !important;
+    color: #1e293b !important;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 18px rgba(15, 23, 42, .12);
+}
+
+.riho-modal-btn-primary,
+.riho-modal .btn-primary,
+.riho-modal .btn-success {
+    background: var(--theme-deafult, #007fbf) !important;
+    color: #fff !important;
+    border-color: var(--theme-deafult, #007fbf) !important;
+}
+
+.riho-modal-btn-primary:hover,
+.riho-modal .btn-primary:hover,
+.riho-modal .btn-success:hover {
+    background: #006da3 !important;
+    color: #fff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 18px rgba(0, 127, 191, .22);
+}
+
+.riho-modal-btn-danger,
+.riho-modal .btn-danger,
+.riho-modal .btn-warning {
+    background: #ff7043 !important;
+    color: #fff !important;
+    border-color: #ff7043 !important;
+}
+
+.riho-modal-btn-danger:hover,
+.riho-modal .btn-danger:hover,
+.riho-modal .btn-warning:hover {
+    background: #f4511e !important;
+    color: #fff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 18px rgba(244, 81, 30, .22);
+}
+
+.modal-backdrop.show {
+    opacity: .55;
+}
+
