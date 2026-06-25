@@ -12,7 +12,7 @@
 
 
 <div class="page-body gestor-page">
-
+  
 
                 {% if requerimiento.estado == 'rechazado' %}
   <div class="alert alert-danger">
@@ -22,7 +22,7 @@
   <!-- Page Sidebar Ends-->
   <div class="page-body">
     <!-- Container-fluid starts -->
-
+    
     {% if messages %}
       <div class="container mt-3">
         {% for message in messages %}
@@ -32,7 +32,7 @@
         {% endfor %}
       </div>
     {% endif %}
-
+    
     <div class="container-fluid">
       {% if es_gestor %}
         <div class="alert gestor-readonly-alert d-flex align-items-center gap-2 border-0 rounded-4 shadow-sm gestor-animate">
@@ -57,7 +57,7 @@
               <p class="mb-1"><strong>Fecha:</strong> {{ solicitud_relacionada.creado_en|date:"d/m/Y H:i" }}</p>
               <p class="mb-0"><strong>Estado:</strong> <span class="estado-badge {% estado_badge_class solicitud_relacionada.estado %}">{{ solicitud_relacionada.get_estado_display|default:solicitud_relacionada.estado }}</span></p>
             </div>
-            <a href="{% url 'almacen:detalle_solicitud_requerimiento' solicitud_id=solicitud_relacionada.id %}" class="btn btn-outline-primary btn-sm"><i class="fa fa-eye me-1"></i>Ver solicitud</a>
+            <a href="{% url 'almacen:detalle_solicitud_requerimiento' solicitud_id=solicitud_relacionada.id %}" class="btn btn-outline-primary btn-sm gestor-btn"><i class="fa fa-eye me-1"></i>Ver solicitud</a>
           </div>
         </div>
       </div>
@@ -75,7 +75,7 @@
                       <div class="m-t-15 btn-showcase">
 
 {% if puede_gestionar_requerimiento and requerimiento.estado == 'pendiente' %}
-  <a class="btn btn-outline-warning btn-lg"
+  <a class="btn btn-outline-warning btn-lg action-btn gestor-btn"
      href="{% url 'almacen:enviar_requerimiento' requerimiento.id %}"
      title="Enviar Requerimiento">
     <i class="fa fa-paper-plane"></i> Enviar
@@ -92,7 +92,7 @@
 
 <!-- Botón para abrir modal de despachar -->
 {% if puede_despachar_requerimiento and requerimiento.estado == 'enviado' %}
-  <button type="button" class="btn btn-outline-warning btn-lg" data-bs-toggle="modal" data-bs-target="#modalDespachar">
+  <button type="button" class="btn btn-outline-warning btn-lg action-btn gestor-btn" data-bs-toggle="modal" data-bs-target="#modalDespachar">
     <i class="fa fa-truck"></i> Despachar Requerimiento
   </button>
 {% endif %}
@@ -100,7 +100,7 @@
 
 <!-- Botón para abrir modal de anulación -->
 {% if puede_anular_requerimiento %}
-  <button type="button" class="btn btn-outline-warning btn-lg" data-bs-toggle="modal" data-bs-target="#modalAnular">
+  <button type="button" class="btn btn-outline-warning btn-lg action-btn gestor-btn" data-bs-toggle="modal" data-bs-target="#modalAnular">
     <i class="fa fa-times-circle"></i> Rechazar Requerimiento
   </button>
 {% endif %}
@@ -108,7 +108,7 @@
 
 
 {% if puede_imprimir_requerimiento %}
-<a href="{% url 'almacen:exportar_requerimiento_pdf' requerimiento.id %}" target="_blank" class="btn btn-outline-secondary">
+<a href="{% url 'almacen:exportar_requerimiento_pdf' requerimiento.id %}" target="_blank" class="btn btn-outline-secondary action-btn gestor-btn">
   <i class="fa fa-file-pdf-o"></i> Imprimir
 </a>
 {% endif %}
@@ -164,9 +164,9 @@
 
           <tr>
             <td>
-              <div class="mt-4">
+              <div class="riho-detail-table-wrapper mt-4">
                 <div class="table-responsive">
-                  <table class="table table-hover align-middle mb-0" id="tabla-detalle-requerimiento">
+                  <table class="table riho-detail-table align-middle mb-0" id="tabla-detalle-requerimiento">
                     <thead>
                       <tr>
                         <th>Artículo</th>
@@ -180,7 +180,7 @@
                         <tr>
                           <td>
                             <div class="d-flex align-items-center gap-2">
-
+                              <span class="riho-dot"></span>
                               <div>
                                 <div class="fw-semibold">{{ detalle.articulo.nombre }}</div>
                                 <small class="text-muted">
@@ -192,14 +192,14 @@
                             </div>
                           </td>
                           <td>
-                            <span class="badge badge-light-success">{{ detalle.cantidad }}</span>
+                            <span class="badge-soft badge-success-soft">{{ detalle.cantidad }}</span>
                           </td>
                           <td>{{ detalle.observacion|default:"-" }}</td>
                           <td class="text-center">
                             {% if puede_gestionar_requerimiento and requerimiento.estado != 'rechazado' and requerimiento.estado != 'enviado' and requerimiento.estado != 'despachado' and requerimiento.estado != 'parcial' %}
                               <div class="d-flex justify-content-center gap-2 flex-wrap">
                                 <button type="button"
-                                        class="btn btn-outline-warning btn-sm editar-detalle-btn"
+                                        class="btn btn-outline-warning btn-sm riho-btn editar-detalle-btn"
                                         data-id="{{ detalle.id }}"
                                         data-bs-toggle="modal"
                                         data-bs-target="#editarDetalleModal"
@@ -207,7 +207,7 @@
                                   <i class="fa fa-edit"></i>
                                 </button>
                                 <button type="button"
-                                        class="btn btn-outline-danger btn-sm eliminar-detalle-btn"
+                                        class="btn btn-outline-danger btn-sm riho-btn eliminar-detalle-btn"
                                         data-url="{% url 'almacen:eliminar_detalle_requerimiento' detalle.id %}"
                                         title="Eliminar detalle">
                                   <i class="fa fa-trash-o"></i>
@@ -245,7 +245,7 @@
 {% if puede_gestionar_requerimiento and requerimiento.estado != 'rechazado' and requerimiento.estado != 'enviado' and requerimiento.estado != 'despachado' and requerimiento.estado != 'parcial' %}
   <div style="display: flex; gap: 10px;">
     <button
-      class="btn btn-primary"
+      class="btn btn-primary gestor-btn"
       type="button"
       data-bs-toggle="modal"
       data-bs-target="#agregarDetalleModal"
@@ -266,11 +266,7 @@
     <div class="modal-content">
       <div class="modal-body social-profile text-start p-4">
         <div class="">
-<<<<<<< HEAD
-
-=======
           
->>>>>>> main
           <!-- Encabezado -->
           <div class="title-wrapper pb-3 modal-heading text-center">
             <h5 class="theme-name mb-0">
@@ -287,7 +283,7 @@
           <!-- Formulario de Anulación -->
           <form method="POST" action="{% url 'almacen:anular_requerimiento' requerimiento_id=requerimiento.id %}">
             {% csrf_token %}
-
+            
             <div class="row justify-content-center">
               <div class="col-md-10 mb-3">
                 <label for="motivo_anulacion" class="form-label">Motivo</label>
@@ -297,8 +293,8 @@
 
             <!-- Botones -->
             <div class="text-end">
-              <button type="submit" class="btn btn-danger">Confirmar</button>
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button type="submit" class="btn btn-danger gestor-btn">Confirmar</button>
+              <button type="button" class="btn btn-secondary gestor-btn" data-bs-dismiss="modal">Cancelar</button>
             </div>
           </form>
 
@@ -320,11 +316,7 @@
     <div class="modal-content">
       <div class="modal-body social-profile text-start p-4">
         <div class="">
-<<<<<<< HEAD
-
-=======
           
->>>>>>> main
           <!-- Encabezado -->
           <div class="title-wrapper pb-3 modal-heading text-center">
             <h5 class="theme-name mb-0">
@@ -341,18 +333,12 @@
           <!-- Formulario de Despacho -->
           <form method="POST" action="{% url 'almacen:despachar_requerimiento' requerimiento_id=requerimiento.id %}">
             {% csrf_token %}
-
+            
             <div class="row justify-content-center">
               <div class="col-md-12 mb-3">
-<<<<<<< HEAD
-                <div class="dt-ext table-responsive custom-scrollbar">
-<table class="table table-bordered align-middle text-center table-hover datatables" id="tabla-detalle-requerimiento-2">
-                    <thead>
-=======
                 <div class="table-responsive-wrapper">
                   <table class="table table-bordered align-middle text-center table-hover datatable" id="tabla-detalle-requerimiento-2">
                     <thead >
->>>>>>> main
                       <tr>
                         <th>Artículo</th>
                         <th>Renglón</th>
@@ -383,15 +369,14 @@
                       {% endfor %}
                     </tbody>
                   </table>
-</div>
                 </div>
               </div>
             </div>
 
             <!-- Botones -->
             <div class="text-end">
-              <button type="submit" class="btn btn-primary">Confirmar Despacho</button>
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button type="submit" class="btn btn-primary gestor-btn">Confirmar Despacho</button>
+              <button type="button" class="btn btn-secondary gestor-btn" data-bs-dismiss="modal">Cancelar</button>
             </div>
           </form>
 
@@ -469,7 +454,7 @@
             </div>
 
             <div class="text-end">
-              <button type="submit" class="btn btn-primary">
+              <button type="submit" class="btn btn-primary gestor-btn">
                 <i class="fa fa-save me-1"></i> Guardar Detalle
               </button>
             </div>
@@ -489,7 +474,7 @@
     articuloSelect.addEventListener('change', function () {
       const selectedOption = articuloSelect.options[articuloSelect.selectedIndex];
       const stock = parseInt(selectedOption.getAttribute('data-stock')) || 0;
-
+      
       stockInput.value = stock;
       cantidadInput.max = stock;
 
@@ -546,14 +531,14 @@
           </div>
 
           <div class="text-end">
-            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+            <button type="submit" class="btn btn-primary gestor-btn">Guardar Cambios</button>
           </div>
         </form>
 
       </div>
     </div>
   </div>
-</div>
+</div> 
 
 <!-- Modal de Confirmación para eliminar detalle (actualizado con estilo e imagen) -->
 <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
@@ -588,8 +573,8 @@
 
           <!-- Botones -->
           <div class="modal-footer justify-content-center">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="button" class="btn btn-danger" id="confirmDeleteButton">Eliminar</button>
+            <button type="button" class="btn btn-secondary gestor-btn" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-danger gestor-btn" id="confirmDeleteButton">Eliminar</button>
           </div>
         </div>
 

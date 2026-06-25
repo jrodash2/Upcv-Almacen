@@ -32,21 +32,12 @@
 
     <!-- Nuevo resumen: Asignado - Despachado = Disponible -->
     <div class="card border-0 shadow-sm rounded-4 mt-4 gestor-animate">
-<<<<<<< HEAD
-      <div class="card-header pb-0 card-no-border">
-        <h5>Resumen de Stock Asignado - Despachado</h5>
-      </div>
-      <div class="card-body">
-        <div class="dt-ext table-responsive custom-scrollbar">
-          <table class="display datatables" id="tabla-detalle-departamento">
-=======
       <div class="card-header">
         <h5>Resumen de Stock Asignado - Despachado</h5>
       </div>
       <div class="card-body">
         <div class="table-responsive custom-scrollbar-wrapper">
           <table class="display datatable" id="tabla-detalle-departamento">
->>>>>>> main
             <thead>
               <tr>
                 <th>ID</th>
@@ -91,21 +82,12 @@
     {% if tiene_acceso %}
     <!-- Detalle de asignaciones -->
     <div class="card border-0 shadow-sm rounded-4 mt-4 gestor-animate">
-<<<<<<< HEAD
-      <div class="card-header pb-0 card-no-border">
-        <h5>Detalle de Asignaciones</h5>
-      </div>
-      <div class="card-body">
-        <div class="dt-ext table-responsive custom-scrollbar">
-          <table class="display datatables" id="tabla-detalle-departamento-2">
-=======
       <div class="card-header">
         <h5>Detalle de Asignaciones</h5>
       </div>
       <div class="card-body">
         <div class="table-responsive custom-scrollbar-wrapper">
           <table class="display datatable" id="tabla-detalle-departamento-2">
->>>>>>> main
             <thead>
               <tr>
                 <th>ID</th>
@@ -143,7 +125,7 @@
                 <td>
                   {% if es_administrador %}
                   <!-- Botón para Transferir -->
-                  <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#transferirModal"
+                  <button class="btn btn-warning gestor-btn" data-bs-toggle="modal" data-bs-target="#transferirModal"
                           data-articulo-id="{{ a.articulo.id }}" data-nombre-articulo="{{ a.articulo.nombre }}"
                           data-cantidad="{{ a.cantidad_asignada }}">
                     Transferir
@@ -164,21 +146,12 @@
 
     <!-- NUEVO: Historial de Transferencias -->
     <div class="card border-0 shadow-sm rounded-4 mt-4 gestor-animate">
-<<<<<<< HEAD
-      <div class="card-header pb-0 card-no-border">
-        <h5>Historial de Transferencias</h5>
-      </div>
-      <div class="card-body">
-        <div class="dt-ext table-responsive custom-scrollbar">
-          <table class="display datatables" id="tabla-detalle-departamento-3">
-=======
       <div class="card-header">
         <h5>Historial de Transferencias</h5>
       </div>
       <div class="card-body">
         <div class="table-responsive custom-scrollbar-wrapper">
           <table class="display datatable" id="tabla-detalle-departamento-3">
->>>>>>> main
             <thead>
               <tr>
                 <th>Artículo</th>
@@ -220,7 +193,7 @@
       </div>
     </div>
 
-    <a href="{% url 'almacen:lista_departamentos' %}" class="btn btn-primary mt-3">← Volver a la lista</a>
+    <a href="{% url 'almacen:lista_departamentos' %}" class="btn btn-primary gestor-btn mt-3">← Volver a la lista</a>
     {% endif %}
 
   </div>
