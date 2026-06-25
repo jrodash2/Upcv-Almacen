@@ -15,9 +15,19 @@
             return;
         }
 
+        $('.page-body table').not('.no-datatable, .riho-detail-table').each(function () {
+            var $table = $(this);
+            if (!$table.hasClass('datatable')) {
+                $table.addClass('display datatables table table-hover riho-table datatable');
+            }
+            if (!$table.attr('id')) {
+                $table.attr('id', 'tabla-riho-' + ($('.page-body table').index(this) + 1));
+            }
+        });
+
         $('.datatable').each(function () {
             if (!$(this).parent().hasClass('table-responsive')) {
-                $(this).wrap('<div class="table-responsive"></div>');
+                $(this).wrap('<div class="table-responsive theme-scrollbar"></div>');
             }
 
             if ($.fn.DataTable.isDataTable(this) || !hasRealRows(this)) {
@@ -116,6 +126,41 @@
         });
     }
 
+
+
+    function enhanceRihoUI() {
+        $('.page-body .card').addClass('riho-card');
+        $('.page-body table').not('.riho-detail-table').addClass('display datatables table table-hover riho-table');
+        $('.page-body .table-responsive').addClass('theme-scrollbar');
+        $('.page-body select').addClass('form-select').removeClass('form-control');
+        $('.page-body input:not([type=checkbox]):not([type=radio]), .page-body textarea').addClass('form-control');
+        $('.page-body input[type=checkbox]').addClass('form-check-input');
+        $('.page-body label').addClass('form-label');
+        $('.page-body td:last-child, .page-body .card-header .text-end, .page-body .form-footer').addClass('riho-actions');
+
+        var iconMap = [
+            [/crear|nuevo|agregar|añadir/i, 'plus-circle'],
+            [/editar|actualizar/i, 'edit'],
+            [/eliminar|borrar|anular/i, 'trash-2'],
+            [/ver|detalle|seguimiento/i, 'eye'],
+            [/pdf|imprimir/i, 'file-text'],
+            [/guardar|confirmar|asignar|despachar|convertir/i, 'check-circle'],
+            [/cancelar|volver|cerrar/i, 'x-circle']
+        ];
+        $('.page-body .btn').each(function () {
+            var $btn = $(this);
+            if ($btn.find('svg.feather, i[data-feather]').length) return;
+            var text = $.trim($btn.text());
+            for (var i = 0; i < iconMap.length; i++) {
+                if (iconMap[i][0].test(text)) {
+                    $btn.prepend('<i data-feather="' + iconMap[i][1] + '"></i> ');
+                    break;
+                }
+            }
+        });
+        if (window.feather) { window.feather.replace(); }
+    }
+
     function enhanceRihoModals() {
         $('.modal').each(function () {
             enhanceRihoModal(this);
@@ -123,6 +168,7 @@
     }
 
     $(document).ready(function () {
+        enhanceRihoUI();
         initRihoDataTables();
         enhanceRihoModals();
 

@@ -523,3 +523,69 @@ table.dataTable.gestor-table thead > tr > th.sorting_desc::after {
     opacity: .55;
 }
 
+
+
+/* Normalización global para que las vistas hereden Riho sin estilos locales invasivos. */
+.page-body,
+.page-body button,
+.page-body input,
+.page-body select,
+.page-body textarea,
+.page-body table,
+.page-body .card,
+.page-body .page-title { font-family: inherit; }
+
+.page-body .page-title { margin-bottom: 24px; }
+.page-body .page-title .breadcrumb { justify-content: flex-end; gap: .25rem; }
+.page-body .page-title h3 { margin-bottom: 0; }
+
+.page-body .table-responsive,
+.page-body .theme-scrollbar { max-width: 100%; overflow-x: auto; }
+.page-body table.display.datatables,
+.page-body table.display.dataTable,
+.page-body table.display.datatable { width: 100% !important; }
+
+.page-body .card-header .btn,
+.page-body .page-title .btn { display: inline-flex; align-items: center; gap: .35rem; }
+.page-body .btn svg.feather { width: 16px; height: 16px; }
+
+.page-body .form-group { margin-bottom: 1rem; }
+.page-body .row.g-3 .form-group { margin-bottom: 0; }
+.page-body .form-check { display: flex; align-items: center; gap: .5rem; padding-left: 0; }
+.page-body .form-check .form-check-input { margin-left: 0; float: none; }
+.page-body .form-check label { margin-bottom: 0; }
+
+.page-body .alert { border: 0; border-radius: 14px; font-weight: 600; }
+.page-body .badge,
+.estado-pendiente,
+.estado-en-proceso,
+.estado-aprobado,
+.estado-convertida,
+.estado-despachado,
+.estado-finalizado,
+.estado-entregado,
+.estado-rechazado,
+.estado-borrador,
+.estado-default {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .25rem;
+    border-radius: 10px;
+    padding: .42rem .7rem;
+    font-weight: 700;
+    line-height: 1;
+}
+.estado-pendiente { background: rgba(255, 193, 7, .16); color: #b7791f; }
+.estado-en-proceso { background: rgba(13, 202, 240, .16); color: #0b7285; }
+.estado-aprobado,
+.estado-convertida,
+.estado-despachado,
+.estado-finalizado,
+.estado-entregado { background: rgba(25, 135, 84, .16); color: #198754; }
+.estado-rechazado { background: rgba(220, 53, 69, .14); color: #dc3545; }
+.estado-borrador,
+.estado-default { background: rgba(108, 117, 125, .14); color: #6c757d; }
+
+.riho-actions { display: inline-flex; align-items: center; gap: .35rem; flex-wrap: wrap; }
+.riho-actions .btn { margin: .1rem; }

@@ -8,40 +8,40 @@ def estado_badge_class(estado):
     estado = str(estado or "").lower().strip()
 
     mapa = {
-        "pendiente": "estado-pendiente",
+        "pendiente": "badge badge-light-warning estado-pendiente",
 
-        "en_proceso": "estado-en-proceso",
-        "proceso": "estado-en-proceso",
-        "en proceso": "estado-en-proceso",
-        "enviado": "estado-en-proceso",
-        "parcial": "estado-en-proceso",
+        "en_proceso": "badge badge-light-info estado-en-proceso",
+        "proceso": "badge badge-light-info estado-en-proceso",
+        "en proceso": "badge badge-light-info estado-en-proceso",
+        "enviado": "badge badge-light-info estado-en-proceso",
+        "parcial": "badge badge-light-info estado-en-proceso",
 
-        "aprobado": "estado-aprobado",
-        "aprobada": "estado-aprobado",
-        "confirmado": "estado-aprobado",
+        "aprobado": "badge badge-light-primary estado-aprobado",
+        "aprobada": "badge badge-light-primary estado-aprobado",
+        "confirmado": "badge badge-light-primary estado-aprobado",
 
-        "convertido": "estado-convertida",
-        "convertida": "estado-convertida",
+        "convertido": "badge badge-light-success estado-convertida",
+        "convertida": "badge badge-light-success estado-convertida",
 
-        "despachado": "estado-despachado",
-        "despachada": "estado-despachado",
+        "despachado": "badge badge-light-success estado-despachado",
+        "despachada": "badge badge-light-success estado-despachado",
 
-        "finalizado": "estado-finalizado",
-        "finalizada": "estado-finalizado",
+        "finalizado": "badge badge-light-success estado-finalizado",
+        "finalizada": "badge badge-light-success estado-finalizado",
 
-        "entregado": "estado-entregado",
-        "entregada": "estado-entregado",
+        "entregado": "badge badge-light-success estado-entregado",
+        "entregada": "badge badge-light-success estado-entregado",
 
-        "rechazado": "estado-rechazado",
-        "rechazada": "estado-rechazado",
+        "rechazado": "badge badge-light-danger estado-rechazado",
+        "rechazada": "badge badge-light-danger estado-rechazado",
 
-        "anulado": "estado-rechazado",
-        "anulada": "estado-rechazado",
+        "anulado": "badge badge-light-danger estado-rechazado",
+        "anulada": "badge badge-light-danger estado-rechazado",
 
-        "cancelado": "estado-rechazado",
-        "cancelada": "estado-rechazado",
+        "cancelado": "badge badge-light-danger estado-rechazado",
+        "cancelada": "badge badge-light-danger estado-rechazado",
 
-        "borrador": "estado-borrador",
+        "borrador": "badge badge-light-secondary estado-borrador",
     }
 
-    return mapa.get(estado, "estado-default")
+    return mapa.get(estado, "badge badge-light-secondary estado-default")
