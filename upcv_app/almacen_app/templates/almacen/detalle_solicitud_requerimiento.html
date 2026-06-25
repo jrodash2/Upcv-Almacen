@@ -9,8 +9,8 @@
   <div class="container-fluid">
     <div class="row justify-content-center">
       <div class="col-xl-10 col-lg-11 col-md-12">
-        <div class="card gestor-card shadow-sm border-0 rounded-4 mb-3 gestor-animate">
-          <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="card shadow-sm border-0 rounded-4 mb-3 gestor-animate">
+          <div class="card-header pb-0 card-no-border d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Solicitud #{{ solicitud.id }}</h5>
             <div>
               <span class="estado-badge {% estado_badge_class solicitud.estado %}">{{ solicitud.get_estado_display|default:solicitud.estado }}</span>
@@ -39,7 +39,7 @@
             {% elif solicitud.motivo_rechazo %}<div class="alert alert-danger mb-3"><strong>Motivo de rechazo:</strong> {{ solicitud.motivo_rechazo }}</div>{% endif %}
 
             {% if solicitud.requerimiento %}
-            <div class="card gestor-card gestor-relation-card border-0 shadow-sm rounded-4 mb-4 gestor-animate">
+            <div class="card gestor-relation-card border-0 shadow-sm rounded-4 mb-4 gestor-animate">
               <div class="card-body p-4">
                 <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
                   <div>
@@ -59,8 +59,8 @@
             </div>
             {% endif %}
 
-            <div class="table-responsive gestor-table-wrapper">
-              <table class="table table-hover align-middle gestor-table mb-0 riho-table datatable" id="tabla-detalle-solicitud-requerimiento">
+            <div class="table-responsive-wrapper">
+              <table class="table table-hover align-middle mb-0 datatables" id="tabla-detalle-solicitud-requerimiento">
                 <thead class="table-light"><tr><th>Código</th><th>Renglón</th><th>Artículo</th><th>Categoría</th><th>Unidad de medida</th><th style="width:150px;">Cantidad</th></tr></thead>
                 <tbody>
                   {% for d in solicitud.detalles.all %}
@@ -68,7 +68,7 @@
                     <td>{{ d.articulo.codigo|default:"-" }}</td>
                     <td>
                       {% if d.articulo.renglon_presupuestario %}
-                        <span class="badge bg-light text-dark border">{{ d.articulo.renglon_presupuestario }}</span>
+                        <span class="badge badge-light-secondary">{{ d.articulo.renglon_presupuestario }}</span>
                       {% else %}
                         <span class="text-muted">S/R</span>
                       {% endif %}
@@ -76,7 +76,7 @@
                     <td>{{ d.articulo.nombre }}</td>
                     <td>
                       {% if d.articulo.categoria %}
-                        <span class="badge bg-light text-dark border">{{ d.articulo.categoria.nombre }}</span>
+                        <span class="badge badge-light-secondary">{{ d.articulo.categoria.nombre }}</span>
                       {% else %}
                         <span class="text-muted">S/C</span>
                       {% endif %}

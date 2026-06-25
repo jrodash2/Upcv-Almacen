@@ -26,7 +26,7 @@
   <div class="container-fluid">
     <div class="row justify-content-center">
       <div class="col-xl-10 col-lg-11 col-md-12">
-        <div class="card gestor-card shadow-sm border-0 rounded-4 gestor-animate">
+        <div class="card shadow-sm border-0 rounded-4 gestor-animate">
           <div class="card-header bg-white border-0 p-4">
             <h5 class="mb-0"><i class="fa fa-file-text-o me-2"></i>Crear Solicitud de Requerimiento</h5>
           </div>
@@ -76,8 +76,8 @@
                 <div class="alert alert-danger py-2">{{ formset.non_form_errors|striptags }}</div>
               {% endif %}
               {{ formset.management_form }}
-              <div class="table-responsive gestor-table-wrapper">
-                <table class="table table-hover align-middle gestor-table riho-table datatable" id="tabla-crear-solicitud-requerimiento">
+              <div class="table-responsive-wrapper">
+                <table class="display datatables" id="tabla-crear-solicitud-requerimiento">
                   <thead class="table-light">
                     <tr>
                       <th>Artículo</th>
@@ -100,10 +100,10 @@
                           {% endfor %}
                         </td>
                         <td class="text-center">
-                          <span class="badge bg-light text-dark border categoria-articulo">S/C</span>
+                          <span class="badge badge-light-secondary categoria-articulo">S/C</span>
                         </td>
                         <td class="text-center">
-                          <span class="badge bg-light text-dark border cantidad-disponible">0</span>
+                          <span class="badge badge-light-secondary cantidad-disponible">0</span>
                         </td>
                         <td>
                           {{ detalle_form.cantidad }}
@@ -130,10 +130,10 @@
                 <tr class="detalle-form-row">
                   <td>{{ formset.empty_form.articulo }}</td>
                   <td class="text-center">
-                    <span class="badge bg-light text-dark border categoria-articulo">S/C</span>
+                    <span class="badge badge-light-secondary categoria-articulo">S/C</span>
                   </td>
                   <td class="text-center">
-                    <span class="badge bg-light text-dark border cantidad-disponible">0</span>
+                    <span class="badge badge-light-secondary cantidad-disponible">0</span>
                   </td>
                   <td>{{ formset.empty_form.cantidad }}</td>
                   <td class="text-center">
