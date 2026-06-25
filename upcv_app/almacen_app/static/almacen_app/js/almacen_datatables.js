@@ -43,14 +43,24 @@
             return;
         }
 
+<<<<<<< HEAD
         $('.datatables, table.display').each(function (index) {
             ensureRihoTableMarkup(this, index);
+=======
+        $('.datatable, table.display').each(function () {
+            var $table = $(this);
+            $table.addClass('display');
+
+            if (!$table.parent().hasClass('table-responsive')) {
+                $table.wrap('<div class="table-responsive"></div>');
+            }
+>>>>>>> main
 
             if ($.fn.DataTable.isDataTable(this) || !hasRealRows(this)) {
                 return;
             }
 
-            $(this).DataTable({
+            $table.DataTable({
                 pageLength: 10,
                 lengthMenu: [10, 25, 50, 100],
                 autoWidth: false,
@@ -71,9 +81,22 @@
         });
     }
 
-    $(document).ready(function () {
-        initRihoDataTables();
+<<<<<<< HEAD
+=======
+    function normalizeRihoModals() {
         $('.modal-dialog').addClass('modal-dialog-centered');
+        $('.modal .modal-footer .btn[data-bs-dismiss], .modal .modal-footer .btn[data-dismiss]').addClass('btn-secondary');
+    }
+
+>>>>>>> main
+    $(document).ready(function () {
+        enhanceRihoUI();
+        initRihoDataTables();
+<<<<<<< HEAD
+        $('.modal-dialog').addClass('modal-dialog-centered');
+=======
+        normalizeRihoModals();
+>>>>>>> main
         if (window.feather) {
             window.feather.replace();
         }

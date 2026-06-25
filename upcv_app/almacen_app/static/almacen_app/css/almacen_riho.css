@@ -5,7 +5,10 @@
  */
 
 /* Solo evita desbordes en tablas anchas sin cambiar su apariencia Riho. */
+<<<<<<< HEAD
 .page-body .dt-ext,
+=======
+>>>>>>> main
 .page-body .table-responsive,
 .page-body .theme-scrollbar {
     max-width: 100%;
