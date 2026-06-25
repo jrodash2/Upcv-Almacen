@@ -27,7 +27,7 @@
         <!-- Formulario de creación de usuario -->
         <div class="col-xl-12">
           <div class="card">
-            <div class="card-header">
+            <div class="card-header pb-0 card-no-border">
               <!-- Puedes agregar un título aquí si lo deseas -->
             </div>
             <div class="card-body">
@@ -100,7 +100,8 @@
               <!-- Tabla para mostrar los usuarios creados -->
               <div class="mt-4">
                 <h5>Usuarios Creados</h5>
-                <table class="display datatable" id="tabla-user-form">
+                <div class="dt-ext table-responsive custom-scrollbar">
+                <table class="display datatables" id="tabla-user-form">
                   <thead>
                     <tr>
                       <th>ID</th>
@@ -127,6 +128,7 @@
                     {% endfor %}
                   </tbody>
                 </table>
+                </div>
               </div>
             </div>
           </div>

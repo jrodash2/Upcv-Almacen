@@ -94,40 +94,12 @@
   margin-bottom: .4rem;
 }
 
+/* Las tablas del gestor heredan la apariencia original de Riho/DataTables. */
 .gestor-table-wrapper {
-  border-radius: 18px;
-  overflow: hidden;
-  border: 1px solid var(--gestor-border);
   background: #fff;
 }
 
 .gestor-table { margin-bottom: 0 !important; }
-
-.gestor-table thead th,
-.gestor-page table.display thead th {
-  background: var(--gestor-soft) !important;
-  color: var(--gestor-muted) !important;
-  font-size: .72rem !important;
-  font-weight: 800 !important;
-  text-transform: uppercase;
-  letter-spacing: .06em;
-  border-bottom: 1px solid #e2e8f0 !important;
-  padding: .95rem !important;
-  white-space: nowrap;
-}
-
-.gestor-table tbody td,
-.gestor-page table.display tbody td {
-  color: #334155;
-  font-size: .88rem;
-  padding: .9rem .95rem !important;
-  vertical-align: middle;
-}
-
-.gestor-table tbody tr,
-.gestor-page table.display tbody tr { transition: background-color .18s ease; }
-.gestor-table tbody tr:hover,
-.gestor-page table.display tbody tr:hover { background: var(--gestor-soft); }
 
 .gestor-badge {
   border-radius: 999px;
