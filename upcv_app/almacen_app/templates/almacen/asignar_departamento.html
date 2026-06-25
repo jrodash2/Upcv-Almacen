@@ -83,7 +83,7 @@
               <div class="mt-4">
                 <h5>Usuarios con Departamentos Asignados</h5>
                 <div class="table-responsive custom-scrollbar">
-                  <table class="display table table-hover align-middle riho-table datatable" id="tabla-asignar-departamento">
+                  <table class="display datatable" id="tabla-asignar-departamento">
                     <thead>
                       <tr>
                         <th>ID</th>
@@ -173,7 +173,7 @@
 
 <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content dark-sign-up">
+    <div class="modal-content">
       <form id="deleteForm" method="POST">
         {% csrf_token %}
         <div class="modal-body social-profile">

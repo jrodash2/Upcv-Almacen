@@ -97,7 +97,7 @@
                 <div class="mt-5">
                   <h5>Artículos Asignados</h5>
                   <div class="table-responsive custom-scrollbar">
-                    <table class="display table table-hover align-middle riho-table datatable" id="tabla-transferir-articulos">
+                    <table class="display datatable" id="tabla-transferir-articulos">
                       <thead>
                         <tr>
                           <th>ID</th>
@@ -142,9 +142,9 @@
               var tr = document.createElement('tr');
               tr.innerHTML = `
                 <td>${articulo.id}</td>
-                <td><span class="badge bg-light text-dark border">${articulo.renglon_presupuestario || 'S/R'}</span></td>
+                <td><span class="badge badge-light-secondary">${articulo.renglon_presupuestario || 'S/R'}</span></td>
                 <td>${articulo.nombre}</td>
-                <td><span class="badge bg-light text-dark border">${articulo.categoria || 'S/C'}</span></td>
+                <td><span class="badge badge-light-secondary">${articulo.categoria || 'S/C'}</span></td>
                 <td>${articulo.cantidad_asignada || articulo.cantidad_disponible || 0}</td>
                 <td><button class="btn btn-success btn-sm transferir-btn" data-articulo-id="${articulo.id}" data-articulo-nombre="${articulo.nombre}">Transferir</button></td>
               `;

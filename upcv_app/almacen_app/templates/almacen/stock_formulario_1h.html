@@ -32,7 +32,7 @@
       <div class="card-body">
         <div class="table-responsive custom-scrollbar">
          <!-- Tabla principal de stock con DataTables global -->
-<table class="display table table-hover align-middle riho-table datatable" id="tabla-stock">
+<table class="display datatable" id="tabla-stock">
   <thead>
     <tr>
       <th style="width: 80px;">ID</th>
@@ -48,13 +48,13 @@
   </thead>
   <tbody>
     {% for item in stock_list %}
-    <tr {% if item.disponible == 0 %}class="table-danger"{% endif %}>
+    <tr>
       <td class="text-center">
-        <span class="badge bg-light text-dark border">{{ item.articulo_id }}</span>
+        <span class="badge badge-light-secondary">{{ item.articulo_id }}</span>
       </td>
       <td class="text-center">
         {% if item.renglon_presupuestario %}
-          <span class="badge bg-light text-dark border">{{ item.renglon_presupuestario }}</span>
+          <span class="badge badge-light-secondary">{{ item.renglon_presupuestario }}</span>
         {% else %}
           <span class="text-muted">S/R</span>
         {% endif %}
@@ -62,7 +62,7 @@
       <td>{{ item.articulo }}</td>
       <td>
         {% if item.categoria %}
-          <span class="badge bg-light text-dark border">{{ item.categoria }}</span>
+          <span class="badge badge-light-secondary">{{ item.categoria }}</span>
         {% else %}
           <span class="text-muted">S/C</span>
         {% endif %}
@@ -72,13 +72,13 @@
       <td>{{ item.departamentos }}</td>
       <td>
         {% if item.disponible > 0 %}
-          <span class="badge bg-success">{{ item.disponible }}</span>
+          <span class="badge badge-light-success">{{ item.disponible }}</span>
         {% else %}
-          <span class="badge bg-primary">0</span>
+          <span class="badge badge-light-danger">0</span>
         {% endif %}
       </td>
       <td>
-        <a href="{% url 'almacen:historial_kardex' item.articulo_id %}">Ver historial</a>
+        <a class="btn btn-primary btn-sm" href="{% url 'almacen:historial_kardex' item.articulo_id %}"><i data-feather="eye"></i> Ver historial</a>
 
 
 
@@ -86,10 +86,10 @@
         {% if item.disponible > 0 %}
           <!-- Botón que abre el modal -->
        <!-- En tu tabla de artículos -->
-<button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#asignarModal"
+<button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#asignarModal"
         data-articulo-id="{{ item.articulo_id }}"
         data-disponible="{{ item.disponible }}">
-  Asignar
+  <i data-feather="check-circle"></i> Asignar
 </button>
 
 
@@ -99,31 +99,18 @@
     </tr>
 
 
-<!-- Modal para Crear Nueva Asignación con imagen de fondo -->
+    {% endfor %}
+  </tbody>
+</table>
+
+<!-- Modal para Crear Nueva Asignación -->
 <div class="modal fade" id="asignarModal" tabindex="-1" aria-labelledby="asignarModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content dark-sign-up">
-      <div class="modal-body social-profile text-start p-4">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" id="asignarModalLabel">Asignar artículo</h5><button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body">
 
-        <!-- Contenedor -->
-        <div class="Riho-demo-img">
-          <!-- Puntos decorativos -->
-          <ul class="dot-group pb-3 pt-0">
-            <li></li>
-            <li></li>
-            <li></li>
-          </ul>
-
-          <!-- Título -->
-          <div class="title-wrapper pb-3 modal-heading text-center">
-            <h5 class="theme-name mb-0"><span>Asignar - </span>Artículo</h5>
-            <p>Complete el formulario para asignar este artículo a un departamento.</p>
-          </div>
-
-          <!-- Imagen -->
-          <div class="overflow-hidden text-center mb-4">
-            <img class="img-fluid" src="{% static 'assets/images/logo/logo.png'%}" alt="imagen decorativa">
-          </div>
+          <p class="text-muted">Complete el formulario para asignar este artículo a un departamento.</p>
 
           <!-- Formulario -->
           <form method="POST" action="{% url 'almacen:crear_asignacion_detalle_articulo' %}" class="row g-3">
@@ -137,7 +124,7 @@
 
             <div class="col-md-12">
               <label for="id_destino" class="form-label">Departamento Destino</label>
-              <select name="destino" id="id_destino" class="form-control" required>
+              <select name="destino" id="id_destino" class="form-select" required>
                 {% for depto in departamentos %}
                   <option value="{{ depto.id }}">{{ depto.nombre }}</option>
                 {% empty %}
@@ -179,13 +166,6 @@
     cantidadInput.value = '';  // Reset value when modal opens
   });
 </script>
-
-
-
-
-    {% endfor %}
-  </tbody>
-</table>
 
         </div>
       </div>

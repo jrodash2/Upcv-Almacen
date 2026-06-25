@@ -9,80 +9,7 @@
 
 <!-- resto de tu código -->
 
-<style>
-  /* Aplicamos estos estilos a las tablas */
-/* Aplicamos estos estilos a las tablas */
-/* Aplicamos estos estilos a las tablas */
-table.bill-content, 
-table.order-details {
-  width: 60%; /* Reducir el ancho de la tabla al 60% del contenedor */
-  table-layout: fixed; /* Esto asegura que la tabla no se agrande por el contenido */
-  max-width: 80%; /* La tabla no se expandirá más allá del tamaño del contenedor */
-}
 
-table.bill-content td, 
-table.order-details td, 
-table.bill-content th, 
-table.order-details th {
-  padding: 12px 10px; /* Reducir el padding para compactar las celdas */
-  word-wrap: break-word; /* Romper palabras largas para ajustarlas */
-  white-space: normal; /* Permitir que el texto se ajuste a varias líneas */
-  overflow: hidden; /* Evitar que el contenido se desborde */
-  text-overflow: ellipsis; /* Mostrar '...' si el texto es demasiado largo */
-}
-
-table.bill-content td, 
-table.order-details td {
-  max-width: 250px; /* Reducir el ancho máximo de las celdas */
-}
-
-table.bill-content th, 
-table.order-details th {
-  text-align: left;
-}
-
-/* Contenedor para las tarjetas */
-.card-container {
-  display: inline-block;
-  width: fit-content; /* Se ajusta al tamaño del contenido (imagen) */
-  margin: 15px; /* Reducir margen alrededor de la tarjeta */
-}
-
-.card {
-  display: inline-block;
-  width: 80%; /* La tarjeta se ajusta al tamaño del contenedor */
-  height: fit-content;
-  overflow: hidden;
-  padding: 0;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-}
-
-.card img {
-  display: block;
-  max-width: 100%;
-  height: auto;
-  width: 100%; /* Se asegura que la imagen ocupe todo el espacio del contenedor */
-}
-
-/* Contenedor general para las tablas y las tarjetas */
-.container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  max-width: 800px; /* Reducir el máximo tamaño del contenedor */
-  margin: 0 auto;
-}
-
-
-
-.modern-card { border: 0; border-radius: 18px; box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08); }
-.form-control, .form-select { border-radius: 12px; min-height: 42px; }
-.table thead th { font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; color: #64748b; }
-.action-btn { border-radius: 10px; }
-</style>
 
 <div class="page-body gestor-page">
   
@@ -118,7 +45,7 @@ table.order-details th {
       {% endif %}
 
       {% if solicitud_relacionada %}
-      <div class="card gestor-card gestor-relation-card border-0 shadow-sm rounded-4 mb-4 gestor-animate">
+      <div class="card gestor-relation-card border-0 shadow-sm rounded-4 mb-4 gestor-animate">
         <div class="card-body p-4">
           <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
             <div>
@@ -336,9 +263,9 @@ table.order-details th {
 <!-- Modal de Anulación con nuevo formato -->
 <div class="modal fade" id="modalAnular" tabindex="-1" aria-labelledby="modalAnularLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content dark-sign-up">
+    <div class="modal-content">
       <div class="modal-body social-profile text-start p-4">
-        <div class="Riho-demo-img">
+        <div class="">
           
           <!-- Encabezado -->
           <div class="title-wrapper pb-3 modal-heading text-center">
@@ -386,9 +313,9 @@ table.order-details th {
 <!-- Modal de Despacho con nuevo formato -->
 <div class="modal fade" id="modalDespachar" tabindex="-1" aria-labelledby="modalDespacharLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content dark-sign-up">
+    <div class="modal-content">
       <div class="modal-body social-profile text-start p-4">
-        <div class="Riho-demo-img">
+        <div class="">
           
           <!-- Encabezado -->
           <div class="title-wrapper pb-3 modal-heading text-center">
@@ -409,8 +336,8 @@ table.order-details th {
             
             <div class="row justify-content-center">
               <div class="col-md-12 mb-3">
-                <div class="table-responsive gestor-table-wrapper">
-                  <table class="table table-bordered align-middle text-center table-hover riho-table datatable" id="tabla-detalle-requerimiento-2">
+                <div class="table-responsive-wrapper">
+                  <table class="table table-bordered align-middle text-center table-hover datatable" id="tabla-detalle-requerimiento-2">
                     <thead >
                       <tr>
                         <th>Artículo</th>
@@ -465,10 +392,10 @@ table.order-details th {
 <!-- Modal para Agregar Detalle (con estilo decorativo e imagen) -->
 <div class="modal fade" id="agregarDetalleModal" tabindex="-1" aria-labelledby="agregarDetalleModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg">
-    <div class="modal-content dark-sign-up">
+    <div class="modal-content">
       <div class="modal-body social-profile text-start p-4">
 
-        <div class="Riho-demo-img">
+        <div class="">
 
           <!-- Decoración superior (opcional) -->
           <ul class="dot-group pb-3 pt-0">
@@ -572,7 +499,7 @@ table.order-details th {
 <!-- Modal para Editar Detalle -->
 <div class="modal fade" id="editarDetalleModal" tabindex="-1" aria-labelledby="editarDetalleModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg">
-    <div class="modal-content dark-sign-up">
+    <div class="modal-content">
       <div class="modal-body p-4">
 
         <div class="title-wrapper pb-3 modal-heading text-center">
@@ -616,11 +543,11 @@ table.order-details th {
 <!-- Modal de Confirmación para eliminar detalle (actualizado con estilo e imagen) -->
 <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content dark-sign-up">
+    <div class="modal-content">
       <div class="modal-body social-profile text-start p-4">
 
         <!-- Contenedor con imagen, título y mensaje -->
-        <div class="Riho-demo-img">
+        <div class="">
 
           <!-- Decoración superior (opcional) -->
           <ul class="dot-group pb-3 pt-0">
