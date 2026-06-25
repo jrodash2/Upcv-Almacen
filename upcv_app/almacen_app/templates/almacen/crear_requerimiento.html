@@ -66,7 +66,7 @@
     <div class="row justify-content-center">
       <div class="col-xl-11 col-lg-12">
         <div class="card card gestor-animate">
-          <div class="card-header py-3 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+          <div class="card-header pb-0 card-no-border py-3 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
             <div>
               <h5 class="mb-0 fw-bold text-dark"><i class="fa fa-tasks me-2 text-primary"></i>{% if es_gestor %}Seguimiento de Requerimientos{% else %}Listado de Requerimientos{% endif %}</h5>
               <small class="text-muted">{% if es_gestor %}Consulta en modo lectura los requerimientos asociados a tus departamentos o solicitudes convertidas.{% else %}Administra y consulta los requerimientos registrados según tus permisos.{% endif %}</small>
@@ -78,8 +78,8 @@
             {% endif %}
           </div>
           <div class="card-body p-4">
-            <div class="table-responsive-wrapper">
-              <table class="display datatable" id="tabla-crear-requerimiento">
+            <div class="dt-ext table-responsive custom-scrollbar">
+              <table class="display datatables" id="tabla-crear-requerimiento">
                 <thead class="table-light">
                   <tr>
                     <th>#</th><th>Departamento</th><th>Creado por</th><th>Fecha</th><th>Estado</th><th>Fecha resolución</th><th class="text-center">Acciones</th>
