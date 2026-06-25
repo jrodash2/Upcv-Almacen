@@ -205,8 +205,9 @@ table.order-details th {
           </tr>
           <tr>
             <td>
-              <table
-                class="order-details table table-hover align-middle riho-table datatable"
+              <div class="dt-ext table-responsive custom-scrollbar">
+<table
+                class="order-details display datatables"
                 style="
                   width: 100%;
                   border-collapse: separate;
@@ -300,7 +301,7 @@ table.order-details th {
                     </td>
                     <td style="padding: 18px 15px">
                       {% if detalle.articulo.categoria %}
-                        <span class="badge bg-light text-dark border">{{ detalle.articulo.categoria.nombre }}</span>
+                        <span class="badge badge-light-secondary">{{ detalle.articulo.categoria.nombre }}</span>
                       {% else %}
                         <span class="text-muted">S/C</span>
                       {% endif %}
@@ -352,6 +353,7 @@ table.order-details th {
                   </tr>
                 </tbody>
               </table>
+</div>
             </td>
             
           </tr>
@@ -404,11 +406,11 @@ table.order-details th {
 <!-- Modal para seleccionar artículo con imagen de fondo -->
 <div class="modal fade" id="detalleFacturaModal" tabindex="-1" aria-labelledby="detalleFacturaModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg">
-    <div class="modal-content dark-sign-up">
+    <div class="modal-content">
       <div class="modal-body social-profile text-start p-4">
 
         <!-- Contenedor con imagen, título y formulario -->
-        <div class="Riho-demo-img">
+        <div class="">
           <!-- Estilo decorativo opcional -->
           <ul class="dot-group pb-3 pt-0">
             <li></li>
@@ -506,7 +508,8 @@ table.order-details th {
         <!-- Tabla de Artículos existentes -->
         <div class="mt-4">
           <h5>Artículos Creados</h5>
-          <table class="display table table-hover align-middle riho-table datatable" id="tabla-agregar-detalle-factura-2">
+          <div class="dt-ext table-responsive custom-scrollbar">
+<table class="display datatables" id="tabla-agregar-detalle-factura-2">
             <thead>
               <tr>
                 <th>ID</th>
@@ -524,7 +527,7 @@ table.order-details th {
                   <td>{{ articulo.nombre }}</td>
                   <td>
                     {% if articulo.categoria %}
-                      <span class="badge bg-light text-dark border">{{ articulo.categoria.nombre }}</span>
+                      <span class="badge badge-light-secondary">{{ articulo.categoria.nombre }}</span>
                     {% else %}
                       <span class="text-muted">S/C</span>
                     {% endif %}
@@ -551,6 +554,7 @@ table.order-details th {
               {% endfor %}
             </tbody>
           </table>
+</div>
         </div>
 
       </div>
@@ -687,11 +691,11 @@ document.querySelectorAll('.seleccionar-articulo').forEach(button => {
 <!-- Modal para Crear Nuevo Artículo con imagen de fondo -->
 <div class="modal fade" id="crearArticuloModal" tabindex="-1" aria-labelledby="crearArticuloModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content dark-sign-up">
+    <div class="modal-content">
       <div class="modal-body social-profile text-start p-4">
 
         <!-- Contenedor con imagen, título y formulario -->
-        <div class="Riho-demo-img">
+        <div class="">
           <!-- Estilo decorativo opcional -->
           <ul class="dot-group pb-3 pt-0">
             <li></li>
@@ -776,11 +780,11 @@ document.querySelectorAll('.seleccionar-articulo').forEach(button => {
 <!-- Modal para Editar Detalle -->
 <div class="modal fade" id="editarDetalleModal" tabindex="-1" aria-labelledby="editarDetalleModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content dark-sign-up">
+    <div class="modal-content">
       <div class="modal-body social-profile text-start p-4">
 
         <!-- Contenedor con imagen, título y formulario -->
-        <div class="Riho-demo-img">
+        <div class="">
           <!-- Estilo decorativo opcional -->
           <ul class="dot-group pb-3 pt-0">
             <li></li>
@@ -922,11 +926,11 @@ function toggleFechaVencimiento() {
 <!-- Modal de Confirmación con imagen y estilo -->
 <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content dark-sign-up">
+    <div class="modal-content">
       <div class="modal-body social-profile text-start p-4">
 
         <!-- Contenedor con imagen, título y formulario -->
-        <div class="Riho-demo-img">
+        <div class="">
           <!-- Estilo decorativo opcional -->
           <ul class="dot-group pb-3 pt-0">
             <li></li>
