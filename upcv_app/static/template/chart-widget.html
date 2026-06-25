@@ -1,0 +1,101 @@
+{% extends 'empleados/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="page-body">
+  <div class="container-fluid">
+
+    <!-- Fila de gráficas -->
+    <div class="row mt-4">
+      <!-- Gráfica: Contratos Vigentes -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="card-title">Contratos Vigentes</h5>
+          </div>
+          <div class="card-body">
+            <div id="contratosVigentesChart"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gráfica: Contratos por Año -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="card-title">Contratos por Año</h5>
+          </div>
+          <div class="card-body">
+            <div id="contratosPorAnioChart"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nueva Gráfica: Empleados por Sede -->
+    <div class="row mt-4">
+      <div class="col-xl-5 col-lg-12 box-col-12">
+        <div class="card">
+          <div class="card-header">
+            <h4 class="card-title">Empleados por Sede</h4>
+          </div>
+          <div class="card-body">
+            <div class="chart-container column-container">
+              <div id="empleadosPorSedeChart"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+<script>
+  // Donut: Contratos vigentes vs no vigentes
+  const optionsContratosVigentes = {
+    chart: { type: 'donut', height: 350 },
+    series: [{{ datos_empleados.contratos_vigentes }}, {{ datos_empleados.contratos_no_vigentes }}],
+    labels: ['Vigentes', 'No Vigentes'],
+    colors: ['#0c4a6e', '#4cb8a4'],
+    tooltip: {
+      y: { formatter: val => val + ' contratos' }
+    }
+  };
+  new ApexCharts(document.querySelector("#contratosVigentesChart"), optionsContratosVigentes).render();
+
+  // Barras: Contratos por año
+  const contratosPorAnio = {{ contratos_por_anio|safe }};
+  const contratosLabels = contratosPorAnio.map(item => item.anio);
+  const contratosData = contratosPorAnio.map(item => item.total);
+  const optionsContratosAnio = {
+    chart: { type: 'bar', height: 350, toolbar: { show: false } },
+    series: [{ name: 'Contratos', data: contratosData }],
+    xaxis: { categories: contratosLabels },
+    colors: ['#0c4a6e'],
+    tooltip: {
+      y: { formatter: val => val + ' contratos' }
+    }
+  };
+  new ApexCharts(document.querySelector("#contratosPorAnioChart"), optionsContratosAnio).render();
+  
+  /// Gráfica: Empleados por Sede
+  const empleadosPorSede = {{ empleados_por_sede|safe }};
+  const sedeLabels = empleadosPorSede.map(item => item.sede__nombre || 'Sin Sede');
+  const sedeData = empleadosPorSede.map(item => item.total);
+
+  const optionsEmpleadosSede = {
+    chart: { type: 'bar', height: 350, toolbar: { show: false } },
+    series: [{ name: 'Empleados', data: sedeData }],
+    xaxis: { categories: sedeLabels },
+    colors: ['#4cb8a4'],
+    tooltip: {
+      y: { formatter: val => val + ' empleados' }
+    }
+  };
+
+  new ApexCharts(document.querySelector("#empleadosPorSedeChart"), optionsEmpleadosSede).render();
+</script>
+{% endblock %}
