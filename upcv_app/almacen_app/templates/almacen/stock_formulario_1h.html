@@ -29,10 +29,18 @@
   <!-- Container-fluid starts-->
   <div class="container-fluid">
     <div class="card">
+      <div class="card-header pb-0 card-no-border">
+        <h4>Stock de Artículos</h4>
+        <span>Existencias registradas por artículo, categoría y departamento.</span>
+      </div>
       <div class="card-body">
-        <div class="table-responsive custom-scrollbar">
+        <div class="dt-ext table-responsive custom-scrollbar">
          <!-- Tabla principal de stock con DataTables global -->
+<<<<<<< HEAD
+<table class="display datatables" id="tabla-stock-articulos">
+=======
 <table class="display datatable" id="tabla-stock">
+>>>>>>> main
   <thead>
     <tr>
       <th style="width: 80px;">ID</th>
@@ -78,7 +86,11 @@
         {% endif %}
       </td>
       <td>
+<<<<<<< HEAD
+        <a class="btn btn-outline-primary btn-sm" href="{% url 'almacen:historial_kardex' item.articulo_id %}"><i data-feather="eye"></i> Ver historial</a>
+=======
         <a class="btn btn-primary btn-sm" href="{% url 'almacen:historial_kardex' item.articulo_id %}"><i data-feather="eye"></i> Ver historial</a>
+>>>>>>> main
 
 
 
