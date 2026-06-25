@@ -51,7 +51,7 @@
       <th>Asignado</th>
       <th>Departamento(s)</th>
       <th>Disponible</th>
-      <th>Acción</th> <!-- Nueva columna -->
+      <th class="text-center">Acción</th>
     </tr>
   </thead>
   <tbody>
@@ -85,24 +85,21 @@
           <span class="badge badge-light-danger">0</span>
         {% endif %}
       </td>
-      <td>
-        <a class="btn btn-outline-primary btn-sm" href="{% url 'almacen:historial_kardex' item.articulo_id %}"><i data-feather="eye"></i> Ver historial</a>
-
-
-
-
-        {% if item.disponible > 0 %}
-          <!-- Botón que abre el modal -->
-       <!-- En tu tabla de artículos -->
-<button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#asignarModal"
-        data-articulo-id="{{ item.articulo_id }}"
-        data-disponible="{{ item.disponible }}">
-  <i data-feather="check-circle"></i> Asignar
-</button>
-
-
-
-        {% endif %}
+      <td class="text-center align-middle">
+        <div class="d-flex flex-column align-items-center gap-1 acciones-stock">
+          <a class="btn btn-outline-primary btn-sm px-2 py-1 accion-btn" href="{% url 'almacen:historial_kardex' item.articulo_id %}">
+            <i data-feather="eye"></i>
+            <span>Historial</span>
+          </a>
+          {% if item.disponible > 0 %}
+          <button class="btn btn-primary btn-sm px-2 py-1 accion-btn" data-bs-toggle="modal" data-bs-target="#asignarModal"
+                  data-articulo-id="{{ item.articulo_id }}"
+                  data-disponible="{{ item.disponible }}">
+            <i data-feather="check-circle"></i>
+            <span>Asignar</span>
+          </button>
+          {% endif %}
+        </div>
       </td>
     </tr>
 

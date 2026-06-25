@@ -27,3 +27,25 @@
     height: 16px;
     vertical-align: text-bottom;
 }
+
+/* Acciones compactas para la tabla de stock sin sobrescribir estilos Riho. */
+.acciones-stock {
+    min-width: 90px;
+}
+
+.acciones-stock .accion-btn {
+    width: 86px;
+    min-height: 28px;
+    font-size: 11px;
+    line-height: 1.1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.acciones-stock .accion-btn svg {
+    width: 13px;
+    height: 13px;
+}
