@@ -30,12 +30,8 @@
   <div class="container-fluid">
     <div class="card">
       <div class="card-header pb-0 card-no-border">
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-          <div>
-            <h4 class="mb-0">Stock de Artículos</h4>
-            <span>Existencias, asignaciones y disponibilidad del almacén.</span>
-          </div>
-        </div>
+        
+        <span>Existencias registradas por artículo, categoría y departamento.</span>
       </div>
       <div class="card-body">
         <div class="dt-ext table-responsive custom-scrollbar">
@@ -51,7 +47,7 @@
       <th>Asignado</th>
       <th>Departamento(s)</th>
       <th>Disponible</th>
-      <th class="text-center">Acción</th>
+      <th>Acción</th> <!-- Nueva columna -->
     </tr>
   </thead>
   <tbody>
@@ -64,7 +60,7 @@
         {% if item.renglon_presupuestario %}
           <span class="badge badge-light-secondary">{{ item.renglon_presupuestario }}</span>
         {% else %}
-          <span class="badge badge-light-secondary">S/R</span>
+          <span class="text-muted">S/R</span>
         {% endif %}
       </td>
       <td>{{ item.articulo }}</td>
@@ -72,7 +68,7 @@
         {% if item.categoria %}
           <span class="badge badge-light-secondary">{{ item.categoria }}</span>
         {% else %}
-          <span class="badge badge-light-danger">S/C</span>
+          <span class="text-muted">S/C</span>
         {% endif %}
       </td>
       <td>{{ item.ingresado }}</td>
@@ -85,22 +81,24 @@
           <span class="badge badge-light-danger">0</span>
         {% endif %}
       </td>
-      <td class="text-center align-middle">
-        <div class="d-flex flex-column align-items-center gap-1 acciones-stock">
-          <a class="btn btn-outline-primary btn-sm px-2 py-1 accion-btn" href="{% url 'almacen:historial_kardex' item.articulo_id %}">
-            <i data-feather="eye"></i>
-            <span>Historial</span>
-          </a>
-          {% if item.disponible > 0 %}
-          <button class="btn btn-primary btn-sm px-2 py-1 accion-btn" data-bs-toggle="modal" data-bs-target="#asignarModal"
-                  data-articulo-id="{{ item.articulo_id }}"
-                  data-disponible="{{ item.disponible }}">
-            <i data-feather="check-circle"></i>
-            <span>Asignar</span>
-          </button>
-          {% endif %}
-        </div>
-      </td>
+     <td>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-primary btn-sm"
+           href="{% url 'almacen:historial_kardex' item.articulo_id %}">
+            <i data-feather="eye"></i> 
+        </a>
+
+        {% if item.disponible > 0 %}
+        <button class="btn btn-primary btn-sm"
+                data-bs-toggle="modal"
+                data-bs-target="#asignarModal"
+                data-articulo-id="{{ item.articulo_id }}"
+                data-disponible="{{ item.disponible }}">
+            <i data-feather="check-circle"></i> 
+        </button>
+        {% endif %}
+    </div>
+</td>
     </tr>
 
 
