@@ -49,3 +49,105 @@
     width: 13px;
     height: 13px;
 }
+
+/* Tarjetas superiores del dashboard/listado de requerimientos. */
+.requerimiento-stats .stat-card {
+    border: 1px solid rgba(82, 82, 108, 0.12);
+    border-radius: 14px;
+    box-shadow: 0 8px 22px rgba(82, 82, 108, 0.08);
+    transition: all 0.2s ease-in-out;
+    overflow: hidden;
+    position: relative;
+}
+
+.requerimiento-stats .stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 28px rgba(82, 82, 108, 0.13);
+}
+
+.requerimiento-stats .stat-card::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 5px;
+    height: 100%;
+    border-radius: 14px 0 0 14px;
+}
+
+.requerimiento-stats .stat-label {
+    display: block;
+    color: #6c757d;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 6px;
+}
+
+.requerimiento-stats .stat-value {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.requerimiento-stats .stat-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 46px;
+}
+
+.requerimiento-stats .stat-icon svg {
+    width: 22px;
+    height: 22px;
+}
+
+.requerimiento-stats .stat-card-primary::before { background: #7366ff; }
+
+.requerimiento-stats .stat-card-primary .stat-icon {
+    color: #7366ff;
+    background: rgba(115, 102, 255, 0.12);
+}
+
+.requerimiento-stats .stat-card-warning::before { background: #ffaa05; }
+
+.requerimiento-stats .stat-card-warning .stat-icon {
+    color: #ffaa05;
+    background: rgba(255, 170, 5, 0.14);
+}
+
+.requerimiento-stats .stat-card-info::before { background: #54ba4a; }
+
+.requerimiento-stats .stat-card-info .stat-icon {
+    color: #54ba4a;
+    background: rgba(84, 186, 74, 0.12);
+}
+
+.requerimiento-stats .stat-card-success::before { background: #65c15c; }
+
+.requerimiento-stats .stat-card-success .stat-icon {
+    color: #65c15c;
+    background: rgba(101, 193, 92, 0.12);
+}
+
+.requerimiento-stats .stat-card-danger::before { background: #fc4438; }
+
+.requerimiento-stats .stat-card-danger .stat-icon {
+    color: #fc4438;
+    background: rgba(252, 68, 56, 0.12);
+}
+
+@media (max-width: 768px) {
+    .requerimiento-stats .stat-value {
+        font-size: 24px;
+    }
+
+    .requerimiento-stats .stat-icon {
+        width: 40px;
+        height: 40px;
+        flex-basis: 40px;
+    }
+}
