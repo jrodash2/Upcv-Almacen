@@ -56,6 +56,7 @@
     }
 
     $(document).ready(function () {
+        enhanceRihoUI();
         initRihoDataTables();
         normalizeRihoModals();
         if (window.feather) {
