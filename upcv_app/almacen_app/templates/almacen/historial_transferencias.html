@@ -1,42 +1,45 @@
 {% extends 'almacen/base.html' %}
-
 {% block title %}Historial de Transferencias{% endblock %}
-
 {% block content %}
-  <div class="container">
-    <h2>Historial de Transferencias</h2>
-    
-    <table class="table table-hover align-middle riho-table datatable" id="tabla-historial-transferencias">
-      <thead>
-        <tr>
-          <th>Artículo</th>
-          <th>Categoría</th>
-          <th>Cantidad</th>
-          <th>Departamento Origen</th>
-          <th>Departamento Destino</th>
-          <th>Fecha</th>
-          <th>Usuario</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for transferencia in transferencias %}
-          <tr>
-            <td>{{ transferencia.articulo.nombre }}</td>
-            <td>
-              {% if transferencia.articulo.categoria %}
-                <span class="badge bg-light text-dark border">{{ transferencia.articulo.categoria.nombre }}</span>
-              {% else %}
-                <span class="text-muted">S/C</span>
-              {% endif %}
-            </td>
-            <td>{{ transferencia.cantidad }}</td>
-            <td>{{ transferencia.departamento_origen.nombre }}</td>
-            <td>{{ transferencia.departamento_destino.nombre }}</td>
-            <td>{{ transferencia.fecha_transferencia }}</td>
-            <td>{{ transferencia.usuario.username }}</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+<div class="page-body">
+  <div class="container-fluid">
+    <div class="page-title">
+      <div class="row">
+        <div class="col-sm-6"><h3>Historial de Transferencias</h3></div>
+        <div class="col-sm-6">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'almacen:dahsboard' %}"><i data-feather="home"></i></a></li>
+            <li class="breadcrumb-item">Almacén</li>
+            <li class="breadcrumb-item active">Historial</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h5 class="mb-0">Transferencias registradas</h5><span>Movimientos entre departamentos.</span></div>
+      <div class="card-body">
+        <div class="table-responsive theme-scrollbar">
+          <table class="display datatable" id="tabla-historial-transferencias">
+            <thead>
+              <tr><th>Artículo</th><th>Categoría</th><th>Cantidad</th><th>Departamento Origen</th><th>Departamento Destino</th><th>Fecha</th><th>Usuario</th></tr>
+            </thead>
+            <tbody>
+              {% for transferencia in transferencias %}
+              <tr>
+                <td>{{ transferencia.articulo.nombre }}</td>
+                <td>{% if transferencia.articulo.categoria %}<span class="badge badge-light-primary">{{ transferencia.articulo.categoria.nombre }}</span>{% else %}<span class="text-muted">S/C</span>{% endif %}</td>
+                <td>{{ transferencia.cantidad }}</td>
+                <td>{{ transferencia.departamento_origen.nombre }}</td>
+                <td>{{ transferencia.departamento_destino.nombre }}</td>
+                <td>{{ transferencia.fecha_transferencia }}</td>
+                <td>{{ transferencia.usuario.username }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
+</div>
 {% endblock %}

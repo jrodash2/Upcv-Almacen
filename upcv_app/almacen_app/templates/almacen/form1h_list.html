@@ -1,31 +1,54 @@
 {% extends 'almacen/base.html' %}
 {% load static %}
 {% block content %}
-<h1>Lista de Formularios 1H</h1>
-<a href="{% url 'almacen:form1h_create' %}" class="btn btn-primary">Crear Nuevo</a>
-<table class="table table-hover align-middle riho-table datatable" id="tabla-form1h-list">
-    <thead>
-        <tr>
-            <th>#</th>
-            <th>Proveedor</th>
-            <th>Número de Factura</th>
-            <th>Fecha de Factura</th>
-            <th>Acciones</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for form in form1h_list %}
-        <tr>
-            <td>{{ forloop.counter }}</td>
-            <td>{{ form.proveedor_nombre }}</td>
-            <td>{{ form.numero_factura }}</td>
-            <td>{{ form.fecha_factura }}</td>
-            <td>
-                <a href="" class="btn btn-warning">Editar</a>
-                <a href="" class="btn btn-danger">Eliminar</a>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="page-body">
+  <div class="container-fluid">
+    <div class="page-title">
+      <div class="row">
+        <div class="col-sm-6"><h3>Lista de Formularios 1H</h3></div>
+        <div class="col-sm-6">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'almacen:dahsboard' %}"><i data-feather="home"></i></a></li>
+            <li class="breadcrumb-item">Almacén</li>
+            <li class="breadcrumb-item active">Formularios 1H</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+          <h5 class="mb-0">Formularios registrados</h5>
+          <span>Consulta y administración de formularios 1H.</span>
+        </div>
+        <a href="{% url 'almacen:form1h_create' %}" class="btn btn-primary"><i data-feather="plus-circle"></i> Crear Nuevo</a>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive theme-scrollbar">
+          <table class="display datatable" id="tabla-formularios-1h">
+            <thead>
+              <tr><th>#</th><th>Proveedor</th><th>Número de Factura</th><th>Fecha de Factura</th><th>Acciones</th></tr>
+            </thead>
+            <tbody>
+              {% for form in form1h_list %}
+              <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ form.proveedor_nombre }}</td>
+                <td>{{ form.numero_factura }}</td>
+                <td>{{ form.fecha_factura }}</td>
+                <td>
+                  <div class="riho-actions">
+                    <a href="" class="btn btn-warning btn-sm"><i data-feather="edit"></i> Editar</a>
+                    <a href="" class="btn btn-danger btn-sm"><i data-feather="trash-2"></i> Eliminar</a>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}

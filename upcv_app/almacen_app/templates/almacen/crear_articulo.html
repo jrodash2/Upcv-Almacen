@@ -147,7 +147,7 @@
               <div class="mt-4">
                 <h5>Artículos Creados</h5>
                 <div class="table-responsive custom-scrollbar">
-                  <table class="display table table-hover align-middle riho-table datatable" id="tabla-crear-articulo">
+                  <table class="display datatable" id="tabla-crear-articulo">
                     <thead>
                       <tr>
                         <th>ID</th>
@@ -165,7 +165,7 @@
                         <td>{{ articulo.id }}</td>
                         <td>
                           {% if articulo.renglon_presupuestario %}
-                            <span class="badge bg-light text-dark border">{{ articulo.renglon_presupuestario }}</span>
+                            <span class="badge badge-light-secondary">{{ articulo.renglon_presupuestario }}</span>
                           {% else %}
                             <span class="text-muted">S/R</span>
                           {% endif %}
@@ -173,7 +173,7 @@
                         <td>{{ articulo.nombre }}</td>
                         <td>
                           {% if articulo.categoria %}
-                            <span class="badge bg-light text-dark border">{{ articulo.categoria.nombre }}</span>
+                            <span class="badge badge-light-secondary">{{ articulo.categoria.nombre }}</span>
                           {% else %}
                             <span class="text-muted">S/C</span>
                           {% endif %}
