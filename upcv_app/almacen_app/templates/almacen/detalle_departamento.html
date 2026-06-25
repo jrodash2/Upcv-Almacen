@@ -32,12 +32,12 @@
 
     <!-- Nuevo resumen: Asignado - Despachado = Disponible -->
     <div class="card border-0 shadow-sm rounded-4 mt-4 gestor-animate">
-      <div class="card-header">
+      <div class="card-header pb-0 card-no-border">
         <h5>Resumen de Stock Asignado - Despachado</h5>
       </div>
       <div class="card-body">
-        <div class="table-responsive custom-scrollbar-wrapper">
-          <table class="display datatable" id="tabla-detalle-departamento">
+        <div class="dt-ext table-responsive custom-scrollbar">
+          <table class="display datatables" id="tabla-detalle-departamento">
             <thead>
               <tr>
                 <th>ID</th>
@@ -82,12 +82,12 @@
     {% if tiene_acceso %}
     <!-- Detalle de asignaciones -->
     <div class="card border-0 shadow-sm rounded-4 mt-4 gestor-animate">
-      <div class="card-header">
+      <div class="card-header pb-0 card-no-border">
         <h5>Detalle de Asignaciones</h5>
       </div>
       <div class="card-body">
-        <div class="table-responsive custom-scrollbar-wrapper">
-          <table class="display datatable" id="tabla-detalle-departamento-2">
+        <div class="dt-ext table-responsive custom-scrollbar">
+          <table class="display datatables" id="tabla-detalle-departamento-2">
             <thead>
               <tr>
                 <th>ID</th>
@@ -146,12 +146,12 @@
 
     <!-- NUEVO: Historial de Transferencias -->
     <div class="card border-0 shadow-sm rounded-4 mt-4 gestor-animate">
-      <div class="card-header">
+      <div class="card-header pb-0 card-no-border">
         <h5>Historial de Transferencias</h5>
       </div>
       <div class="card-body">
-        <div class="table-responsive custom-scrollbar-wrapper">
-          <table class="display datatable" id="tabla-detalle-departamento-3">
+        <div class="dt-ext table-responsive custom-scrollbar">
+          <table class="display datatables" id="tabla-detalle-departamento-3">
             <thead>
               <tr>
                 <th>Artículo</th>
@@ -293,15 +293,7 @@
   });
 </script>
 
-<script>
-  $(document).ready(function() {
-      $('#basic-10, #basic-12, #historial-transferencias').DataTable({
-          "language": {
-            "url": "//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json"
-          }
-      });
-  });
-</script>
+
 
 {% if not tiene_acceso %}
 <style>

@@ -32,7 +32,7 @@
       <div class="row">
         <div class="col-xl-12">
           <div class="card">
-            <div class="card-header">
+            <div class="card-header pb-0 card-no-border">
               <!-- Título opcional -->
               <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editarUnidadModal">
                 {% if form.instance.pk %}Editar Unidad{% else %}Crear Unidad{% endif %}
@@ -60,8 +60,8 @@
               <!-- Tabla para mostrar las unidades creadas -->
               <div class="mt-4">
                 <h5>Unidades Creadas</h5>
-                <div class="table-responsive custom-scrollbar">
-                  <table class="display datatable" id="tabla-editar-unidad">
+                <div class="dt-ext table-responsive custom-scrollbar">
+                  <table class="display datatables" id="tabla-editar-unidad">
                     <thead>
                       <tr>
                         <th>ID</th>
