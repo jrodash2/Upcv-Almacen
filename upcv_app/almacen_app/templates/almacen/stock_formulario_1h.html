@@ -39,7 +39,7 @@
 <table class="display datatables" id="tabla-stock-articulos">
   <thead>
     <tr>
-      <th style="width: 80px;">ID</th>
+      <th style="width: 110px;">Código</th>
       <th>Renglón</th>
       <th>Artículo</th>
       <th>Categoría</th>
@@ -54,7 +54,7 @@
     {% for item in stock_list %}
     <tr>
       <td class="text-center">
-        <span class="badge badge-light-secondary">{{ item.articulo_id }}</span>
+        <span class="badge badge-light-secondary">{{ item.articulo_codigo }}</span>
       </td>
       <td class="text-center">
         {% if item.renglon_presupuestario %}
