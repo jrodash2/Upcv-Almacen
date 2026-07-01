@@ -40,7 +40,7 @@
           <table class="display datatables" id="tabla-detalle-departamento">
             <thead>
               <tr>
-                <th>ID</th>
+                <th>Código</th>
                 <th>Renglón</th>
                 <th>Artículo</th>
                 <th>Categoría</th>
@@ -52,7 +52,7 @@
             <tbody>
               {% for item in resumen_stock %}
               <tr>
-                <td>{{ item.articulo_id }}</td>
+                <td><span class="badge badge-light-primary">{{ item.articulo_codigo }}</span></td>
                 <td>
                   {% if item.renglon_presupuestario %}
                     <span class="badge badge-light-secondary">{{ item.renglon_presupuestario }}</span>
@@ -90,7 +90,7 @@
           <table class="display datatables" id="tabla-detalle-departamento-2">
             <thead>
               <tr>
-                <th>ID</th>
+                <th>Código</th>
                 <th>Renglón</th>
                 <th>Artículo</th>
                 <th>Categoría</th>
@@ -103,7 +103,7 @@
             <tbody>
               {% for a in asignaciones_detalle %}
               <tr>
-                <td>{{ a.articulo.id }}</td>
+                <td><span class="badge badge-light-primary">{{ a.articulo.codigo }}</span></td>
                 <td>
                   {% if a.articulo.renglon_presupuestario %}
                     <span class="badge badge-light-secondary">{{ a.articulo.renglon_presupuestario }}</span>

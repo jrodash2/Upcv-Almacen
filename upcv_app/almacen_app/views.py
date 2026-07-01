@@ -301,12 +301,25 @@ def articulos_asignados(request, departamento_id):
             usuariodepartamento__usuario=request.user
         )
         stock_disponible = obtener_stock_disponible_por_departamento(departamento)
-        articulos = Articulo.objects.filter(id__in=stock_disponible.keys()).order_by('nombre')
+        articulos = Articulo.objects.filter(id__in=stock_disponible.keys())
+        tipos_solicitud = request.GET.getlist('tipos_solicitud') or request.GET.getlist('tipos_solicitud[]')
+        if tipos_solicitud:
+            categoria_query = Q()
+            filtros_categoria = {
+                'bienes': 'bien',
+                'suministros': 'suministro',
+                'insumos': 'insumo',
+            }
+            for tipo in tipos_solicitud:
+                categoria_query |= Q(categoria__nombre__icontains=filtros_categoria.get(tipo, tipo))
+            articulos = articulos.filter(categoria_query)
+        articulos = articulos.order_by('nombre')
 
         data = {
             'articulos': [
                 {
                     'id': articulo.id,
+                    'codigo': articulo.codigo,
                     'nombre': articulo.nombre,
                     'categoria': articulo.categoria.nombre if articulo.categoria else 'S/C',
                     'renglon_presupuestario': articulo.renglon_presupuestario or 'S/R',
@@ -507,14 +520,19 @@ def crear_solicitud_requerimiento(request):
             departamento = departamentos_qs.filter(id=departamento_id).first()
 
     stock_disponible = obtener_stock_disponible_por_departamento(departamento) if departamento else {}
+    tipos_solicitud = request.POST.getlist('tipos_solicitud') if request.method == 'POST' else []
 
     formset = DetalleSolicitudRequerimientoFormSet(
         request.POST or None,
         queryset=DetalleSolicitudRequerimiento.objects.none(),
         prefix='detalles',
         departamento=departamento,
-        stock_disponible=stock_disponible
+        stock_disponible=stock_disponible,
+        tipos_solicitud=tipos_solicitud
     )
+
+    if request.method == 'POST' and not tipos_solicitud:
+        messages.error(request, "Debe seleccionar al menos un tipo de solicitud.")
 
     if request.method == 'POST' and not stock_disponible:
         messages.error(request, "No tiene artículos asignados disponibles para solicitar. Comuníquese con el administrador o con su departamento.")
@@ -536,6 +554,7 @@ def crear_solicitud_requerimiento(request):
         'stock_disponible': {str(k): str(v) for k, v in stock_disponible.items()},
         'stock_dict': {str(k): str(v) for k, v in stock_disponible.items()},
         'sin_stock_disponible': not bool(stock_disponible),
+        'selected_tipos': tipos_solicitud,
     })
 
 
@@ -1015,7 +1034,7 @@ def exportar_kardex_pdf(request, articulo_id):
 
     pdf_file = HTML(string=html_string).write_pdf()
     response = HttpResponse(pdf_file, content_type='application/pdf')
-    response['Content-Disposition'] = f'inline; filename="kardex_{articulo.id}.pdf"'
+    response['Content-Disposition'] = f'inline; filename="kardex_{articulo.codigo}.pdf"'
     return response
 
 
@@ -1065,7 +1084,7 @@ def historial_kardex_articulo(request, articulo_id):
 def ver_stock_formulario_1h(request):
     ingresos = DetalleFactura.objects.filter(
         form1h__estado='confirmado'
-    ).values('articulo__id', 'articulo__nombre', 'articulo__categoria__nombre', 'articulo__renglon_presupuestario').annotate(
+    ).values('articulo__id', 'articulo__codigo', 'articulo__nombre', 'articulo__categoria__nombre', 'articulo__renglon_presupuestario').annotate(
         total_ingresado=Sum('cantidad')
     )
 
@@ -1096,6 +1115,7 @@ def ver_stock_formulario_1h(request):
             articulo = Articulo.objects.get(id=articulo_id)
             ingreso_dict[articulo_id] = {
                 'articulo__id': articulo_id,
+                'articulo__codigo': articulo.codigo,
                 'articulo__nombre': articulo.nombre,
                 'articulo__categoria__nombre': articulo.categoria.nombre if articulo.categoria else None,
                 'articulo__renglon_presupuestario': articulo.renglon_presupuestario,
@@ -1112,6 +1132,7 @@ def ver_stock_formulario_1h(request):
 
         stock_list.append({
             'articulo_id': item['articulo__id'],
+            'articulo_codigo': item.get('articulo__codigo'),
             'renglon_presupuestario': item.get('articulo__renglon_presupuestario'),
             'categoria': item.get('articulo__categoria__nombre'),
             'articulo': item['articulo__nombre'],
@@ -1211,7 +1232,7 @@ def detalle_departamento(request, pk):
         asignaciones_agrupadas = (
             AsignacionDetalleFactura.objects
             .filter(destino=departamento)
-            .values('articulo__id', 'articulo__nombre', 'articulo__categoria__nombre', 'articulo__renglon_presupuestario')
+            .values('articulo__id', 'articulo__codigo', 'articulo__nombre', 'articulo__categoria__nombre', 'articulo__renglon_presupuestario')
             .annotate(total_asignado=Sum('cantidad_asignada'))
             .order_by('articulo__nombre')
         )
@@ -1233,6 +1254,7 @@ def detalle_departamento(request, pk):
 
             resumen_stock.append({
                 'articulo_id': articulo_id,
+                'articulo_codigo': item.get('articulo__codigo'),
                 'renglon_presupuestario': item.get('articulo__renglon_presupuestario'),
                 'categoria': item.get('articulo__categoria__nombre'),
                 'nombre_articulo': item['articulo__nombre'],
@@ -1388,7 +1410,7 @@ def crear_asignacion_detalle_articulo(request):
     # Calcular stock ingresado
     ingresos = DetalleFactura.objects.filter(
         form1h__estado='confirmado'
-    ).values('articulo__id', 'articulo__nombre', 'articulo__categoria__nombre', 'articulo__renglon_presupuestario').annotate(
+    ).values('articulo__id', 'articulo__codigo', 'articulo__nombre', 'articulo__categoria__nombre', 'articulo__renglon_presupuestario').annotate(
         total_ingresado=Sum('cantidad')
     )
 
@@ -1422,6 +1444,7 @@ def crear_asignacion_detalle_articulo(request):
             articulo = Articulo.objects.get(id=articulo_id)
             ingreso_dict[articulo_id] = {
                 'articulo__id': articulo_id,
+                'articulo__codigo': articulo.codigo,
                 'articulo__nombre': articulo.nombre,
                 'articulo__categoria__nombre': articulo.categoria.nombre if articulo.categoria else None,
                 'articulo__renglon_presupuestario': articulo.renglon_presupuestario,
@@ -1439,6 +1462,7 @@ def crear_asignacion_detalle_articulo(request):
 
         stock_list.append({
             'articulo_id': item['articulo__id'],
+            'articulo_codigo': item.get('articulo__codigo'),
             'renglon_presupuestario': item.get('articulo__renglon_presupuestario'),
             'categoria': item.get('articulo__categoria__nombre'),
             'articulo': item['articulo__nombre'],
@@ -1461,12 +1485,13 @@ def crear_asignacion_detalle_articulo(request):
     
 def buscar_articulos(request):
     term = request.GET.get('q', '')
-    articulos = Articulo.objects.filter(nombre__icontains=term)[:10]
+    articulos = Articulo.objects.filter(Q(codigo__icontains=term) | Q(nombre__icontains=term))[:10]
     results = [
         {
             'id': art.id,
+            'codigo': art.codigo,
             'nombre': art.nombre,
-            'text': f"{art.nombre} — Categoría: {art.categoria.nombre if art.categoria else 'S/C'} — Renglón: {art.renglon_presupuestario or 'S/R'}",
+            'text': f"{art.codigo} - {art.nombre} — Categoría: {art.categoria.nombre if art.categoria else 'S/C'} — Renglón: {art.renglon_presupuestario or 'S/R'}",
             'categoria': art.categoria.nombre if art.categoria else 'S/C',
             'renglon_presupuestario': art.renglon_presupuestario,
         }

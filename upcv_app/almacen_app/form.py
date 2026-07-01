@@ -4,7 +4,7 @@ from django.forms import CheckboxInput, DateInput, inlineformset_factory, modelf
 from django.core.exceptions import ValidationError
 from .models import DetalleFactura, Ubicacion, Perfil, UnidadDeMedida, Proveedor, Departamento, Categoria, Articulo, Departamento, Kardex, AsignacionDetalleFactura, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa, UsuarioDepartamento
 
-from django.db.models import Sum, F, Value
+from django.db.models import Sum, F, Value, Q
 from django.db.models.functions import Coalesce
 
 
@@ -117,7 +117,7 @@ class ArticuloChoiceField(forms.ModelChoiceField):
         categoria = obj.categoria.nombre if obj.categoria else 'S/C'
         renglon = obj.renglon_presupuestario or 'S/R'
         disponible = getattr(obj, 'cantidad_disponible', None)
-        texto = f"{obj.nombre} — Categoría: {categoria} — Renglón: {renglon}"
+        texto = f"{obj.codigo} - {obj.nombre} — Categoría: {categoria} — Renglón: {renglon}"
         if disponible is not None:
             texto += f" — Disponible: {disponible}"
         return texto
@@ -287,8 +287,9 @@ class DepartamentoForm(forms.ModelForm):
 class ArticuloForm(forms.ModelForm):
     class Meta:
         model = Articulo
-        fields = ['nombre', 'renglon_presupuestario', 'categoria', 'unidad_medida', 'ubicacion', 'requiere_vencimiento', 'requiere_inventario_individual']  # ✅ campo agregado
+        fields = ['codigo', 'nombre', 'renglon_presupuestario', 'categoria', 'unidad_medida', 'ubicacion', 'requiere_vencimiento', 'requiere_inventario_individual']  # ✅ campo agregado
         widgets = {
+            'codigo': forms.TextInput(attrs={'placeholder': 'Ejemplo: SUM-001, INS-010, MAT-025', 'class': 'form-control'}),
             'nombre': forms.TextInput(attrs={'placeholder': 'Nombre del artículo', 'class': 'form-control'}),
             'renglon_presupuestario': forms.TextInput(attrs={'placeholder': 'Ejemplo: 211, 231, 267', 'class': 'form-control'}),
             'categoria': forms.Select(attrs={'class': 'form-select'}),
@@ -302,6 +303,10 @@ class ArticuloForm(forms.ModelForm):
 
         if 'categoria' in self.fields:
             self.fields['categoria'].empty_label = 'Seleccione una categoría'
+        if 'codigo' in self.fields:
+            self.fields['codigo'].label = 'Código'
+            self.fields['codigo'].help_text = 'Código único que identifica el artículo en el sistema.'
+            self.fields['codigo'].required = True
 
         for field_name, field in self.fields.items():
             if isinstance(field.widget, forms.CheckboxInput):
@@ -310,6 +315,18 @@ class ArticuloForm(forms.ModelForm):
                 field.widget.attrs['class'] = 'form-select'
             else:
                 field.widget.attrs['class'] = 'form-control'
+
+    def clean_codigo(self):
+        codigo = (self.cleaned_data.get('codigo') or '').strip().upper()
+        if not codigo:
+            raise forms.ValidationError('Este campo es obligatorio.')
+
+        qs = Articulo.objects.filter(codigo__iexact=codigo)
+        if self.instance and self.instance.pk:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise forms.ValidationError('Ya existe un artículo registrado con este código.')
+        return codigo
 
 
 class ProveedorForm(forms.ModelForm):
@@ -553,15 +570,19 @@ DetalleRequerimientoFormSet = modelformset_factory(
 
 
 class SolicitudRequerimientoForm(forms.ModelForm):
+    tipos_solicitud = forms.MultipleChoiceField(
+        choices=SolicitudRequerimiento.TIPO_SOLICITUD_CHOICES,
+        widget=forms.CheckboxSelectMultiple,
+        required=True,
+        label="Tipo de solicitud",
+        error_messages={'required': 'Debe seleccionar al menos un tipo de solicitud.'},
+    )
+
     class Meta:
         model = SolicitudRequerimiento
-        fields = ['departamento', 'tipo_solicitud', 'justificacion']
+        fields = ['departamento', 'tipos_solicitud', 'justificacion']
         labels = {
-            'tipo_solicitud': 'Tipo de solicitud',
             'justificacion': 'Justificación',
-        }
-        widgets = {
-            'tipo_solicitud': forms.RadioSelect(choices=SolicitudRequerimiento.TIPO_SOLICITUD_CHOICES),
         }
 
     def __init__(self, *args, **kwargs):
@@ -571,9 +592,11 @@ class SolicitudRequerimientoForm(forms.ModelForm):
             self.fields['departamento'].queryset = Departamento.objects.filter(
                 usuariodepartamento__usuario=usuario
             ).distinct()
+        if self.instance and self.instance.pk:
+            self.fields['tipos_solicitud'].initial = self.instance.get_tipos_list()
         for name, field in self.fields.items():
-            if name == 'tipo_solicitud':
-                field.widget.attrs.update({'class': 'form-check-input'})
+            if name == 'tipos_solicitud':
+                field.widget.attrs.update({'class': 'form-check-input tipo-solicitud-checkbox'})
             elif isinstance(field.widget, forms.Select):
                 field.widget.attrs.update({'class': 'form-select'})
             elif isinstance(field.widget, forms.Textarea):
@@ -582,6 +605,22 @@ class SolicitudRequerimientoForm(forms.ModelForm):
                 field.widget.attrs.update({'class': 'form-control'})
             field.widget.attrs.setdefault('placeholder', field.label or '')
 
+    def clean_tipos_solicitud(self):
+        tipos = self.cleaned_data.get('tipos_solicitud') or []
+        if not tipos:
+            raise forms.ValidationError('Debe seleccionar al menos un tipo de solicitud.')
+        return tipos
+
+    def save(self, commit=True):
+        solicitud = super().save(commit=False)
+        tipos = self.cleaned_data.get('tipos_solicitud') or []
+        solicitud.tipos_solicitud = ','.join(tipos)
+        solicitud.tipo_solicitud = tipos[0] if tipos else solicitud.tipo_solicitud
+        if commit:
+            solicitud.save()
+            self.save_m2m()
+        return solicitud
+
 
 class DetalleSolicitudRequerimientoForm(forms.ModelForm):
     class ArticuloAsignadoChoiceField(forms.ModelChoiceField):
@@ -589,7 +628,7 @@ class DetalleSolicitudRequerimientoForm(forms.ModelForm):
             categoria = obj.categoria.nombre if obj.categoria else 'S/C'
             renglon = obj.renglon_presupuestario or 'S/R'
             disponible = getattr(obj, 'cantidad_disponible', None)
-            texto = f"{obj.nombre} — Categoría: {categoria} — Renglón: {renglon}"
+            texto = f"{obj.codigo} - {obj.nombre} — Categoría: {categoria} — Renglón: {renglon}"
             if disponible is not None:
                 texto += f" — Disponible: {disponible}"
             return texto
@@ -603,12 +642,24 @@ class DetalleSolicitudRequerimientoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.departamento = kwargs.pop('departamento', None)
         self.stock_disponible = kwargs.pop('stock_disponible', {})
+        self.tipos_solicitud = kwargs.pop('tipos_solicitud', [])
         super().__init__(*args, **kwargs)
         if self.departamento:
             articulos = Articulo.objects.filter(
                 id__in=self.stock_disponible.keys(),
                 asignaciondetallefactura__destino=self.departamento
-            ).distinct().order_by('nombre')
+            )
+            if self.tipos_solicitud:
+                categoria_query = Q()
+                filtros_categoria = {
+                    'bienes': 'bien',
+                    'suministros': 'suministro',
+                    'insumos': 'insumo',
+                }
+                for tipo in self.tipos_solicitud:
+                    categoria_query |= Q(categoria__nombre__icontains=filtros_categoria.get(tipo, tipo))
+                articulos = articulos.filter(categoria_query)
+            articulos = articulos.distinct().order_by('nombre')
             for articulo in articulos:
                 articulo.cantidad_disponible = self.stock_disponible.get(articulo.id, 0)
             self.fields['articulo'].queryset = articulos
@@ -644,12 +695,14 @@ class BaseDetalleSolicitudRequerimientoFormSet(BaseModelFormSet):
     def __init__(self, *args, **kwargs):
         self.departamento = kwargs.pop('departamento', None)
         self.stock_disponible = kwargs.pop('stock_disponible', {})
+        self.tipos_solicitud = kwargs.pop('tipos_solicitud', [])
         super().__init__(*args, **kwargs)
 
     def get_form_kwargs(self, index):
         kwargs = super().get_form_kwargs(index)
         kwargs['departamento'] = self.departamento
         kwargs['stock_disponible'] = self.stock_disponible
+        kwargs['tipos_solicitud'] = self.tipos_solicitud
         return kwargs
 
     def clean(self):

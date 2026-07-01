@@ -80,8 +80,8 @@ admin.site.register(UnidadDeMedida, UnidadDeMedidaAdmin)
 
 # Registrar Articulo
 class ArticuloAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'renglon_presupuestario', 'categoria', 'unidad_medida', 'ubicacion')
-    search_fields = ('nombre', 'renglon_presupuestario')
+    list_display = ('codigo', 'nombre', 'renglon_presupuestario', 'categoria', 'unidad_medida', 'ubicacion')
+    search_fields = ('codigo', 'nombre', 'renglon_presupuestario')
     list_filter = ('categoria', 'renglon_presupuestario')
 
 
@@ -98,7 +98,7 @@ admin.site.register(Serie, SerieAdmin)
 # Registrar Kardex
 class KardexAdmin(admin.ModelAdmin):
     list_display = ('articulo', 'tipo_movimiento', 'cantidad', 'fecha', 'observacion')
-    search_fields = ('articulo__nombre',)
+    search_fields = ('articulo__codigo', 'articulo__nombre')
     list_filter = ('tipo_movimiento', 'fecha')
  
 admin.site.register(Kardex, KardexAdmin)
@@ -106,7 +106,7 @@ admin.site.register(Kardex, KardexAdmin)
 # Registrar AsignacionDetalleFactura
 class AsignacionDetalleFacturaAdmin(admin.ModelAdmin):
     list_display = ('get_articulo', 'cantidad_asignada', 'destino', 'fecha_asignacion')
-    search_fields = ('detalle__articulo__nombre', 'destino__nombre')
+    search_fields = ('detalle__articulo__codigo', 'detalle__articulo__nombre', 'destino__nombre')
     list_filter = ('fecha_asignacion', 'destino')
 
     def get_articulo(self, obj):
@@ -118,7 +118,7 @@ admin.site.register(AsignacionDetalleFactura, AsignacionDetalleFacturaAdmin)
 # Registrar Movimiento
 class MovimientoAdmin(admin.ModelAdmin):
     list_display = ('articulo', 'tipo_movimiento', 'cantidad', 'fecha_movimiento', 'usuario', 'observacion')
-    search_fields = ('articulo__nombre', 'usuario__username')
+    search_fields = ('articulo__codigo', 'articulo__nombre', 'usuario__username')
     list_filter = ('tipo_movimiento', 'fecha_movimiento', 'usuario')
 
 admin.site.register(Movimiento, MovimientoAdmin)

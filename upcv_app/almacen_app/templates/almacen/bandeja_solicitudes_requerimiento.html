@@ -13,11 +13,11 @@
         <div class="card-body p-4">
           <div class="dt-ext table-responsive custom-scrollbar">
             <table class="display datatables" id="tabla-bandeja-solicitudes-requerimiento">
-              <thead class="table-light"><tr><th>ID</th><th>Solicitante</th><th>Departamento</th><th>Estado</th><th>Fecha</th><th>Fecha resolución</th><th>Requerimiento</th><th class="text-center">Acciones</th></tr></thead>
+              <thead class="table-light"><tr><th>ID</th><th>Solicitante</th><th>Departamento</th><th>Tipos</th><th>Estado</th><th>Fecha</th><th>Fecha resolución</th><th>Requerimiento</th><th class="text-center">Acciones</th></tr></thead>
               <tbody>
               {% for s in solicitudes %}
                 <tr>
-                  <td>#{{ s.id }}</td><td>{{ s.usuario_solicitante }}</td><td>{{ s.departamento }}</td>
+                  <td>#{{ s.id }}</td><td>{{ s.usuario_solicitante }}</td><td>{{ s.departamento }}</td><td>{% for tipo in s.get_tipos_badges %}<span class="badge {{ tipo.class }} me-1">{{ tipo.label }}</span>{% empty %}<span class="text-muted">-</span>{% endfor %}</td>
                   <td>
                     <span class="estado-badge {% estado_badge_class s.estado %}">{{ s.get_estado_display|default:s.estado }}</span>
                   </td>
@@ -37,7 +37,7 @@
                   <td class="text-center"><a href="{% url 'almacen:detalle_solicitud_requerimiento' solicitud_id=s.id %}" class="btn btn-outline-primary btn-sm gestor-btn">Ver detalle</a></td>
                 </tr>
               {% empty %}
-                <tr><td colspan="8" class="text-center text-muted">No hay solicitudes para mostrar.</td></tr>
+                <tr><td colspan="9" class="text-center text-muted">No hay solicitudes para mostrar.</td></tr>
               {% endfor %}
               </tbody>
             </table>

@@ -45,18 +45,22 @@
                   {% if form.departamento.errors %}<div class="text-danger small">{{ form.departamento.errors|striptags }}</div>{% endif %}
                 </div>
                 <div class="col-md-6 mb-3">
-                  <label class="form-label fw-semibold d-block">{{ form.tipo_solicitud.label }}</label>
-                  <div class="d-flex gap-4 align-items-center flex-wrap">
-                    {% for radio in form.tipo_solicitud %}
-                      <div class="form-check">
-                        {{ radio.tag }}
-                        <label class="form-check-label fw-semibold" for="{{ radio.id_for_label }}">
-                          {{ radio.choice_label }}
-                        </label>
-                      </div>
-                    {% endfor %}
+                  <label class="form-label fw-semibold d-block">{{ form.tipos_solicitud.label }}</label>
+                  <div class="d-flex flex-wrap gap-3">
+                    <div class="form-check checkbox checkbox-primary mb-0">
+                      <input class="form-check-input tipo-solicitud-checkbox" type="checkbox" name="tipos_solicitud" id="tipo_bienes" value="bienes" {% if 'bienes' in selected_tipos %}checked{% endif %}>
+                      <label class="form-check-label fw-semibold" for="tipo_bienes">Bienes</label>
+                    </div>
+                    <div class="form-check checkbox checkbox-primary mb-0">
+                      <input class="form-check-input tipo-solicitud-checkbox" type="checkbox" name="tipos_solicitud" id="tipo_suministros" value="suministros" {% if 'suministros' in selected_tipos %}checked{% endif %}>
+                      <label class="form-check-label fw-semibold" for="tipo_suministros">Suministros</label>
+                    </div>
+                    <div class="form-check checkbox checkbox-primary mb-0">
+                      <input class="form-check-input tipo-solicitud-checkbox" type="checkbox" name="tipos_solicitud" id="tipo_insumos" value="insumos" {% if 'insumos' in selected_tipos %}checked{% endif %}>
+                      <label class="form-check-label fw-semibold" for="tipo_insumos">Insumos</label>
+                    </div>
                   </div>
-                  {% if form.tipo_solicitud.errors %}<div class="text-danger small">{{ form.tipo_solicitud.errors|striptags }}</div>{% endif %}
+                  {% if form.tipos_solicitud.errors %}<div class="text-danger small">{{ form.tipos_solicitud.errors|striptags }}</div>{% endif %}
                 </div>
                 <div class="col-12 mb-3">
                   <label class="form-label fw-semibold" for="{{ form.justificacion.id_for_label }}">{{ form.justificacion.label }}</label>
@@ -215,7 +219,7 @@ document.addEventListener("DOMContentLoaded", function () {
     items.forEach((item) => {
       const option = document.createElement("option");
       option.value = item.id;
-      option.textContent = item.nombre + " — Categoría: " + (item.categoria || "S/C") + " — Renglón: " + (item.renglon_presupuestario || "S/R") + " — Disponible: " + item.cantidad_disponible;
+      option.textContent = item.codigo + " - " + item.nombre + " — Categoría: " + (item.categoria || "S/C") + " — Renglón: " + (item.renglon_presupuestario || "S/R") + " — Disponible: " + item.cantidad_disponible;
       select.appendChild(option);
     });
 
@@ -277,24 +281,39 @@ document.addEventListener("DOMContentLoaded", function () {
   document.querySelectorAll(".select-articulo").forEach(actualizarDisponible);
 
   const deptSelect = document.getElementById("id_departamento");
-  if (deptSelect) {
-    deptSelect.addEventListener("change", async function () {
-      const deptId = this.value;
-      if (!deptId) return;
-
-      const resp = await fetch(`${endpointBase}${deptId}/`);
-      if (!resp.ok) return;
-
-      const payload = await resp.json();
-      articulosDepartamento = payload.articulos || [];
-      stockData = {};
-      articulosDepartamento.forEach((item) => {
-        stockData[String(item.id)] = item.cantidad_disponible;
-      });
-
-      actualizarOpcionesFilas(articulosDepartamento);
-    });
+  function obtenerTiposSeleccionados() {
+    return Array.from(document.querySelectorAll('input[name="tipos_solicitud"]:checked')).map((input) => input.value);
   }
+
+  async function cargarArticulosDepartamento() {
+    if (!deptSelect) return;
+    const deptId = deptSelect.value;
+    if (!deptId) return;
+
+    const params = new URLSearchParams();
+    obtenerTiposSeleccionados().forEach((tipo) => params.append("tipos_solicitud", tipo));
+    const query = params.toString() ? `?${params.toString()}` : "";
+
+    const resp = await fetch(`${endpointBase}${deptId}/${query}`);
+    if (!resp.ok) return;
+
+    const payload = await resp.json();
+    articulosDepartamento = payload.articulos || [];
+    stockData = {};
+    articulosDepartamento.forEach((item) => {
+      stockData[String(item.id)] = item.cantidad_disponible;
+    });
+
+    actualizarOpcionesFilas(articulosDepartamento);
+  }
+
+  if (deptSelect) {
+    deptSelect.addEventListener("change", cargarArticulosDepartamento);
+  }
+
+  document.querySelectorAll('input[name="tipos_solicitud"]').forEach((checkbox) => {
+    checkbox.addEventListener("change", cargarArticulosDepartamento);
+  });
 });
 </script>
 {% endblock %}
