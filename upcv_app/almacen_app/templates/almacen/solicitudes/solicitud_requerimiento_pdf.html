@@ -48,9 +48,9 @@
 
   <div class="row">
     <strong>FECHA:</strong> {{ solicitud.creado_en|date:"d/m/Y" }}
-    <span class="checkbox">{% if solicitud.tipo_solicitud == "bienes" %}X{% endif %}</span> BIENES
-    <span class="checkbox">{% if solicitud.tipo_solicitud == "suministros" %}X{% endif %}</span> SUMINISTROS
-    <span class="checkbox">{% if solicitud.tipo_solicitud == "insumos" %}X{% endif %}</span> INSUMOS
+    <span class="checkbox">{% if solicitud.es_bienes %}X{% endif %}</span> BIENES
+    <span class="checkbox">{% if solicitud.es_suministros %}X{% endif %}</span> SUMINISTROS
+    <span class="checkbox">{% if solicitud.es_insumos %}X{% endif %}</span> INSUMOS
   </div>
 
   <div class="intro">

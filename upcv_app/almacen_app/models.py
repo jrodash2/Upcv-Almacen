@@ -539,6 +539,12 @@ class SolicitudRequerimiento(models.Model):
     usuario_solicitante = models.ForeignKey(User, on_delete=models.CASCADE, related_name='solicitudes_requerimiento')
     departamento = models.ForeignKey(Departamento, on_delete=models.CASCADE)
     tipo_solicitud = models.CharField(max_length=20, choices=TIPO_SOLICITUD_CHOICES, default='suministros')
+    tipos_solicitud = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Tipos de solicitud",
+        help_text="Tipos seleccionados: bienes, suministros, insumos."
+    )
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='pendiente')
     justificacion = models.TextField(blank=True, null=True)
     observaciones = models.TextField(blank=True, null=True)
@@ -550,6 +556,45 @@ class SolicitudRequerimiento(models.Model):
     convertido_en = models.DateTimeField(blank=True, null=True)
     rechazado_por = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name='solicitudes_rechazadas')
     rechazado_en = models.DateTimeField(blank=True, null=True)
+
+
+    def get_tipos_list(self):
+        if self.tipos_solicitud:
+            return [x.strip() for x in self.tipos_solicitud.split(',') if x.strip()]
+        if self.tipo_solicitud:
+            return [self.tipo_solicitud]
+        return []
+
+    def tiene_tipo(self, tipo):
+        return tipo in self.get_tipos_list()
+
+    @property
+    def es_bienes(self):
+        return self.tiene_tipo('bienes')
+
+    @property
+    def es_suministros(self):
+        return self.tiene_tipo('suministros')
+
+    @property
+    def es_insumos(self):
+        return self.tiene_tipo('insumos')
+
+    def get_tipos_display(self):
+        labels = dict(self.TIPO_SOLICITUD_CHOICES)
+        return ', '.join(labels.get(t, t) for t in self.get_tipos_list())
+
+    def get_tipos_badges(self):
+        styles = {
+            'bienes': 'badge-light-primary',
+            'suministros': 'badge-light-info',
+            'insumos': 'badge-light-warning',
+        }
+        labels = dict(self.TIPO_SOLICITUD_CHOICES)
+        return [
+            {'label': labels.get(tipo, tipo), 'class': styles.get(tipo, 'badge-light-secondary')}
+            for tipo in self.get_tipos_list()
+        ]
 
 
 class DetalleSolicitudRequerimiento(models.Model):

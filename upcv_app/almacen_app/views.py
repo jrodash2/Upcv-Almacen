@@ -301,7 +301,19 @@ def articulos_asignados(request, departamento_id):
             usuariodepartamento__usuario=request.user
         )
         stock_disponible = obtener_stock_disponible_por_departamento(departamento)
-        articulos = Articulo.objects.filter(id__in=stock_disponible.keys()).order_by('nombre')
+        articulos = Articulo.objects.filter(id__in=stock_disponible.keys())
+        tipos_solicitud = request.GET.getlist('tipos_solicitud') or request.GET.getlist('tipos_solicitud[]')
+        if tipos_solicitud:
+            categoria_query = Q()
+            filtros_categoria = {
+                'bienes': 'bien',
+                'suministros': 'suministro',
+                'insumos': 'insumo',
+            }
+            for tipo in tipos_solicitud:
+                categoria_query |= Q(categoria__nombre__icontains=filtros_categoria.get(tipo, tipo))
+            articulos = articulos.filter(categoria_query)
+        articulos = articulos.order_by('nombre')
 
         data = {
             'articulos': [
@@ -508,14 +520,19 @@ def crear_solicitud_requerimiento(request):
             departamento = departamentos_qs.filter(id=departamento_id).first()
 
     stock_disponible = obtener_stock_disponible_por_departamento(departamento) if departamento else {}
+    tipos_solicitud = request.POST.getlist('tipos_solicitud') if request.method == 'POST' else []
 
     formset = DetalleSolicitudRequerimientoFormSet(
         request.POST or None,
         queryset=DetalleSolicitudRequerimiento.objects.none(),
         prefix='detalles',
         departamento=departamento,
-        stock_disponible=stock_disponible
+        stock_disponible=stock_disponible,
+        tipos_solicitud=tipos_solicitud
     )
+
+    if request.method == 'POST' and not tipos_solicitud:
+        messages.error(request, "Debe seleccionar al menos un tipo de solicitud.")
 
     if request.method == 'POST' and not stock_disponible:
         messages.error(request, "No tiene artículos asignados disponibles para solicitar. Comuníquese con el administrador o con su departamento.")
@@ -537,6 +554,7 @@ def crear_solicitud_requerimiento(request):
         'stock_disponible': {str(k): str(v) for k, v in stock_disponible.items()},
         'stock_dict': {str(k): str(v) for k, v in stock_disponible.items()},
         'sin_stock_disponible': not bool(stock_disponible),
+        'selected_tipos': tipos_solicitud,
     })
 
 

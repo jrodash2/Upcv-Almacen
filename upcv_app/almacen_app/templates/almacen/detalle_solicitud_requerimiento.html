@@ -21,7 +21,7 @@
               <div class="col-md-3"><span class="text-muted d-block">Departamento</span><strong>{{ solicitud.departamento }}</strong></div>
               <div class="col-md-3"><span class="text-muted d-block">Solicitante</span><strong>{{ solicitud.usuario_solicitante }}</strong></div>
               <div class="col-md-3"><span class="text-muted d-block">Fecha</span><strong>{{ solicitud.creado_en|date:"d/m/Y H:i" }}</strong></div>
-              <div class="col-md-3"><span class="text-muted d-block">Tipo de solicitud</span><strong>{{ solicitud.get_tipo_solicitud_display }}</strong></div>
+              <div class="col-md-3"><span class="text-muted d-block">Tipos de solicitud</span>{% for tipo in solicitud.get_tipos_badges %}<span class="badge {{ tipo.class }} me-1">{{ tipo.label }}</span>{% empty %}<strong>-</strong>{% endfor %}</div>
             </div>
             <div class="mb-3"><span class="text-muted d-block">Justificación</span>{{ solicitud.justificacion|default:solicitud.observaciones|default:"-" }}</div>
             {% if solicitud.estado == 'convertida' and solicitud.convertido_en %}
