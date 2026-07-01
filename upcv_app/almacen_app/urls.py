@@ -125,6 +125,10 @@ urlpatterns = [
     path('articulos/por-vencer/', views.articulos_por_vencer, name='articulos_por_vencer'),
     
     path('libro-ingresos/pdf/', libro_ingresos_pdf, name='libro_ingresos_pdf'),
+    path('libro-mayor/', views.libro_mayor, name='libro_mayor'),
+    path('libro-mayor/pdf/', views.libro_mayor_pdf, name='libro_mayor_pdf'),
+    path('libro-mayor/excel/', views.libro_mayor_excel, name='libro_mayor_excel'),
+    path('libro-mayor/articulo/<int:articulo_id>/movimientos/', views.libro_mayor_movimientos, name='libro_mayor_movimientos'),
     path('anular_requerimiento/<int:requerimiento_id>/', views.anular_requerimiento, name='anular_requerimiento'),
     path('factura/<int:form1h_id>/exportar-pdf/', views.exportar_detalle_factura_pdf, name='exportar_detalle_factura_pdf'),
     path('exportar-excel/<int:form1h_id>/', views.exportar_detalle_factura_excel, name='exportar_excel'),

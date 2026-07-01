@@ -2292,3 +2292,249 @@ def signin(request):
                 'error': 'Usuario o contraseña incorrectos',
                 'institucion': institucion,
             })
+
+
+def _parse_fecha_libro_mayor(value):
+    if not value:
+        return None
+    try:
+        return datetime.strptime(value, '%Y-%m-%d').date()
+    except (TypeError, ValueError):
+        return None
+
+
+def _normalizar_rango_renglones(inicio=None, fin=None):
+    try:
+        inicio = int(inicio)
+    except (TypeError, ValueError):
+        inicio = 300
+    try:
+        fin = int(fin)
+    except (TypeError, ValueError):
+        fin = 399
+    inicio = max(300, min(inicio, 399))
+    fin = max(300, min(fin, 399))
+    if inicio > fin:
+        inicio, fin = fin, inicio
+    return inicio, fin
+
+
+def _departamentos_permitidos_libro_mayor(usuario):
+    if usuario.is_superuser or usuario.groups.filter(name__in=['Administrador', 'Almacen']).exists():
+        return None
+    if usuario.groups.filter(name__in=['Departamento', 'Gestor']).exists():
+        return list(UsuarioDepartamento.objects.filter(usuario=usuario).values_list('departamento_id', flat=True))
+    return []
+
+
+def _movimiento_corresponde_departamento(movimiento, departamento_ids):
+    if departamento_ids is None:
+        return True
+    if not departamento_ids:
+        return False
+    if movimiento.fuente_asignacion_id:
+        return movimiento.fuente_asignacion.destino_id in departamento_ids
+    if movimiento.fuente_despacho_id and movimiento.fuente_despacho.requerimiento_id:
+        return movimiento.fuente_despacho.requerimiento.departamento_id in departamento_ids
+    return movimiento.tipo_movimiento == 'INGRESO'
+
+
+def generar_datos_libro_mayor(fecha_inicio=None, fecha_fin=None, renglon_inicio=300, renglon_fin=399, articulo=None, departamento=None, usuario=None, incluir_sin_movimientos=False):
+    renglon_inicio, renglon_fin = _normalizar_rango_renglones(renglon_inicio, renglon_fin)
+    fecha_inicio = _parse_fecha_libro_mayor(fecha_inicio) if isinstance(fecha_inicio, str) else fecha_inicio
+    fecha_fin = _parse_fecha_libro_mayor(fecha_fin) if isinstance(fecha_fin, str) else fecha_fin
+
+    departamento_ids = None
+    if usuario is not None:
+        departamento_ids = _departamentos_permitidos_libro_mayor(usuario)
+    if departamento:
+        try:
+            departamento_id = int(departamento)
+            departamento_ids = [departamento_id] if departamento_ids is None or departamento_id in departamento_ids else []
+        except (TypeError, ValueError):
+            departamento_ids = []
+
+    articulos = Articulo.objects.select_related('unidad_medida').order_by('renglon_presupuestario', 'nombre')
+    if articulo:
+        articulos = articulos.filter(id=articulo)
+
+    articulos_filtrados = []
+    for art in articulos:
+        renglon_texto = (art.renglon_presupuestario or '').strip()
+        if not renglon_texto.isdigit():
+            continue
+        renglon_numero = int(renglon_texto)
+        if renglon_inicio <= renglon_numero <= renglon_fin:
+            articulos_filtrados.append((art, renglon_numero))
+
+    filas = []
+    for art, renglon_numero in articulos_filtrados:
+        movimientos = Kardex.objects.filter(articulo=art).select_related(
+            'fuente_asignacion__destino', 'fuente_despacho__requerimiento__departamento'
+        ).order_by('fecha', 'id')
+        saldo_inicial = entradas = salidas = 0
+        tuvo_movimientos = False
+        for mov in movimientos:
+            if not _movimiento_corresponde_departamento(mov, departamento_ids):
+                continue
+            tuvo_movimientos = True
+            cantidad = mov.cantidad or 0
+            es_ingreso = mov.tipo_movimiento in ['INGRESO', 'ENTRADA']
+            es_salida = mov.tipo_movimiento in ['SALIDA', 'EGRESO']
+            if fecha_inicio and mov.fecha.date() < fecha_inicio:
+                if es_ingreso:
+                    saldo_inicial += cantidad
+                elif es_salida:
+                    saldo_inicial -= cantidad
+                continue
+            if fecha_fin and mov.fecha.date() > fecha_fin:
+                continue
+            if es_ingreso:
+                entradas += cantidad
+            elif es_salida:
+                salidas += cantidad
+
+        if not tuvo_movimientos and not incluir_sin_movimientos:
+            continue
+        saldo_final = saldo_inicial + entradas - salidas
+        filas.append({
+            'renglon': str(renglon_numero),
+            'codigo': art.codigo,
+            'articulo': art.nombre,
+            'unidad': str(art.unidad_medida) if art.unidad_medida else '',
+            'saldo_inicial': saldo_inicial,
+            'entradas': entradas,
+            'salidas': salidas,
+            'saldo_final': saldo_final,
+            'articulo_id': art.id,
+        })
+
+    totales = {
+        'total_renglones': len({fila['renglon'] for fila in filas}),
+        'total_articulos': len(filas),
+        'total_entradas': sum(fila['entradas'] for fila in filas),
+        'total_salidas': sum(fila['salidas'] for fila in filas),
+        'saldo_final_general': sum(fila['saldo_final'] for fila in filas),
+    }
+    filtros = {
+        'fecha_inicio': fecha_inicio,
+        'fecha_fin': fecha_fin,
+        'renglon_inicio': renglon_inicio,
+        'renglon_fin': renglon_fin,
+        'articulo': str(articulo or ''),
+        'departamento': str(departamento or ''),
+        'incluir_sin_movimientos': incluir_sin_movimientos,
+    }
+    return {'filas': filas, 'totales': totales, 'filtros': filtros}
+
+
+@login_required
+@grupo_requerido('Administrador', 'Almacen', 'Departamento', 'Gestor')
+def libro_mayor(request):
+    datos = generar_datos_libro_mayor(
+        fecha_inicio=request.GET.get('fecha_inicio'),
+        fecha_fin=request.GET.get('fecha_fin'),
+        renglon_inicio=request.GET.get('renglon_inicio', 300),
+        renglon_fin=request.GET.get('renglon_fin', 399),
+        articulo=request.GET.get('articulo'),
+        departamento=request.GET.get('departamento'),
+        usuario=request.user,
+        incluir_sin_movimientos=request.GET.get('incluir_sin_movimientos') == 'on',
+    )
+    departamentos_ids = _departamentos_permitidos_libro_mayor(request.user)
+    departamentos = Departamento.objects.all() if departamentos_ids is None else Departamento.objects.filter(id__in=departamentos_ids)
+    return render(request, 'almacen/libro_mayor.html', {
+        **datos,
+        'articulos': Articulo.objects.filter(renglon_presupuestario__regex=r'^3[0-9][0-9]$').order_by('codigo', 'nombre'),
+        'departamentos': departamentos,
+    })
+
+
+@login_required
+@grupo_requerido('Administrador', 'Almacen', 'Departamento', 'Gestor')
+def libro_mayor_pdf(request):
+    datos = generar_datos_libro_mayor(request.GET.get('fecha_inicio'), request.GET.get('fecha_fin'), request.GET.get('renglon_inicio', 300), request.GET.get('renglon_fin', 399), request.GET.get('articulo'), request.GET.get('departamento'), request.user, request.GET.get('incluir_sin_movimientos') == 'on')
+    html_string = render_to_string('almacen/libro_mayor_pdf.html', {**datos, 'institucion': Institucion.objects.first(), 'generado': timezone.now()})
+    pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf()
+    response = HttpResponse(pdf_file, content_type='application/pdf')
+    response['Content-Disposition'] = 'inline; filename="libro_mayor.pdf"'
+    return response
+
+
+@login_required
+@grupo_requerido('Administrador', 'Almacen', 'Departamento', 'Gestor')
+def libro_mayor_excel(request):
+    datos = generar_datos_libro_mayor(request.GET.get('fecha_inicio'), request.GET.get('fecha_fin'), request.GET.get('renglon_inicio', 300), request.GET.get('renglon_fin', 399), request.GET.get('articulo'), request.GET.get('departamento'), request.user, request.GET.get('incluir_sin_movimientos') == 'on')
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'Libro Mayor'
+    ws.append(['Libro Mayor'])
+    ws.append(['Generado', timezone.now().strftime('%d/%m/%Y %H:%M')])
+    ws.append(['Rango renglones', f"{datos['filtros']['renglon_inicio']} - {datos['filtros']['renglon_fin']}"])
+    ws.append(['Fecha inicio', datos['filtros']['fecha_inicio'] or ''])
+    ws.append(['Fecha fin', datos['filtros']['fecha_fin'] or ''])
+    ws.append([])
+    headers = ['Renglón', 'Código', 'Artículo', 'Unidad', 'Saldo inicial', 'Entradas', 'Salidas', 'Saldo final']
+    ws.append(headers)
+    for cell in ws[7]:
+        cell.font = Font(bold=True)
+    for fila in datos['filas']:
+        ws.append([fila['renglon'], fila['codigo'], fila['articulo'], fila['unidad'], fila['saldo_inicial'], fila['entradas'], fila['salidas'], fila['saldo_final']])
+    ws.append([])
+    ws.append(['Totales', '', '', '', '', datos['totales']['total_entradas'], datos['totales']['total_salidas'], datos['totales']['saldo_final_general']])
+    for col in ws.columns:
+        letter = get_column_letter(col[0].column)
+        ws.column_dimensions[letter].width = min(max(len(str(cell.value or '')) for cell in col) + 2, 50)
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="libro_mayor.xlsx"'
+    wb.save(response)
+    return response
+
+
+@login_required
+@grupo_requerido('Administrador', 'Almacen', 'Departamento', 'Gestor')
+def libro_mayor_movimientos(request, articulo_id):
+    articulo = get_object_or_404(Articulo, id=articulo_id)
+    datos = generar_datos_libro_mayor(
+        fecha_inicio=request.GET.get('fecha_inicio'),
+        fecha_fin=request.GET.get('fecha_fin'),
+        renglon_inicio=request.GET.get('renglon_inicio', 300),
+        renglon_fin=request.GET.get('renglon_fin', 399),
+        articulo=articulo.id,
+        departamento=request.GET.get('departamento'),
+        usuario=request.user,
+        incluir_sin_movimientos=True,
+    )
+    departamento_ids = _departamentos_permitidos_libro_mayor(request.user)
+    if request.GET.get('departamento'):
+        try:
+            departamento_id = int(request.GET.get('departamento'))
+            departamento_ids = [departamento_id] if departamento_ids is None or departamento_id in departamento_ids else []
+        except (TypeError, ValueError):
+            departamento_ids = []
+    fecha_inicio = datos['filtros']['fecha_inicio']
+    fecha_fin = datos['filtros']['fecha_fin']
+    movimientos = []
+    for mov in Kardex.objects.filter(articulo=articulo).select_related('fuente_asignacion__destino', 'fuente_despacho__requerimiento__departamento').order_by('fecha', 'id'):
+        if not _movimiento_corresponde_departamento(mov, departamento_ids):
+            continue
+        if fecha_inicio and mov.fecha.date() < fecha_inicio:
+            continue
+        if fecha_fin and mov.fecha.date() > fecha_fin:
+            continue
+        departamento = ''
+        if mov.fuente_asignacion_id:
+            departamento = mov.fuente_asignacion.destino.nombre
+        elif mov.fuente_despacho_id and mov.fuente_despacho.requerimiento_id:
+            departamento = mov.fuente_despacho.requerimiento.departamento.nombre
+        movimientos.append({
+            'fecha': mov.fecha,
+            'tipo_movimiento': mov.tipo_movimiento,
+            'referencia': mov.numero_kardex,
+            'departamento': departamento,
+            'entrada': mov.cantidad if mov.tipo_movimiento in ['INGRESO', 'ENTRADA'] else 0,
+            'salida': mov.cantidad if mov.tipo_movimiento in ['SALIDA', 'EGRESO'] else 0,
+            'saldo': mov.saldo_actual,
+            'observacion': mov.observacion,
+        })
+    return render(request, 'almacen/libro_mayor_movimientos.html', {'articulo': articulo, 'movimientos': movimientos, 'filtros': datos['filtros']})
