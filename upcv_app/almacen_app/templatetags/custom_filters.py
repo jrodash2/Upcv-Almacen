@@ -30,3 +30,12 @@ def cantidad_limpia(value):
     if number.is_integer():
         return f"{int(number):,}"
     return f"{number:,.2f}".rstrip('0').rstrip('.')
+
+
+@register.filter
+def quetzales(value):
+    try:
+        number = float(value or 0)
+    except (TypeError, ValueError):
+        number = 0
+    return f"Q{number:,.2f}"

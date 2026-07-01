@@ -2303,6 +2303,10 @@ def _parse_fecha_libro_mayor(value):
         return None
 
 
+def _moneda(valor):
+    return Decimal(valor or 0).quantize(Decimal('0.01'))
+
+
 def _normalizar_rango_renglones(inicio=None, fin=None):
     try:
         inicio = int(inicio)
@@ -2339,6 +2343,116 @@ def _movimiento_corresponde_departamento(movimiento, departamento_ids):
     return movimiento.tipo_movimiento == 'INGRESO'
 
 
+def _costo_entrada_kardex(movimiento):
+    if movimiento.fuente_factura_id and movimiento.fuente_factura:
+        precio_unitario = _moneda(movimiento.fuente_factura.precio_unitario)
+        precio_total = _moneda(movimiento.fuente_factura.precio_total)
+        sin_costo = precio_unitario <= 0
+        if precio_total > 0 and movimiento.fuente_factura.cantidad == movimiento.cantidad:
+            return precio_unitario, precio_total, sin_costo
+        return precio_unitario, _moneda(precio_unitario * Decimal(movimiento.cantidad or 0)), sin_costo
+    return Decimal('0.00'), Decimal('0.00'), True
+
+
+def _datos_departamento_movimiento(movimiento):
+    if movimiento.fuente_asignacion_id:
+        return movimiento.fuente_asignacion.destino.nombre
+    if movimiento.fuente_despacho_id and movimiento.fuente_despacho.requerimiento_id:
+        return movimiento.fuente_despacho.requerimiento.departamento.nombre
+    return ''
+
+
+def _calcular_movimientos_valorizados(articulo, departamento_ids, fecha_inicio=None, fecha_fin=None):
+    saldo_cantidad = 0
+    saldo_monto = Decimal('0.00')
+    resumen = {
+        'saldo_inicial_cantidad': 0,
+        'saldo_inicial_monto': Decimal('0.00'),
+        'entradas_cantidad': 0,
+        'entradas_monto': Decimal('0.00'),
+        'salidas_cantidad': 0,
+        'salidas_monto': Decimal('0.00'),
+        'sin_costo': False,
+        'movimientos': [],
+        'tuvo_movimientos': False,
+    }
+
+    movimientos = Kardex.objects.filter(articulo=articulo).select_related(
+        'fuente_factura', 'fuente_asignacion__destino', 'fuente_despacho__requerimiento__departamento'
+    ).order_by('fecha', 'id')
+
+    for mov in movimientos:
+        if not _movimiento_corresponde_departamento(mov, departamento_ids):
+            continue
+        resumen['tuvo_movimientos'] = True
+        cantidad = mov.cantidad or 0
+        cantidad_decimal = Decimal(cantidad)
+        es_ingreso = mov.tipo_movimiento in ['INGRESO', 'ENTRADA']
+        es_salida = mov.tipo_movimiento in ['SALIDA', 'EGRESO']
+        costo_unitario = Decimal('0.00')
+        monto = Decimal('0.00')
+        sin_costo_movimiento = False
+
+        if es_ingreso:
+            costo_unitario, monto, sin_costo_movimiento = _costo_entrada_kardex(mov)
+            saldo_cantidad += cantidad
+            saldo_monto = _moneda(saldo_monto + monto)
+        elif es_salida:
+            costo_unitario = _moneda(saldo_monto / Decimal(saldo_cantidad)) if saldo_cantidad > 0 else Decimal('0.00')
+            monto = _moneda(costo_unitario * cantidad_decimal)
+            if costo_unitario == 0 and cantidad > 0:
+                sin_costo_movimiento = True
+            saldo_cantidad -= cantidad
+            saldo_monto = _moneda(saldo_monto - monto)
+        else:
+            continue
+
+        if sin_costo_movimiento:
+            resumen['sin_costo'] = True
+
+        fecha_mov = mov.fecha.date()
+        dentro_rango = (not fecha_inicio or fecha_mov >= fecha_inicio) and (not fecha_fin or fecha_mov <= fecha_fin)
+        if fecha_inicio and fecha_mov < fecha_inicio:
+            resumen['saldo_inicial_cantidad'] = saldo_cantidad
+            resumen['saldo_inicial_monto'] = saldo_monto
+            continue
+        if not dentro_rango:
+            continue
+
+        if es_ingreso:
+            resumen['entradas_cantidad'] += cantidad
+            resumen['entradas_monto'] = _moneda(resumen['entradas_monto'] + monto)
+        elif es_salida:
+            resumen['salidas_cantidad'] += cantidad
+            resumen['salidas_monto'] = _moneda(resumen['salidas_monto'] + monto)
+
+        resumen['movimientos'].append({
+            'fecha': mov.fecha,
+            'tipo_movimiento': mov.tipo_movimiento,
+            'referencia': mov.numero_kardex,
+            'departamento': _datos_departamento_movimiento(mov),
+            'entrada_cantidad': cantidad if es_ingreso else 0,
+            'entrada_monto': monto if es_ingreso else Decimal('0.00'),
+            'salida_cantidad': cantidad if es_salida else 0,
+            'salida_monto': monto if es_salida else Decimal('0.00'),
+            'saldo_cantidad': saldo_cantidad,
+            'saldo_monto': saldo_monto,
+            'costo_unitario': costo_unitario,
+            'sin_costo': sin_costo_movimiento,
+            'revisar': saldo_cantidad < 0 or saldo_monto < 0,
+            'observacion': mov.observacion,
+        })
+
+    if not fecha_inicio:
+        resumen['saldo_inicial_cantidad'] = 0
+        resumen['saldo_inicial_monto'] = Decimal('0.00')
+    resumen['saldo_final_cantidad'] = resumen['saldo_inicial_cantidad'] + resumen['entradas_cantidad'] - resumen['salidas_cantidad']
+    resumen['saldo_final_monto'] = _moneda(resumen['saldo_inicial_monto'] + resumen['entradas_monto'] - resumen['salidas_monto'])
+    resumen['costo_promedio'] = _moneda(resumen['saldo_final_monto'] / Decimal(resumen['saldo_final_cantidad'])) if resumen['saldo_final_cantidad'] > 0 else Decimal('0.00')
+    resumen['revisar'] = resumen['saldo_final_cantidad'] < 0 or resumen['saldo_final_monto'] < 0
+    return resumen
+
+
 def generar_datos_libro_mayor(fecha_inicio=None, fecha_fin=None, renglon_inicio=300, renglon_fin=399, articulo=None, departamento=None, usuario=None, incluir_sin_movimientos=False):
     renglon_inicio, renglon_fin = _normalizar_rango_renglones(renglon_inicio, renglon_fin)
     fecha_inicio = _parse_fecha_libro_mayor(fecha_inicio) if isinstance(fecha_inicio, str) else fecha_inicio
@@ -2358,63 +2472,45 @@ def generar_datos_libro_mayor(fecha_inicio=None, fecha_fin=None, renglon_inicio=
     if articulo:
         articulos = articulos.filter(id=articulo)
 
-    articulos_filtrados = []
+    filas = []
     for art in articulos:
         renglon_texto = (art.renglon_presupuestario or '').strip()
         if not renglon_texto.isdigit():
             continue
         renglon_numero = int(renglon_texto)
-        if renglon_inicio <= renglon_numero <= renglon_fin:
-            articulos_filtrados.append((art, renglon_numero))
-
-    filas = []
-    for art, renglon_numero in articulos_filtrados:
-        movimientos = Kardex.objects.filter(articulo=art).select_related(
-            'fuente_asignacion__destino', 'fuente_despacho__requerimiento__departamento'
-        ).order_by('fecha', 'id')
-        saldo_inicial = entradas = salidas = 0
-        tuvo_movimientos = False
-        for mov in movimientos:
-            if not _movimiento_corresponde_departamento(mov, departamento_ids):
-                continue
-            tuvo_movimientos = True
-            cantidad = mov.cantidad or 0
-            es_ingreso = mov.tipo_movimiento in ['INGRESO', 'ENTRADA']
-            es_salida = mov.tipo_movimiento in ['SALIDA', 'EGRESO']
-            if fecha_inicio and mov.fecha.date() < fecha_inicio:
-                if es_ingreso:
-                    saldo_inicial += cantidad
-                elif es_salida:
-                    saldo_inicial -= cantidad
-                continue
-            if fecha_fin and mov.fecha.date() > fecha_fin:
-                continue
-            if es_ingreso:
-                entradas += cantidad
-            elif es_salida:
-                salidas += cantidad
-
-        if not tuvo_movimientos and not incluir_sin_movimientos:
+        if not (renglon_inicio <= renglon_numero <= renglon_fin):
             continue
-        saldo_final = saldo_inicial + entradas - salidas
+        calculo = _calcular_movimientos_valorizados(art, departamento_ids, fecha_inicio, fecha_fin)
+        if not calculo['tuvo_movimientos'] and not incluir_sin_movimientos:
+            continue
         filas.append({
             'renglon': str(renglon_numero),
             'codigo': art.codigo,
             'articulo': art.nombre,
             'unidad': str(art.unidad_medida) if art.unidad_medida else '',
-            'saldo_inicial': saldo_inicial,
-            'entradas': entradas,
-            'salidas': salidas,
-            'saldo_final': saldo_final,
+            'saldo_inicial_cantidad': calculo['saldo_inicial_cantidad'],
+            'saldo_inicial_monto': calculo['saldo_inicial_monto'],
+            'entradas_cantidad': calculo['entradas_cantidad'],
+            'entradas_monto': calculo['entradas_monto'],
+            'salidas_cantidad': calculo['salidas_cantidad'],
+            'salidas_monto': calculo['salidas_monto'],
+            'saldo_final_cantidad': calculo['saldo_final_cantidad'],
+            'saldo_final_monto': calculo['saldo_final_monto'],
+            'costo_promedio': calculo['costo_promedio'],
+            'sin_costo': calculo['sin_costo'],
+            'revisar': calculo['revisar'],
             'articulo_id': art.id,
         })
 
     totales = {
         'total_renglones': len({fila['renglon'] for fila in filas}),
         'total_articulos': len(filas),
-        'total_entradas': sum(fila['entradas'] for fila in filas),
-        'total_salidas': sum(fila['salidas'] for fila in filas),
-        'saldo_final_general': sum(fila['saldo_final'] for fila in filas),
+        'total_entradas_cantidad': sum(fila['entradas_cantidad'] for fila in filas),
+        'total_entradas_monto': _moneda(sum((fila['entradas_monto'] for fila in filas), Decimal('0.00'))),
+        'total_salidas_cantidad': sum(fila['salidas_cantidad'] for fila in filas),
+        'total_salidas_monto': _moneda(sum((fila['salidas_monto'] for fila in filas), Decimal('0.00'))),
+        'saldo_final_cantidad': sum(fila['saldo_final_cantidad'] for fila in filas),
+        'saldo_final_monto': _moneda(sum((fila['saldo_final_monto'] for fila in filas), Decimal('0.00'))),
     }
     filtros = {
         'fecha_inicio': fecha_inicio,
@@ -2426,6 +2522,7 @@ def generar_datos_libro_mayor(fecha_inicio=None, fecha_fin=None, renglon_inicio=
         'incluir_sin_movimientos': incluir_sin_movimientos,
     }
     return {'filas': filas, 'totales': totales, 'filtros': filtros}
+
 
 
 @login_required
@@ -2474,14 +2571,35 @@ def libro_mayor_excel(request):
     ws.append(['Fecha inicio', datos['filtros']['fecha_inicio'] or ''])
     ws.append(['Fecha fin', datos['filtros']['fecha_fin'] or ''])
     ws.append([])
-    headers = ['Renglón', 'Código', 'Artículo', 'Unidad', 'Saldo inicial', 'Entradas', 'Salidas', 'Saldo final']
+    headers = [
+        'Renglón', 'Código', 'Artículo', 'Unidad',
+        'Saldo Inicial Cantidad', 'Saldo Inicial Monto',
+        'Entradas Cantidad', 'Entradas Monto',
+        'Salidas Cantidad', 'Salidas Monto',
+        'Saldo Final Cantidad', 'Saldo Final Monto', 'Costo Promedio'
+    ]
     ws.append(headers)
     for cell in ws[7]:
         cell.font = Font(bold=True)
     for fila in datos['filas']:
-        ws.append([fila['renglon'], fila['codigo'], fila['articulo'], fila['unidad'], fila['saldo_inicial'], fila['entradas'], fila['salidas'], fila['saldo_final']])
+        ws.append([
+            fila['renglon'], fila['codigo'], fila['articulo'], fila['unidad'],
+            fila['saldo_inicial_cantidad'], fila['saldo_inicial_monto'],
+            fila['entradas_cantidad'], fila['entradas_monto'],
+            fila['salidas_cantidad'], fila['salidas_monto'],
+            fila['saldo_final_cantidad'], fila['saldo_final_monto'], fila['costo_promedio']
+        ])
     ws.append([])
-    ws.append(['Totales', '', '', '', '', datos['totales']['total_entradas'], datos['totales']['total_salidas'], datos['totales']['saldo_final_general']])
+    ws.append([
+        'TOTAL', '', '', '', '', '',
+        datos['totales']['total_entradas_cantidad'], datos['totales']['total_entradas_monto'],
+        datos['totales']['total_salidas_cantidad'], datos['totales']['total_salidas_monto'],
+        datos['totales']['saldo_final_cantidad'], datos['totales']['saldo_final_monto'], ''
+    ])
+    for row in ws.iter_rows(min_row=8, min_col=6, max_col=13):
+        for cell in row:
+            if cell.column in [6, 8, 10, 12, 13]:
+                cell.number_format = '"Q"#,##0.00'
     for col in ws.columns:
         letter = get_column_letter(col[0].column)
         ws.column_dimensions[letter].width = min(max(len(str(cell.value or '')) for cell in col) + 2, 50)
@@ -2495,16 +2613,8 @@ def libro_mayor_excel(request):
 @grupo_requerido('Administrador', 'Almacen', 'Departamento', 'Gestor')
 def libro_mayor_movimientos(request, articulo_id):
     articulo = get_object_or_404(Articulo, id=articulo_id)
-    datos = generar_datos_libro_mayor(
-        fecha_inicio=request.GET.get('fecha_inicio'),
-        fecha_fin=request.GET.get('fecha_fin'),
-        renglon_inicio=request.GET.get('renglon_inicio', 300),
-        renglon_fin=request.GET.get('renglon_fin', 399),
-        articulo=articulo.id,
-        departamento=request.GET.get('departamento'),
-        usuario=request.user,
-        incluir_sin_movimientos=True,
-    )
+    fecha_inicio = _parse_fecha_libro_mayor(request.GET.get('fecha_inicio'))
+    fecha_fin = _parse_fecha_libro_mayor(request.GET.get('fecha_fin'))
     departamento_ids = _departamentos_permitidos_libro_mayor(request.user)
     if request.GET.get('departamento'):
         try:
@@ -2512,29 +2622,9 @@ def libro_mayor_movimientos(request, articulo_id):
             departamento_ids = [departamento_id] if departamento_ids is None or departamento_id in departamento_ids else []
         except (TypeError, ValueError):
             departamento_ids = []
-    fecha_inicio = datos['filtros']['fecha_inicio']
-    fecha_fin = datos['filtros']['fecha_fin']
-    movimientos = []
-    for mov in Kardex.objects.filter(articulo=articulo).select_related('fuente_asignacion__destino', 'fuente_despacho__requerimiento__departamento').order_by('fecha', 'id'):
-        if not _movimiento_corresponde_departamento(mov, departamento_ids):
-            continue
-        if fecha_inicio and mov.fecha.date() < fecha_inicio:
-            continue
-        if fecha_fin and mov.fecha.date() > fecha_fin:
-            continue
-        departamento = ''
-        if mov.fuente_asignacion_id:
-            departamento = mov.fuente_asignacion.destino.nombre
-        elif mov.fuente_despacho_id and mov.fuente_despacho.requerimiento_id:
-            departamento = mov.fuente_despacho.requerimiento.departamento.nombre
-        movimientos.append({
-            'fecha': mov.fecha,
-            'tipo_movimiento': mov.tipo_movimiento,
-            'referencia': mov.numero_kardex,
-            'departamento': departamento,
-            'entrada': mov.cantidad if mov.tipo_movimiento in ['INGRESO', 'ENTRADA'] else 0,
-            'salida': mov.cantidad if mov.tipo_movimiento in ['SALIDA', 'EGRESO'] else 0,
-            'saldo': mov.saldo_actual,
-            'observacion': mov.observacion,
-        })
-    return render(request, 'almacen/libro_mayor_movimientos.html', {'articulo': articulo, 'movimientos': movimientos, 'filtros': datos['filtros']})
+    calculo = _calcular_movimientos_valorizados(articulo, departamento_ids, fecha_inicio, fecha_fin)
+    return render(request, 'almacen/libro_mayor_movimientos.html', {
+        'articulo': articulo,
+        'movimientos': calculo['movimientos'],
+        'filtros': {'fecha_inicio': fecha_inicio, 'fecha_fin': fecha_fin},
+    })
