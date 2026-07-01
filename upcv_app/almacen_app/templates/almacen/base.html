@@ -246,6 +246,15 @@
                 </li>
 {% if user.is_authenticated %}
 
+  <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
+    <a class="sidebar-link sidebar-title" href="#">
+      <i data-feather="book-open"></i><span>Reportes</span>
+    </a>
+    <ul class="sidebar-submenu">
+      <li><a href="{% url 'almacen:libro_mayor' %}">Libro Mayor</a></li>
+    </ul>
+  </li>
+
   {# Mostrar "Asignados" a Departamentos #}
   {% if es_departamento_o_gestor %}
    </li>

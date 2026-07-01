@@ -1,0 +1,55 @@
+{% extends 'almacen/base.html' %}
+{% load custom_filters %}
+{% block content %}
+<div class="page-body">
+  <div class="container-fluid">
+    <div class="page-title">
+      <div class="row">
+        <div class="col-6"><h4>Libro Mayor</h4></div>
+        <div class="col-6">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item">Almacén</li>
+            <li class="breadcrumb-item active">Libro Mayor</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container-fluid">
+    <div class="card">
+      <div class="card-header pb-0 card-no-border"><h4>Filtros</h4><span>El reporte permanece limitado a renglones presupuestarios del 300 al 399.</span></div>
+      <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+          <div class="col-md-2"><label class="form-label">Fecha inicio</label><input type="date" name="fecha_inicio" class="form-control" value="{{ filtros.fecha_inicio|date:'Y-m-d' }}"></div>
+          <div class="col-md-2"><label class="form-label">Fecha fin</label><input type="date" name="fecha_fin" class="form-control" value="{{ filtros.fecha_fin|date:'Y-m-d' }}"></div>
+          <div class="col-md-2"><label class="form-label">Renglón inicial</label><input type="number" min="300" max="399" name="renglon_inicio" class="form-control" value="{{ filtros.renglon_inicio }}"></div>
+          <div class="col-md-2"><label class="form-label">Renglón final</label><input type="number" min="300" max="399" name="renglon_fin" class="form-control" value="{{ filtros.renglon_fin }}"></div>
+          <div class="col-md-2"><label class="form-label">Artículo</label><select name="articulo" class="form-select"><option value="">Todos</option>{% for art in articulos %}<option value="{{ art.id }}" {% if filtros.articulo == art.id|stringformat:'s' %}selected{% endif %}>{{ art.codigo }} - {{ art.nombre }}</option>{% endfor %}</select></div>
+          <div class="col-md-2"><label class="form-label">Departamento</label><select name="departamento" class="form-select"><option value="">Todos</option>{% for depto in departamentos %}<option value="{{ depto.id }}" {% if filtros.departamento == depto.id|stringformat:'s' %}selected{% endif %}>{{ depto.nombre }}</option>{% endfor %}</select></div>
+          <div class="col-md-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="incluir_sin_movimientos" id="incluir_sin_movimientos" {% if filtros.incluir_sin_movimientos %}checked{% endif %}><label class="form-check-label" for="incluir_sin_movimientos">Incluir artículos sin movimientos</label></div></div>
+          <div class="col-md-9 text-end"><button class="btn btn-primary" type="submit">Filtrar</button><a class="btn btn-outline-danger" href="{% url 'almacen:libro_mayor_pdf' %}?{{ request.GET.urlencode }}">Exportar PDF</a><a class="btn btn-outline-success" href="{% url 'almacen:libro_mayor_excel' %}?{{ request.GET.urlencode }}">Exportar Excel</a></div>
+        </form>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-sm"><div class="card small-widget"><div class="card-body"><span>Total de renglones</span><h4>{{ totales.total_renglones|cantidad_limpia }}</h4></div></div></div>
+      <div class="col-sm"><div class="card small-widget"><div class="card-body"><span>Total de artículos</span><h4>{{ totales.total_articulos|cantidad_limpia }}</h4></div></div></div>
+      <div class="col-sm"><div class="card small-widget"><div class="card-body"><span>Total entradas</span><h4>{{ totales.total_entradas|cantidad_limpia }}</h4></div></div></div>
+      <div class="col-sm"><div class="card small-widget"><div class="card-body"><span>Total salidas</span><h4>{{ totales.total_salidas|cantidad_limpia }}</h4></div></div></div>
+      <div class="col-sm"><div class="card small-widget"><div class="card-body"><span>Saldo final general</span><h4>{{ totales.saldo_final_general|cantidad_limpia }}</h4></div></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header pb-0 card-no-border"><div class="d-flex justify-content-between align-items-center flex-wrap gap-2"><div><h4>Libro Mayor</h4><span>Movimientos de artículos por renglón presupuestario del 300 al 399.</span></div><div><a class="btn btn-danger btn-sm" href="{% url 'almacen:libro_mayor_pdf' %}?{{ request.GET.urlencode }}">Exportar PDF</a><a class="btn btn-success btn-sm" href="{% url 'almacen:libro_mayor_excel' %}?{{ request.GET.urlencode }}">Exportar Excel</a></div></div></div>
+      <div class="card-body"><div class="dt-ext table-responsive custom-scrollbar">
+        <table class="display datatables" id="tabla-libro-mayor">
+          <thead><tr><th>Renglón</th><th>Código</th><th>Artículo</th><th>Unidad</th><th>Saldo inicial</th><th>Entradas</th><th>Salidas</th><th>Saldo final</th><th>Acción</th></tr></thead>
+          <tbody>{% for fila in filas %}<tr><td>{{ fila.renglon }}</td><td><span class="badge badge-light-secondary">{{ fila.codigo }}</span></td><td>{{ fila.articulo }}</td><td>{{ fila.unidad }}</td><td>{{ fila.saldo_inicial|cantidad_limpia }}</td><td>{{ fila.entradas|cantidad_limpia }}</td><td>{{ fila.salidas|cantidad_limpia }}</td><td>{{ fila.saldo_final|cantidad_limpia }}</td><td><a class="btn btn-outline-primary btn-sm" href="{% url 'almacen:libro_mayor_movimientos' fila.articulo_id %}?{{ request.GET.urlencode }}">Ver movimientos</a></td></tr>{% endfor %}</tbody>
+        </table>
+      </div></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
