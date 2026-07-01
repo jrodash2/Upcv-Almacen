@@ -59,10 +59,20 @@
                 {% csrf_token %}
                 
                 <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.codigo.id_for_label }}">Código</label>
+                            {{ form.codigo }}
+                            <small class="text-muted">Código único que identifica el artículo en el sistema.</small>
+                            {% for error in form.codigo.errors %}
+                              <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
                     <!-- Columna 1 -->
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label for="{{ form.nombre.id_for_label }}">Nombre</label>
+                            <label class="form-label" for="{{ form.nombre.id_for_label }}">Nombre</label>
                             {{ form.nombre }}
                         </div>
                     </div>
@@ -147,7 +157,7 @@
                   <table class="display datatables" id="tabla-editar-articulo">
                     <thead>
                       <tr>
-                        <th>ID</th>
+                        <th>Código</th>
                         <th>Renglón</th>
                         <th>Nombre</th>
                         <th>Categoría</th>
@@ -159,7 +169,7 @@
                     <tbody>
                       {% for articulo in articulos %}
                       <tr>
-                        <td>{{ articulo.id }}</td>
+                        <td><span class="badge badge-light-primary">{{ articulo.codigo }}</span></td>
                         <td>
                           {% if articulo.renglon_presupuestario %}
                             <span class="badge badge-light-secondary">{{ articulo.renglon_presupuestario }}</span>
@@ -185,7 +195,7 @@
                     </tbody>
                     <tfoot>
                       <tr>
-                        <th>ID</th>
+                        <th>Código</th>
                         <th>Renglón</th>
                         <th>Nombre</th>
                         <th>Categoría</th>

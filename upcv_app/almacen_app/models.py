@@ -66,6 +66,12 @@ class Categoria(models.Model):
         return self.nombre
     
 class Articulo(models.Model):
+    codigo = models.CharField(
+        max_length=50,
+        unique=True,
+        verbose_name="Código",
+        help_text="Código único de referencia del artículo."
+    )
     nombre = models.CharField(max_length=1085)
     renglon_presupuestario = models.CharField(
         max_length=20,
@@ -81,7 +87,7 @@ class Articulo(models.Model):
     requiere_inventario_individual = models.BooleanField(default=False)
 
     def __str__(self):
-        return self.nombre
+        return f"{self.codigo} - {self.nombre}"
 
 
 # Modelo de Departamento

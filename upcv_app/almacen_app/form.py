@@ -117,7 +117,7 @@ class ArticuloChoiceField(forms.ModelChoiceField):
         categoria = obj.categoria.nombre if obj.categoria else 'S/C'
         renglon = obj.renglon_presupuestario or 'S/R'
         disponible = getattr(obj, 'cantidad_disponible', None)
-        texto = f"{obj.nombre} — Categoría: {categoria} — Renglón: {renglon}"
+        texto = f"{obj.codigo} - {obj.nombre} — Categoría: {categoria} — Renglón: {renglon}"
         if disponible is not None:
             texto += f" — Disponible: {disponible}"
         return texto
@@ -287,8 +287,9 @@ class DepartamentoForm(forms.ModelForm):
 class ArticuloForm(forms.ModelForm):
     class Meta:
         model = Articulo
-        fields = ['nombre', 'renglon_presupuestario', 'categoria', 'unidad_medida', 'ubicacion', 'requiere_vencimiento', 'requiere_inventario_individual']  # ✅ campo agregado
+        fields = ['codigo', 'nombre', 'renglon_presupuestario', 'categoria', 'unidad_medida', 'ubicacion', 'requiere_vencimiento', 'requiere_inventario_individual']  # ✅ campo agregado
         widgets = {
+            'codigo': forms.TextInput(attrs={'placeholder': 'Ejemplo: SUM-001, INS-010, MAT-025', 'class': 'form-control'}),
             'nombre': forms.TextInput(attrs={'placeholder': 'Nombre del artículo', 'class': 'form-control'}),
             'renglon_presupuestario': forms.TextInput(attrs={'placeholder': 'Ejemplo: 211, 231, 267', 'class': 'form-control'}),
             'categoria': forms.Select(attrs={'class': 'form-select'}),
@@ -302,6 +303,10 @@ class ArticuloForm(forms.ModelForm):
 
         if 'categoria' in self.fields:
             self.fields['categoria'].empty_label = 'Seleccione una categoría'
+        if 'codigo' in self.fields:
+            self.fields['codigo'].label = 'Código'
+            self.fields['codigo'].help_text = 'Código único que identifica el artículo en el sistema.'
+            self.fields['codigo'].required = True
 
         for field_name, field in self.fields.items():
             if isinstance(field.widget, forms.CheckboxInput):
@@ -310,6 +315,18 @@ class ArticuloForm(forms.ModelForm):
                 field.widget.attrs['class'] = 'form-select'
             else:
                 field.widget.attrs['class'] = 'form-control'
+
+    def clean_codigo(self):
+        codigo = (self.cleaned_data.get('codigo') or '').strip().upper()
+        if not codigo:
+            raise forms.ValidationError('Este campo es obligatorio.')
+
+        qs = Articulo.objects.filter(codigo__iexact=codigo)
+        if self.instance and self.instance.pk:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise forms.ValidationError('Ya existe un artículo registrado con este código.')
+        return codigo
 
 
 class ProveedorForm(forms.ModelForm):
@@ -589,7 +606,7 @@ class DetalleSolicitudRequerimientoForm(forms.ModelForm):
             categoria = obj.categoria.nombre if obj.categoria else 'S/C'
             renglon = obj.renglon_presupuestario or 'S/R'
             disponible = getattr(obj, 'cantidad_disponible', None)
-            texto = f"{obj.nombre} — Categoría: {categoria} — Renglón: {renglon}"
+            texto = f"{obj.codigo} - {obj.nombre} — Categoría: {categoria} — Renglón: {renglon}"
             if disponible is not None:
                 texto += f" — Disponible: {disponible}"
             return texto

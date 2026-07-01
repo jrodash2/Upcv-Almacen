@@ -442,7 +442,7 @@ table.order-details th {
                       value="{{ articulo.id }}"
                       data-requiere-vencimiento="{{ articulo.requiere_vencimiento|yesno:'true,false' }}"
                       data-requiere-inventario="{{ articulo.requiere_inventario_individual|yesno:'true,false' }}">
-                      {{ articulo.nombre }} — Categoría: {{ articulo.categoria.nombre|default:"S/C" }} — Renglón: {{ articulo.renglon_presupuestario|default:"S/R" }}
+                      {{ articulo.codigo }} - {{ articulo.nombre }} — Categoría: {{ articulo.categoria.nombre|default:"S/C" }} — Renglón: {{ articulo.renglon_presupuestario|default:"S/R" }}
                     </option>
                   {% endfor %}
                 </select>
@@ -510,7 +510,7 @@ table.order-details th {
           <table class="display datatables" id="tabla-agregar-detalle-factura-2">
             <thead>
               <tr>
-                <th>ID</th>
+                <th>Código</th>
                 <th>Nombre</th>
                 <th>Categoría</th>
                 <th>Unidad de Medida</th>
@@ -521,7 +521,7 @@ table.order-details th {
             <tbody>
               {% for articulo in articulos %}
                 <tr>
-                  <td>{{ articulo.id }}</td>
+                  <td><span class="badge badge-light-primary">{{ articulo.codigo }}</span></td>
                   <td>{{ articulo.nombre }}</td>
                   <td>
                     {% if articulo.categoria %}
@@ -814,7 +814,7 @@ document.querySelectorAll('.seleccionar-articulo').forEach(button => {
       value="{{ articulo.id }}"
       data-requiere-vencimiento="{{ articulo.requiere_vencimiento|yesno:'true,false' }}"
     >
-      {{ articulo.nombre }} — Categoría: {{ articulo.categoria.nombre|default:"S/C" }} — Renglón: {{ articulo.renglon_presupuestario|default:"S/R" }}
+      {{ articulo.codigo }} - {{ articulo.nombre }} — Categoría: {{ articulo.categoria.nombre|default:"S/C" }} — Renglón: {{ articulo.renglon_presupuestario|default:"S/R" }}
     </option>
   {% endfor %}
 </select>

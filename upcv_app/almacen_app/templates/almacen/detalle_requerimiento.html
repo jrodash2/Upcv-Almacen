@@ -428,7 +428,7 @@
   {% for articulo in articulos %}
     <option value="{{ articulo.id }}"
             data-stock="{{ stock_disponible|get_item:articulo.id|default:0 }}">
-      {{ articulo.nombre }} — Categoría: {{ articulo.categoria.nombre|default:"S/C" }} — Renglón: {{ articulo.renglon_presupuestario|default:"S/R" }} — Disponible: {{ stock_disponible|get_item:articulo.id|default:0 }}
+      {{ articulo.codigo }} - {{ articulo.nombre }} — Categoría: {{ articulo.categoria.nombre|default:"S/C" }} — Renglón: {{ articulo.renglon_presupuestario|default:"S/R" }} — Disponible: {{ stock_disponible|get_item:articulo.id|default:0 }}
     </option>
   {% endfor %}
 </select>
@@ -515,7 +515,7 @@
             <label for="editarArticulo" class="form-label">Artículo</label>
             <select class="form-control" id="editarArticulo" name="articulo" required>
               {% for articulo in articulos %}
-                <option value="{{ articulo.id }}">{{ articulo.nombre }} — Categoría: {{ articulo.categoria.nombre|default:"S/C" }} — Renglón: {{ articulo.renglon_presupuestario|default:"S/R" }}</option>
+                <option value="{{ articulo.id }}">{{ articulo.codigo }} - {{ articulo.nombre }} — Categoría: {{ articulo.categoria.nombre|default:"S/C" }} — Renglón: {{ articulo.renglon_presupuestario|default:"S/R" }}</option>
               {% endfor %}
             </select>
           </div>
