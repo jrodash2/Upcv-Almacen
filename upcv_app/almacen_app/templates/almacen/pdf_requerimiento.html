@@ -1,4 +1,5 @@
 {% load static %}
+{% load custom_filters %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -7,289 +8,286 @@
 
 
   <style>
-    /* Fuente personalizada para todo el documento */
-    body, html {
-      font-family: 'Arial', sans-serif; /* Aquí puedes cambiar a la fuente que desees */
-    }
-
-    /* Eliminar márgenes en el body y html para reducir el espacio de la hoja */
-    body, html {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-    }
-
-    /* Establecer márgenes para la página de impresión (PDF) */
     @page {
       margin: 10mm;
     }
 
-    /* Ajustar la sección principal de la página */
-    .card-body {
-      margin: 0;
-      padding: 0;
+    * {
+      box-sizing: border-box;
     }
 
-    /* Eliminar márgenes y rellenos en la tabla */
-    table {
+    html,
+    body {
       margin: 0;
       padding: 0;
       width: 100%;
+      max-width: 100%;
+      height: 100%;
+      font-family: Arial, sans-serif;
+      color: #000;
+      font-size: 8.5px;
     }
 
-    /* Estilo de los encabezados de la tabla */
-    th, td {
-      border: 1px solid #000;
-      padding: 4px;
+    .pdf-wrapper,
+    .report-container {
+      width: 100%;
+      max-width: 100%;
+      overflow: hidden;
+    }
+
+    .pdf-header {
+      display: table;
+      width: 100%;
+      max-width: 100%;
+      margin-bottom: 8px;
+      padding-bottom: 5px;
+      border-bottom: 1px solid #000;
+      table-layout: fixed;
+    }
+
+    .header-logo {
+      display: table-cell;
+      width: 18%;
+      vertical-align: middle;
       text-align: left;
     }
 
-    /* Estilo para los logos */
-    .logo-row {
-      display: flex;
-      justify-content: center; 
-      align-items: center;
-      margin: 0;
-    }
-
-    .logo-row img {
+    .header-logo img {
+      max-width: 85px;
       max-height: 60px;
-      height: auto;
       width: auto;
-      margin: 0 10px;
+      height: auto;
     }
 
-    /* Estilo de los detalles de la institución */
-    .institucion-info {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 10px;
+    .header-text {
+      display: table-cell;
+      width: 82%;
+      text-align: center;
+      vertical-align: middle;
+      padding-left: 4px;
     }
 
-    .institucion-info div {
-      width: 32%;
+    .institution-name {
+      font-size: 11px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    .section-name {
       font-size: 10px;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-top: 2px;
     }
 
-    /* Ajuste de las columnas dentro de la invoice */
-    .invoice-details {
-      margin-bottom: 10px;
-      color: black;
+    .document-title {
+      font-size: 12px;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-top: 4px;
     }
 
-    .invoice-details p {
+    table {
+      width: 100%;
+      max-width: 100%;
       margin: 0;
       padding: 0;
+      border-collapse: collapse;
+      table-layout: fixed;
     }
 
-    /* Flexbox para las filas */
-    .row {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .col-sm-6 {
-      flex: 1 1 45%;
-    }
-
-    @media (max-width: 768px) {
-      .col-sm-6 {
-        flex: 1 1 100%;
-      }
-    }
-
-    /* Estilo para los detalles de la tabla */
-    .small-header {
-      font-size: 9px;
-      padding: 3px;
-      text-align: center;
-    }
-
-    .descripcion-header {
-      font-size: 10px;
-      text-align: center;
-      padding: 10px;
-    }
-
-    .small-cell {
-      font-size: 10px;
-      padding: 2px;
-      text-align: center;
-    }
-
-    .descripcion-Articulo {
-      font-size: 11px;
-      white-space: normal;
+    th,
+    td {
+      box-sizing: border-box;
       word-wrap: break-word;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 180px;
-      text-align: center;
+      overflow-wrap: break-word;
     }
 
-    /* Ajuste de firma */
+    .meta-table,
+    .items-table,
+    .observation-table {
+      width: 100%;
+      max-width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 8.5px;
+      margin-bottom: 8px;
+    }
+
+    .meta-table td,
+    .items-table th,
+    .items-table td,
+    .observation-table td {
+      border: 1px solid #000;
+      padding: 3px 4px;
+      vertical-align: middle;
+    }
+
+    .items-table th {
+      text-align: center;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    .label-cell,
+    .text-bold {
+      font-weight: bold;
+    }
+
+    .value-cell {
+      font-weight: normal;
+    }
+
+    .text-left { text-align: left; }
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+
+    .correlativo {
+      color: #ff0000;
+      font-weight: bold;
+      text-align: center;
+      font-size: 10px;
+    }
+
+    .money-cell {
+      text-align: right;
+      white-space: nowrap;
+      font-size: 8px;
+    }
+
+    .observation-table {
+      margin-top: 8px;
+    }
+
+    .observation-table td {
+      padding: 4px;
+      vertical-align: top;
+    }
+
+    .observation-label {
+      width: 13%;
+      font-weight: bold;
+    }
+
+    .observation-text {
+      width: 87%;
+      text-align: justify;
+      line-height: 1.35;
+    }
+
     .firmas {
       display: flex;
       justify-content: space-between;
-      margin-top: 30px;
-      font-size: 10px;
+      font-size: 11px;
+      box-sizing: border-box;
     }
 
     .firmas div {
       width: 32%;
       text-align: center;
     }
+
+    .institucion-info,
+    .institucion-info div {
+      box-sizing: border-box;
+      max-width: 100%;
+    }
   </style>
 
 </head>
 <body>
-
-{% comment %} <!-- Logos arriba -->
-<div class="logo-row">
-  <img src="{{ institucion.logo.url }}" alt="Logo 1">
-  <img src="{{ institucion.logo2.url }}" alt="Logo 2">
-</div> {% endcomment %}
-  <br>  <br>  <br>  <br>  <br>  <br>  <br>
-
-
-<div class="card-body pt-10 mt-10">  <!-- Quitado 'border-top' -->
-<!-- Línea con nombre del Departamento centrado -->
-<p style="text-align: center; font-size: 14px; color: #0b2a4a; border-top: 0.5px solid #0b2a4a; margin: 4px 0 8px 0;">
-  <strong>{{ requerimiento.departamento.nombre }}</strong>
-</p>
-
-<!-- Tabla con información del requerimiento y motivo -->
-<table style="width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed;">
-  <tr style="border-bottom: 0.5px solid #0b2a4a;">
-    <th style="width: 15%; text-align: left; padding: 6px; background-color: #717172ff; color: white; border: 1px solid #0b2a4a;">
-      Elaborado Por:
-    </th>
-    <td style="padding: 6px; border: 1px solid #0b2a4a; overflow-wrap: break-word; width: 35%;">
-      {{ requerimiento.creado_por.get_full_name }}
-    </td>
-
-    <th style="width: 6%; text-align: left; padding: 6px; background-color: #717172ff; color: white; border: 1px solid #0b2a4a;">
-      Fecha:
-    </th>
-    <td style="padding: 3px; border: 1px solid #0b2a4a; width: 17%;">
-      {{ requerimiento.fecha_creacion|date:"d \d\e F \d\e Y" }}
-    </td>
-{% if requerimiento.estado != 'pendiente' %}
-<th style="width: 6%; text-align: left; padding: 6px; background-color: #717172ff; color: white; border: 1px solid #0b2a4a;">
-  Estado:
-</th>
-{% else %}
-<th style="width: 6%; text-align: left; padding: 6px; background-color: #717172ff; color: #717172ff; border: 1px solid #0b2a4a;">
-  Estado:
-</th>
-{% endif %}
-
-    <td style="padding: 6px; border: 1px solid #0b2a4a; overflow-wrap: break-word;">
-      {% if requerimiento.estado != 'pendiente' %}
-        {{ requerimiento.get_estado_display }}
-      {% else %}
-        <!-- Dejar vacío pero mantener estructura -->
+<div class="pdf-wrapper">
+  <div class="pdf-header">
+    <div class="header-logo">
+      {% if institucion.logo %}
+        <img src="{{ institucion.logo.url }}" alt="Logo institucional">
       {% endif %}
-    </td>
-  </tr>
+    </div>
+    <div class="header-text">
+      <div class="institution-name">{% if institucion.nombre %}{{ institucion.nombre }}{% else %}UNIDAD PARA LA PREVENCIÓN COMUNITARIA DE LA VIOLENCIA{% endif %}</div>
+      <div class="section-name">SECCIÓN DE ALMACÉN E INVENTARIOS</div>
+      <div class="document-title">REQUERIMIENTO DE BIENES, SUMINISTROS E INSUMOS</div>
+    </div>
+  </div>
 
-  {% if requerimiento.motivo %}
-  <tr>
-    <th colspan="1" style="text-align: left; padding: 6px; color: white; border: 1px solid #0b2a4a; background-color: #717172ff;">
-      Motivo de la Solicitud:
-    </th>
-    <td colspan="5" style="padding: 6px; border: 1px solid #0b2a4a; word-wrap: break-word; overflow-wrap: break-word;">
-      {{ requerimiento.motivo }}
-    </td>
-  </tr>
-  {% endif %}
-</table>
+  <div class="report-container">
+    <table class="meta-table">
+      <tr>
+        <td class="label-cell" style="width: 24%;">DEPARTAMENTO O SECCIÓN SOLICITANTE</td>
+        <td class="value-cell" style="width: 40%;">{{ departamento_solicitante }}</td>
+        <td class="label-cell text-center" style="width: 12%;">FECHA</td>
+        <td class="value-cell text-center" style="width: 24%;">{{ fecha }}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">ELABORADO POR</td>
+        <td colspan="3" class="value-cell">{{ elaborado_por }}</td>
+      </tr>
+      <tr>
+        <td class="label-cell">MOTIVO DE LA SOLICITUD</td>
+        <td colspan="3" class="value-cell">{{ motivo }}</td>
+      </tr>
+      <tr>
+        <td class="label-cell text-center">CORRELATIVO<br>DE<br>LA SOLICITUD</td>
+        <td colspan="3" class="correlativo">{{ correlativo }}</td>
+      </tr>
+    </table>
 
-
-
-
-
-
-<br>
-<style>
-  table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    border-radius: 10px;
-    overflow: hidden;
-  }
-  th, td {
-    padding: 12px;
-    text-align: left;
-    border: 0.51px solid #0b2a4a;
-  }
-  th {
-    background-color: #0b2a4a;
-    color: white;
-  }
-  tr:nth-child(even) {
-    background-color: 
-  }
-  tr:hover {
-    background-color: #ddd;
-  }
-</style>
-
-
-
-  <!-- Detalles de la tabla con el nuevo formato -->
-  <div class="table-responsive invoice-table mb-4 ">
-    <table class="table table ">
+    <table class="items-table">
       <thead>
         <tr>
-          <th class="small-header">Cantidad Solicitada</th>
-          <th class="small-header">Unidad de Medida</th>
-          <th class="descripcion-header">Descripción</th>
-          <th class="small-header">Cantidad Despachada</th>
+          <th style="width: 11%;">CÓDIGO</th>
+          <th style="width: 38%;">DESCRIPCIÓN</th>
+          <th style="width: 14%;">UNIDAD DE<br>MEDIDA</th>
+          <th style="width: 13%;">COSTO<br>UNITARIO</th>
+          <th style="width: 10%;">CANTIDAD</th>
+          <th style="width: 14%;">TOTAL</th>
         </tr>
       </thead>
       <tbody>
-        {% for detalle in detalles_requerimiento %}
-         <tr>
-  <td class="small-cell">{{ detalle.cantidad }}</td>
-  <td class="small-cell">{{ detalle.articulo.unidad_medida }}</td>
-  <td class="descripcion-Articulo">{{ detalle.articulo.nombre }}<br><small>Categoría: {{ detalle.articulo.categoria.nombre|default:"S/C" }}</small></td>
-  <td class="small-cell">
-    {% if requerimiento.estado != 'pendiente' %}
-      {{ detalle.cantidad_despachada }}
-    {% endif %}
-  </td>
-</tr>
-
+        {% for item in detalles %}
+        <tr>
+          <td class="text-center">{{ item.codigo }}</td>
+          <td class="text-left">{{ item.descripcion }}</td>
+          <td class="text-center">{{ item.unidad }}</td>
+          <td class="money-cell">{{ item.costo_unitario|quetzales }}</td>
+          <td class="text-center">{{ item.cantidad }}</td>
+          <td class="money-cell">{{ item.total|quetzales }}</td>
+        </tr>
         {% empty %}
-          <tr>
-            <td colspan="4">No hay detalles registrados.</td>
-          </tr>
+        <tr>
+          <td colspan="6" class="text-center">No hay artículos registrados.</td>
+        </tr>
         {% endfor %}
+        <tr>
+          <td colspan="5" class="text-bold text-right">TOTAL Q</td>
+          <td class="money-cell text-bold">{{ total_general|quetzales }}</td>
+        </tr>
       </tbody>
     </table>
+
+    <table class="observation-table">
+      <tr>
+        <td class="observation-label">Observación:</td>
+        <td class="observation-text">
+          El 021 del departamento o sección se compromete a dar un uso adecuado, responsable y eficiente a los suministros que le han sido entregados, garantizando su correcta distribución conforme a las necesidades operativas y administrativas de la Unidad para la Prevención Comunitaria de la Violencia.
+        </td>
+      </tr>
+    </table>
   </div>
-
-
-
-</body>
-
+</div>
 
 <!-- Firmas -->
 
 
 <!-- Primera línea de firmas -->
-<div class="firmas" style="text-align: center; padding-bottom: 25px; margin-right: 30px; font-size: 13px; position: fixed; bottom: 130px; width: 100%; left: 0;">
+<div class="firmas" style="text-align: center; padding-bottom: 25px; font-size: 13px; position: fixed; bottom: 130px; width: 100%; left: 0;">
   <div>_______________________________<br><strong>Elaborado Por</strong></div>
   <div style="margin-top: -15px;">_________________________________<br><strong>Jefe Departamento y/o Sección</strong></div>
   <div>_________________________<br><strong>Recibí Conforme</strong></div>
 </div>
 
 <!-- Segunda línea de firmas -->
-<div class="firmas" style="text-align: center; padding-bottom: 5px; margin-right: 30px; font-size: 13px; position: fixed; bottom: 1px; width: 100%; left: 0;">
+<div class="firmas" style="text-align: center; padding-bottom: 5px; font-size: 13px; position: fixed; bottom: 1px; width: 100%; left: 0;">
   <div>_______________________________<br><strong>Departamento Financiero</strong></div>
   <div style="margin-top: -15px;">_________________________<br><strong>Vo. Bo. Coordinación</strong></div>
   <div>_________________________<br><strong>Entrega Sección de Almacén</strong></div>
@@ -325,8 +323,5 @@
   </div>
   
 </div> 
-
-
-
-
+</body>
 </html>
