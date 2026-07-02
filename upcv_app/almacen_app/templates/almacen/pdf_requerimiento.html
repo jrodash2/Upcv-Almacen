@@ -187,83 +187,142 @@
       text-align: center;
     }
 
-    .institucion-info,
-    .institucion-info div {
-      box-sizing: border-box;
-      max-width: 100%;
+    .department-title {
+      text-align: center;
+      font-size: 12px;
+      color: #0b2a4a;
+      border-top: 0.5px solid #0b2a4a;
+      margin: 4px 0 8px 0;
+      padding-top: 4px;
+      text-transform: uppercase;
+    }
+
+    .report-table {
+      width: 100%;
+      border-collapse: collapse;
+      border-spacing: 0;
+      font-size: 9px;
+      margin-bottom: 8px;
+      table-layout: fixed;
+    }
+
+    .report-table th,
+    .report-table td {
+      border: 1px solid #000;
+      padding: 3px 4px;
+      vertical-align: middle;
+      color: #000;
+      background: #fff;
+    }
+
+    .report-table th {
+      text-align: center;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    .summary-table td { height: 18px; }
+    .items-table { margin-top: 10px; }
+    .items-table td { word-wrap: break-word; overflow-wrap: break-word; }
+    .observation-table { margin-top: 10px; }
+
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .text-bold { font-weight: bold; }
+
+    .correlativo {
+      color: #ff0000 !important;
+      font-weight: bold;
+      text-align: center;
+      font-size: 11px;
+    }
+
+    .observacion {
+      font-size: 9px;
+      line-height: 1.35;
+      text-align: justify;
     }
   </style>
 
 </head>
 <body>
-<div class="pdf-wrapper">
-  <div class="pdf-header">
-    <div class="header-logo">
-      {% if institucion.logo %}
-        <img src="{{ institucion.logo.url }}" alt="Logo institucional">
-      {% endif %}
-    </div>
-    <div class="header-text">
-      <div class="institution-name">{% if institucion.nombre %}{{ institucion.nombre }}{% else %}UNIDAD PARA LA PREVENCIÓN COMUNITARIA DE LA VIOLENCIA{% endif %}</div>
-      <div class="section-name">SECCIÓN DE ALMACÉN E INVENTARIOS</div>
-      <div class="document-title">REQUERIMIENTO DE BIENES, SUMINISTROS E INSUMOS</div>
-    </div>
-  </div>
 
-  <div class="report-container">
-    <table class="meta-table">
-      <tr>
-        <td class="label-cell" style="width: 24%;">DEPARTAMENTO O SECCIÓN SOLICITANTE</td>
-        <td class="value-cell" style="width: 40%;">{{ departamento_solicitante }}</td>
-        <td class="label-cell text-center" style="width: 12%;">FECHA</td>
-        <td class="value-cell text-center" style="width: 24%;">{{ fecha }}</td>
-      </tr>
-      <tr>
-        <td class="label-cell">ELABORADO POR</td>
-        <td colspan="3" class="value-cell">{{ elaborado_por }}</td>
-      </tr>
-      <tr>
-        <td class="label-cell">MOTIVO DE LA SOLICITUD</td>
-        <td colspan="3" class="value-cell">{{ motivo }}</td>
-      </tr>
-      <tr>
-        <td class="label-cell text-center">CORRELATIVO<br>DE<br>LA SOLICITUD</td>
-        <td colspan="3" class="correlativo">{{ correlativo }}</td>
-      </tr>
-    </table>
+{% comment %} <!-- Logos arriba -->
+<div class="logo-row">
+  <img src="{{ institucion.logo.url }}" alt="Logo 1">
+  <img src="{{ institucion.logo2.url }}" alt="Logo 2">
+</div> {% endcomment %}
+  <br>  <br>  <br>  <br>  <br>  <br>  <br>
 
-    <table class="items-table">
-      <thead>
-        <tr>
-          <th style="width: 11%;">CÓDIGO</th>
-          <th style="width: 38%;">DESCRIPCIÓN</th>
-          <th style="width: 14%;">UNIDAD DE<br>MEDIDA</th>
-          <th style="width: 13%;">COSTO<br>UNITARIO</th>
-          <th style="width: 10%;">CANTIDAD</th>
-          <th style="width: 14%;">TOTAL</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for item in detalles %}
-        <tr>
-          <td class="text-center">{{ item.codigo }}</td>
-          <td class="text-left">{{ item.descripcion }}</td>
-          <td class="text-center">{{ item.unidad }}</td>
-          <td class="money-cell">{{ item.costo_unitario|quetzales }}</td>
-          <td class="text-center">{{ item.cantidad }}</td>
-          <td class="money-cell">{{ item.total|quetzales }}</td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="6" class="text-center">No hay artículos registrados.</td>
-        </tr>
-        {% endfor %}
-        <tr>
-          <td colspan="5" class="text-bold text-right">TOTAL Q</td>
-          <td class="money-cell text-bold">{{ total_general|quetzales }}</td>
-        </tr>
-      </tbody>
-    </table>
+
+<div class="card-body pt-10 mt-10">
+  <p class="department-title">
+    <strong>{{ departamento_solicitante }}</strong>
+  </p>
+
+  <table class="report-table summary-table">
+    <tr>
+      <td class="text-bold" style="width: 24%;">DEPARTAMENTO O SECCIÓN SOLICITANTE</td>
+      <td style="width: 40%;">{{ departamento_solicitante }}</td>
+      <td class="text-bold text-center" style="width: 12%;">FECHA</td>
+      <td class="text-center" style="width: 24%;">{{ fecha }}</td>
+    </tr>
+    <tr>
+      <td class="text-bold">ELABORADO POR</td>
+      <td colspan="3">{{ elaborado_por }}</td>
+    </tr>
+    <tr>
+      <td class="text-bold">MOTIVO DE LA SOLICITUD</td>
+      <td colspan="3">{{ motivo }}</td>
+    </tr>
+    <tr>
+      <td class="text-bold text-center">CORRELATIVO<br>DE<br>LA SOLICITUD</td>
+      <td colspan="3" class="correlativo">{{ correlativo }}</td>
+    </tr>
+  </table>
+
+  <table class="report-table items-table">
+    <thead>
+      <tr>
+        <th style="width: 12%;">CÓDIGO</th>
+        <th style="width: 38%;">DESCRIPCIÓN</th>
+        <th style="width: 15%;">UNIDAD DE<br>MEDIDA</th>
+        <th style="width: 12%;">COSTO<br>UNITARIO</th>
+        <th style="width: 10%;">CANTIDAD</th>
+        <th style="width: 13%;">TOTAL</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in detalles %}
+      <tr>
+        <td class="text-center">{{ item.codigo }}</td>
+        <td>{{ item.descripcion }}</td>
+        <td class="text-center">{{ item.unidad }}</td>
+        <td class="text-right">{{ item.costo_unitario|quetzales }}</td>
+        <td class="text-center">{{ item.cantidad }}</td>
+        <td class="text-right">{{ item.total|quetzales }}</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="6" class="text-center">No hay artículos registrados.</td>
+      </tr>
+      {% endfor %}
+      <tr>
+        <td colspan="5" class="text-bold text-right">TOTAL Q</td>
+        <td class="text-right text-bold">{{ total_general|quetzales }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <table class="report-table observation-table">
+    <tr>
+      <td class="text-bold" style="width: 12%;">Observación:</td>
+      <td class="observacion">
+        El 021 del departamento o sección se compromete a dar un uso adecuado, responsable y eficiente a los suministros que le han sido entregados, garantizando su correcta distribución conforme a las necesidades operativas y administrativas de la Unidad para la Prevención Comunitaria de la Violencia.
+      </td>
+    </tr>
+  </table>
+</div>
 
     <table class="observation-table">
       <tr>
