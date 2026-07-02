@@ -1052,12 +1052,39 @@ def exportar_requerimiento_pdf(request, requerimiento_id):
     if request.user.groups.filter(name='Gestor').exists() or not (es_admin or es_almacen or tiene_departamento_asignado):
         messages.error(request, "No tiene permiso para imprimir requerimientos.")
         return redirect('almacen:seguimiento_requerimientos')
-    detalles = requerimiento.detalles.all()
+    detalles = requerimiento.detalles.select_related('articulo__unidad_medida', 'articulo__categoria')
     institucion = Institucion.objects.first()  # ✅ Agregamos esto
+
+    detalles_pdf = []
+    total_general = Decimal('0.00')
+    for detalle in detalles:
+        cantidad = detalle.cantidad_despachada if requerimiento.estado in ['despachado', 'parcial'] and detalle.cantidad_despachada else detalle.cantidad
+        cantidad_decimal = Decimal(cantidad or 0)
+        ultimo_ingreso = DetalleFactura.objects.filter(articulo=detalle.articulo).order_by('-form1h__fecha_factura', '-id').first()
+        # Si no hay un Formulario 1H asociado al artículo, se muestra Q0.00 sin inventar precios.
+        costo_unitario = Decimal(ultimo_ingreso.precio_unitario or 0) if ultimo_ingreso else Decimal('0.00')
+        total = cantidad_decimal * costo_unitario
+        total_general += total
+        detalles_pdf.append({
+            'codigo': detalle.articulo.codigo,
+            'descripcion': detalle.articulo.nombre,
+            'unidad': detalle.articulo.unidad_medida or '',
+            'costo_unitario': costo_unitario,
+            'cantidad': cantidad,
+            'total': total,
+        })
+
+    elaborado_por = requerimiento.creado_por.get_full_name() or requerimiento.creado_por.username
 
     html_string = render_to_string('almacen/pdf_requerimiento.html', {
         'requerimiento': requerimiento,
-        'detalles_requerimiento': detalles,
+        'detalles': detalles_pdf,
+        'total_general': total_general,
+        'departamento_solicitante': requerimiento.departamento.nombre,
+        'fecha': requerimiento.fecha_creacion.strftime('%d/%m/%Y'),
+        'elaborado_por': elaborado_por,
+        'motivo': requerimiento.motivo or 'No especificado.',
+        'correlativo': f'REQ-{requerimiento.id:06d}',
         'institucion': institucion,  # ✅ Pasamos la instancia al template
     })
 
