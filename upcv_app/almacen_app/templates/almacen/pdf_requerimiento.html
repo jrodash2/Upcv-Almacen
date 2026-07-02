@@ -1,4 +1,5 @@
 {% load static %}
+{% load custom_filters %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -141,6 +142,62 @@
       width: 32%;
       text-align: center;
     }
+
+    .department-title {
+      text-align: center;
+      font-size: 12px;
+      color: #0b2a4a;
+      border-top: 0.5px solid #0b2a4a;
+      margin: 4px 0 8px 0;
+      padding-top: 4px;
+      text-transform: uppercase;
+    }
+
+    .report-table {
+      width: 100%;
+      border-collapse: collapse;
+      border-spacing: 0;
+      font-size: 9px;
+      margin-bottom: 8px;
+      table-layout: fixed;
+    }
+
+    .report-table th,
+    .report-table td {
+      border: 1px solid #000;
+      padding: 3px 4px;
+      vertical-align: middle;
+      color: #000;
+      background: #fff;
+    }
+
+    .report-table th {
+      text-align: center;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    .summary-table td { height: 18px; }
+    .items-table { margin-top: 10px; }
+    .items-table td { word-wrap: break-word; overflow-wrap: break-word; }
+    .observation-table { margin-top: 10px; }
+
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .text-bold { font-weight: bold; }
+
+    .correlativo {
+      color: #ff0000 !important;
+      font-weight: bold;
+      text-align: center;
+      font-size: 11px;
+    }
+
+    .observacion {
+      font-size: 9px;
+      line-height: 1.35;
+      text-align: justify;
+    }
   </style>
 
 </head>
@@ -154,128 +211,74 @@
   <br>  <br>  <br>  <br>  <br>  <br>  <br>
 
 
-<div class="card-body pt-10 mt-10">  <!-- Quitado 'border-top' -->
-<!-- Línea con nombre del Departamento centrado -->
-<p style="text-align: center; font-size: 14px; color: #0b2a4a; border-top: 0.5px solid #0b2a4a; margin: 4px 0 8px 0;">
-  <strong>{{ requerimiento.departamento.nombre }}</strong>
-</p>
+<div class="card-body pt-10 mt-10">
+  <p class="department-title">
+    <strong>{{ departamento_solicitante }}</strong>
+  </p>
 
-<!-- Tabla con información del requerimiento y motivo -->
-<table style="width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed;">
-  <tr style="border-bottom: 0.5px solid #0b2a4a;">
-    <th style="width: 15%; text-align: left; padding: 6px; background-color: #717172ff; color: white; border: 1px solid #0b2a4a;">
-      Elaborado Por:
-    </th>
-    <td style="padding: 6px; border: 1px solid #0b2a4a; overflow-wrap: break-word; width: 35%;">
-      {{ requerimiento.creado_por.get_full_name }}
-    </td>
+  <table class="report-table summary-table">
+    <tr>
+      <td class="text-bold" style="width: 24%;">DEPARTAMENTO O SECCIÓN SOLICITANTE</td>
+      <td style="width: 40%;">{{ departamento_solicitante }}</td>
+      <td class="text-bold text-center" style="width: 12%;">FECHA</td>
+      <td class="text-center" style="width: 24%;">{{ fecha }}</td>
+    </tr>
+    <tr>
+      <td class="text-bold">ELABORADO POR</td>
+      <td colspan="3">{{ elaborado_por }}</td>
+    </tr>
+    <tr>
+      <td class="text-bold">MOTIVO DE LA SOLICITUD</td>
+      <td colspan="3">{{ motivo }}</td>
+    </tr>
+    <tr>
+      <td class="text-bold text-center">CORRELATIVO<br>DE<br>LA SOLICITUD</td>
+      <td colspan="3" class="correlativo">{{ correlativo }}</td>
+    </tr>
+  </table>
 
-    <th style="width: 6%; text-align: left; padding: 6px; background-color: #717172ff; color: white; border: 1px solid #0b2a4a;">
-      Fecha:
-    </th>
-    <td style="padding: 3px; border: 1px solid #0b2a4a; width: 17%;">
-      {{ requerimiento.fecha_creacion|date:"d \d\e F \d\e Y" }}
-    </td>
-{% if requerimiento.estado != 'pendiente' %}
-<th style="width: 6%; text-align: left; padding: 6px; background-color: #717172ff; color: white; border: 1px solid #0b2a4a;">
-  Estado:
-</th>
-{% else %}
-<th style="width: 6%; text-align: left; padding: 6px; background-color: #717172ff; color: #717172ff; border: 1px solid #0b2a4a;">
-  Estado:
-</th>
-{% endif %}
+  <table class="report-table items-table">
+    <thead>
+      <tr>
+        <th style="width: 12%;">CÓDIGO</th>
+        <th style="width: 38%;">DESCRIPCIÓN</th>
+        <th style="width: 15%;">UNIDAD DE<br>MEDIDA</th>
+        <th style="width: 12%;">COSTO<br>UNITARIO</th>
+        <th style="width: 10%;">CANTIDAD</th>
+        <th style="width: 13%;">TOTAL</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in detalles %}
+      <tr>
+        <td class="text-center">{{ item.codigo }}</td>
+        <td>{{ item.descripcion }}</td>
+        <td class="text-center">{{ item.unidad }}</td>
+        <td class="text-right">{{ item.costo_unitario|quetzales }}</td>
+        <td class="text-center">{{ item.cantidad }}</td>
+        <td class="text-right">{{ item.total|quetzales }}</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="6" class="text-center">No hay artículos registrados.</td>
+      </tr>
+      {% endfor %}
+      <tr>
+        <td colspan="5" class="text-bold text-right">TOTAL Q</td>
+        <td class="text-right text-bold">{{ total_general|quetzales }}</td>
+      </tr>
+    </tbody>
+  </table>
 
-    <td style="padding: 6px; border: 1px solid #0b2a4a; overflow-wrap: break-word;">
-      {% if requerimiento.estado != 'pendiente' %}
-        {{ requerimiento.get_estado_display }}
-      {% else %}
-        <!-- Dejar vacío pero mantener estructura -->
-      {% endif %}
-    </td>
-  </tr>
-
-  {% if requerimiento.motivo %}
-  <tr>
-    <th colspan="1" style="text-align: left; padding: 6px; color: white; border: 1px solid #0b2a4a; background-color: #717172ff;">
-      Motivo de la Solicitud:
-    </th>
-    <td colspan="5" style="padding: 6px; border: 1px solid #0b2a4a; word-wrap: break-word; overflow-wrap: break-word;">
-      {{ requerimiento.motivo }}
-    </td>
-  </tr>
-  {% endif %}
-</table>
-
-
-
-
-
-
-<br>
-<style>
-  table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    border-radius: 10px;
-    overflow: hidden;
-  }
-  th, td {
-    padding: 12px;
-    text-align: left;
-    border: 0.51px solid #0b2a4a;
-  }
-  th {
-    background-color: #0b2a4a;
-    color: white;
-  }
-  tr:nth-child(even) {
-    background-color: 
-  }
-  tr:hover {
-    background-color: #ddd;
-  }
-</style>
-
-
-
-  <!-- Detalles de la tabla con el nuevo formato -->
-  <div class="table-responsive invoice-table mb-4 ">
-    <table class="table table ">
-      <thead>
-        <tr>
-          <th class="small-header">Cantidad Solicitada</th>
-          <th class="small-header">Unidad de Medida</th>
-          <th class="descripcion-header">Descripción</th>
-          <th class="small-header">Cantidad Despachada</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for detalle in detalles_requerimiento %}
-         <tr>
-  <td class="small-cell">{{ detalle.cantidad }}</td>
-  <td class="small-cell">{{ detalle.articulo.unidad_medida }}</td>
-  <td class="descripcion-Articulo">{{ detalle.articulo.nombre }}<br><small>Categoría: {{ detalle.articulo.categoria.nombre|default:"S/C" }}</small></td>
-  <td class="small-cell">
-    {% if requerimiento.estado != 'pendiente' %}
-      {{ detalle.cantidad_despachada }}
-    {% endif %}
-  </td>
-</tr>
-
-        {% empty %}
-          <tr>
-            <td colspan="4">No hay detalles registrados.</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-
-
-
-</body>
+  <table class="report-table observation-table">
+    <tr>
+      <td class="text-bold" style="width: 12%;">Observación:</td>
+      <td class="observacion">
+        El 021 del departamento o sección se compromete a dar un uso adecuado, responsable y eficiente a los suministros que le han sido entregados, garantizando su correcta distribución conforme a las necesidades operativas y administrativas de la Unidad para la Prevención Comunitaria de la Violencia.
+      </td>
+    </tr>
+  </table>
+</div>
 
 
 <!-- Firmas -->
@@ -325,8 +328,5 @@
   </div>
   
 </div> 
-
-
-
-
+</body>
 </html>
