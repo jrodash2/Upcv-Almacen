@@ -1291,6 +1291,7 @@ def ver_stock_formulario_1h(request):
     context = {
         'stock_list': construir_stock_list_administrador(),
         'departamentos': Departamento.objects.all(),
+        'es_administrador': request.user.is_superuser or request.user.groups.filter(name='Administrador').exists(),
     }
     return render(request, 'almacen/stock_formulario_1h.html', context)
     
@@ -1501,6 +1502,87 @@ def detalle_departamento(request, pk):
     })
 
 
+
+def calcular_disponibilidad_para_division(articulo):
+    total_ingresado = DetalleFactura.objects.filter(
+        articulo=articulo,
+        form1h__estado='confirmado'
+    ).aggregate(total=Sum('cantidad'))['total'] or 0
+    asignado_directo = AsignacionDetalleFactura.objects.filter(
+        articulo=articulo
+    ).aggregate(total=Sum('cantidad_asignada'))['total'] or 0
+    asignado_divisiones = DivisionArticulo.objects.filter(
+        articulo=articulo,
+        activo=True
+    ).aggregate(total=Sum('cantidad_asignada'))['total'] or Decimal('0')
+    disponible_real = Decimal(total_ingresado) - Decimal(asignado_directo) - Decimal(asignado_divisiones)
+    return {
+        'total_ingresado': total_ingresado,
+        'asignado_directo': asignado_directo,
+        'asignado_divisiones': asignado_divisiones,
+        'disponible_para_division': max(Decimal('0'), disponible_real),
+        'requiere_revision': disponible_real < 0,
+    }
+
+
+@login_required
+@grupo_requerido('Administrador', 'Almacen')
+def asignar_articulo_division(request, articulo_id):
+    articulo = get_object_or_404(Articulo.objects.select_related('categoria'), pk=articulo_id)
+    disponibilidad = calcular_disponibilidad_para_division(articulo)
+    divisiones = DivisionAlmacen.objects.filter(activa=True).order_by('nombre')
+
+    if request.method == 'POST':
+        division_id = request.POST.get('division')
+        cantidad_raw = request.POST.get('cantidad')
+        division = divisiones.filter(pk=division_id).first()
+
+        try:
+            cantidad = Decimal(cantidad_raw or '0')
+        except Exception:
+            cantidad = Decimal('0')
+
+        if not division:
+            messages.error(request, 'Debe seleccionar una división activa.')
+        elif cantidad <= 0:
+            messages.error(request, 'La cantidad a asignar debe ser mayor a cero.')
+        elif disponibilidad['disponible_para_division'] <= 0:
+            messages.error(request, 'No hay disponibilidad para asignar este artículo a divisiones.')
+        elif cantidad > disponibilidad['disponible_para_division']:
+            messages.error(request, 'No puede asignar más de la cantidad disponible para divisiones.')
+        else:
+            try:
+                with transaction.atomic():
+                    division_articulo = DivisionArticulo.objects.select_for_update().filter(
+                        division=division,
+                        articulo=articulo,
+                        activo=True
+                    ).first()
+                    if division_articulo:
+                        division_articulo.cantidad_asignada += cantidad
+                        division_articulo.asignado_por = request.user
+                    else:
+                        division_articulo = DivisionArticulo(
+                            division=division,
+                            articulo=articulo,
+                            cantidad_asignada=cantidad,
+                            asignado_por=request.user,
+                            activo=True,
+                        )
+                    division_articulo.save()
+                messages.success(request, 'Artículo asignado a la división correctamente.')
+                return redirect('almacen:ver_stock_formulario_1h')
+            except ValidationError as e:
+                messages.error(request, e.message_dict if hasattr(e, 'message_dict') else e.messages)
+
+        disponibilidad = calcular_disponibilidad_para_division(articulo)
+
+    return render(request, 'almacen/asignar_articulo_division.html', {
+        'articulo': articulo,
+        'divisiones': divisiones,
+        'disponibilidad': disponibilidad,
+    })
+
 @login_required
 @grupo_requerido('Administrador', 'Almacen')
 def transferir_articulos(request):
@@ -1688,6 +1770,7 @@ def crear_asignacion_detalle_articulo(request):
         'form': form,
         'stock_list': construir_stock_list_administrador(),
         'departamentos': Departamento.objects.all(),
+        'es_administrador': request.user.is_superuser or request.user.groups.filter(name='Administrador').exists(),
     }
 
     return render(request, 'almacen/stock_formulario_1h.html', context)

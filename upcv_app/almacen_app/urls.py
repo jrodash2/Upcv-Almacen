@@ -79,6 +79,7 @@ urlpatterns = [
     path('buscar-articulos/', views.buscar_articulos, name='buscar_articulos'),
     path('almacen/articulos/<int:articulo_id>/disponibilidad-json/', views.articulo_disponibilidad_json, name='articulo_disponibilidad_json'),
     path('stock-formulario-1h/', views.ver_stock_formulario_1h, name='ver_stock_formulario_1h'),
+    path('almacen/articulos/<int:articulo_id>/asignar-division/', views.asignar_articulo_division, name='asignar_articulo_division'),
     
     # Kardex
     path('kardex/<int:articulo_id>/', views.historial_kardex_articulo, name='historial_kardex'),
