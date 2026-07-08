@@ -472,6 +472,131 @@ def guardar_perfil_usuario(sender, instance, **kwargs):
     if hasattr(instance, 'perfil'):
         instance.perfil.save()
         
+
+def existencia_general_articulo(articulo):
+    ingresos = DetalleFactura.objects.filter(articulo=articulo, form1h__estado='confirmado').aggregate(total=Sum('cantidad'))['total'] or 0
+    salidas = Kardex.objects.filter(articulo=articulo, tipo_movimiento='SALIDA').aggregate(total=Sum('cantidad'))['total'] or 0
+    return ingresos - salidas
+
+
+class DivisionAlmacen(models.Model):
+    nombre = models.CharField(max_length=150, unique=True)
+    descripcion = models.TextField(blank=True, null=True)
+    activa = models.BooleanField(default=True)
+    creado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="divisiones_creadas")
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.nombre
+
+    @property
+    def total_reservado(self):
+        return self.articulos.filter(activo=True).aggregate(total=Sum('asignaciones_ubicacion__cantidad_reservada'))['total'] or 0
+
+
+class DivisionUbicacion(models.Model):
+    division = models.ForeignKey(DivisionAlmacen, on_delete=models.CASCADE, related_name="ubicaciones")
+    ubicacion = models.ForeignKey(Departamento, on_delete=models.CASCADE, related_name="divisiones_almacen")
+    activa = models.BooleanField(default=True)
+    fecha_asignacion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("division", "ubicacion")
+
+    def __str__(self):
+        return f"{self.division} - {self.ubicacion}"
+
+
+class DivisionArticulo(models.Model):
+    division = models.ForeignKey(DivisionAlmacen, on_delete=models.CASCADE, related_name="articulos")
+    articulo = models.ForeignKey(Articulo, on_delete=models.CASCADE, related_name="divisiones_asignadas")
+    cantidad_asignada = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    observacion = models.TextField(blank=True, null=True)
+    activo = models.BooleanField(default=True)
+    fecha_asignacion = models.DateTimeField(auto_now_add=True)
+    asignado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+
+    class Meta:
+        unique_together = ("division", "articulo")
+
+    def __str__(self):
+        return f"{self.division} - {self.articulo}"
+
+    @property
+    def existencia_total(self):
+        return existencia_general_articulo(self.articulo)
+
+    @property
+    def total_asignado_ubicaciones(self):
+        return self.asignaciones_ubicacion.filter(activo=True).aggregate(total=Sum('cantidad_asignada'))['total'] or 0
+
+    @property
+    def total_reservado(self):
+        return self.asignaciones_ubicacion.filter(activo=True).aggregate(total=Sum('cantidad_reservada'))['total'] or 0
+
+    @property
+    def disponible_division(self):
+        return self.cantidad_asignada - self.total_asignado_ubicaciones
+
+    @property
+    def disponible_para_solicitud(self):
+        return self.cantidad_asignada - self.total_reservado
+
+    def clean(self):
+        if self.cantidad_asignada is None or self.cantidad_asignada <= 0:
+            raise ValidationError({'cantidad_asignada': 'La cantidad debe ser mayor a cero.'})
+        total_otras = DivisionArticulo.objects.filter(articulo=self.articulo, activo=True).exclude(pk=self.pk).aggregate(total=Sum('cantidad_asignada'))['total'] or 0
+        if total_otras + self.cantidad_asignada > self.existencia_total:
+            raise ValidationError({'cantidad_asignada': 'La cantidad asignada a divisiones supera la existencia general disponible.'})
+        if self.pk and self.cantidad_asignada < self.total_asignado_ubicaciones:
+            raise ValidationError({'cantidad_asignada': 'No puede ser menor a lo ya asignado a ubicaciones.'})
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+
+class DivisionArticuloUbicacion(models.Model):
+    division_articulo = models.ForeignKey(DivisionArticulo, on_delete=models.CASCADE, related_name="asignaciones_ubicacion")
+    ubicacion = models.ForeignKey(Departamento, on_delete=models.CASCADE, related_name="articulos_division_asignados")
+    cantidad_asignada = models.DecimalField(max_digits=12, decimal_places=2)
+    cantidad_reservada = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    cantidad_consumida = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    activo = models.BooleanField(default=True)
+    asignado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    fecha_asignacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("division_articulo", "ubicacion")
+
+    def __str__(self):
+        return f"{self.ubicacion} - {self.division_articulo}"
+
+    @property
+    def disponible_ubicacion(self):
+        return self.cantidad_asignada - self.cantidad_reservada - self.cantidad_consumida
+
+    def clean(self):
+        for field in ['cantidad_asignada', 'cantidad_reservada', 'cantidad_consumida']:
+            value = getattr(self, field)
+            if value is not None and value < 0:
+                raise ValidationError({field: 'La cantidad no puede ser negativa.'})
+        if self.cantidad_asignada is None or self.cantidad_asignada <= 0:
+            raise ValidationError({'cantidad_asignada': 'La cantidad debe ser mayor a cero.'})
+        if self.cantidad_reservada > (self.cantidad_asignada - self.cantidad_consumida):
+            raise ValidationError({'cantidad_reservada': 'No puede reservar más de lo disponible en la ubicación.'})
+        pertenece = DivisionUbicacion.objects.filter(division=self.division_articulo.division, ubicacion=self.ubicacion, activa=True).exists()
+        if not pertenece:
+            raise ValidationError({'ubicacion': 'La ubicación no pertenece a esta división.'})
+        total_otras = DivisionArticuloUbicacion.objects.filter(division_articulo=self.division_articulo, activo=True).exclude(pk=self.pk).aggregate(total=Sum('cantidad_asignada'))['total'] or 0
+        if total_otras + self.cantidad_asignada > self.division_articulo.cantidad_asignada:
+            raise ValidationError({'cantidad_asignada': 'La suma asignada a ubicaciones supera lo disponible en la división.'})
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
 class Requerimiento(models.Model):
     departamento = models.ForeignKey(Departamento, on_delete=models.CASCADE)
     motivo = models.TextField(max_length=255, blank=True, null=True)
@@ -600,6 +725,7 @@ class SolicitudRequerimiento(models.Model):
 class DetalleSolicitudRequerimiento(models.Model):
     solicitud = models.ForeignKey(SolicitudRequerimiento, on_delete=models.CASCADE, related_name='detalles')
     articulo = models.ForeignKey(Articulo, on_delete=models.CASCADE)
+    division_articulo_ubicacion = models.ForeignKey(DivisionArticuloUbicacion, on_delete=models.SET_NULL, null=True, blank=True)
     cantidad = models.PositiveIntegerField()
     observacion = models.TextField(blank=True, null=True)
 
