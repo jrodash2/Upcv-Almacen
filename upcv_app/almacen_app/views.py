@@ -1359,7 +1359,6 @@ from django.db.models import Q
 
 
 def construir_resumen_gestor_departamento(departamento):
-    resumen_por_articulo = {}
     detalle_asignaciones = []
 
     despachados = (
@@ -1368,42 +1367,9 @@ def construir_resumen_gestor_departamento(departamento):
         .values('articulo__id')
         .annotate(total_despachado=Sum('cantidad_despachada'))
     )
-    despachados_dict = {d['articulo__id']: d['total_despachado'] or 0 for d in despachados}
+    despachados_dict = {d['articulo__id']: Decimal(d['total_despachado'] or 0) for d in despachados}
 
-    directas = (
-        AsignacionDetalleFactura.objects
-        .filter(destino=departamento)
-        .select_related('articulo', 'articulo__categoria')
-        .order_by('-fecha_asignacion')
-    )
-    for asignacion in directas:
-        articulo = asignacion.articulo
-        item = resumen_por_articulo.setdefault(articulo.id, {
-            'articulo_id': articulo.id,
-            'articulo_codigo': articulo.codigo,
-            'renglon_presupuestario': articulo.renglon_presupuestario,
-            'nombre_articulo': articulo.nombre,
-            'categoria': articulo.categoria.nombre if articulo.categoria else None,
-            'asignado_directo': 0,
-            'asignado_division': Decimal('0'),
-            'reservado': Decimal('0'),
-            'consumido': Decimal('0'),
-        })
-        item['asignado_directo'] += asignacion.cantidad_asignada
-        detalle_asignaciones.append({
-            'articulo': articulo,
-            'origen': 'Directo',
-            'division': None,
-            'departamento': departamento,
-            'cantidad_asignada': asignacion.cantidad_asignada,
-            'reservado': 0,
-            'consumido': despachados_dict.get(articulo.id, 0),
-            'disponible': max(0, asignacion.cantidad_asignada - despachados_dict.get(articulo.id, 0)),
-            'fecha': asignacion.fecha_asignacion,
-            'descripcion': asignacion.descripcion,
-            'transferible': True,
-        })
-
+    division_consumido_por_articulo = defaultdict(Decimal)
     asignaciones_division = (
         DivisionArticuloUbicacion.objects
         .filter(
@@ -1417,46 +1383,93 @@ def construir_resumen_gestor_departamento(departamento):
     )
     for asignacion in asignaciones_division:
         articulo = asignacion.division_articulo.articulo
+        cantidad_asignada = Decimal(asignacion.cantidad_asignada or 0)
+        cantidad_reservada = Decimal(asignacion.cantidad_reservada or 0)
+        cantidad_consumida = Decimal(asignacion.cantidad_consumida or 0)
+        disponible_real = cantidad_asignada - cantidad_reservada - cantidad_consumida
+        division_consumido_por_articulo[articulo.id] += cantidad_consumida
+        detalle_asignaciones.append({
+            'articulo': articulo,
+            'origen': 'División',
+            'division': asignacion.division_articulo.division.nombre,
+            'departamento': departamento,
+            'cantidad_asignada': cantidad_asignada,
+            'reservado': cantidad_reservada,
+            'consumido': cantidad_consumida,
+            'disponible': max(Decimal('0'), disponible_real),
+            'requiere_revision': disponible_real < 0,
+            'fecha': asignacion.fecha_asignacion,
+            'descripcion': asignacion.division_articulo.observacion,
+            'transferible': False,
+        })
+
+    consumo_directo_restante = defaultdict(Decimal)
+    for articulo_id, total_despachado in despachados_dict.items():
+        consumo_directo_restante[articulo_id] = max(
+            Decimal('0'),
+            total_despachado - division_consumido_por_articulo.get(articulo_id, Decimal('0'))
+        )
+
+    directas = (
+        AsignacionDetalleFactura.objects
+        .filter(destino=departamento)
+        .select_related('articulo', 'articulo__categoria')
+        .order_by('-fecha_asignacion')
+    )
+    for asignacion in directas:
+        articulo = asignacion.articulo
+        cantidad_asignada = Decimal(asignacion.cantidad_asignada or 0)
+        cantidad_reservada = Decimal('0')
+        cantidad_consumida = min(cantidad_asignada, consumo_directo_restante.get(articulo.id, Decimal('0')))
+        consumo_directo_restante[articulo.id] -= cantidad_consumida
+        disponible_real = cantidad_asignada - cantidad_reservada - cantidad_consumida
+        detalle_asignaciones.append({
+            'articulo': articulo,
+            'origen': 'Directo',
+            'division': None,
+            'departamento': departamento,
+            'cantidad_asignada': cantidad_asignada,
+            'reservado': cantidad_reservada,
+            'consumido': cantidad_consumida,
+            'disponible': max(Decimal('0'), disponible_real),
+            'requiere_revision': disponible_real < 0,
+            'fecha': asignacion.fecha_asignacion,
+            'descripcion': asignacion.descripcion,
+            'transferible': True,
+        })
+
+    resumen_por_articulo = {}
+    for fila in detalle_asignaciones:
+        articulo = fila['articulo']
         item = resumen_por_articulo.setdefault(articulo.id, {
             'articulo_id': articulo.id,
             'articulo_codigo': articulo.codigo,
             'renglon_presupuestario': articulo.renglon_presupuestario,
             'nombre_articulo': articulo.nombre,
             'categoria': articulo.categoria.nombre if articulo.categoria else None,
-            'asignado_directo': 0,
+            'asignado_directo': Decimal('0'),
             'asignado_division': Decimal('0'),
             'reservado': Decimal('0'),
-            'consumido': Decimal('0'),
+            'despachado': Decimal('0'),
+            'disponible': Decimal('0'),
+            'requiere_revision': False,
         })
-        item['asignado_division'] += asignacion.cantidad_asignada
-        item['reservado'] += asignacion.cantidad_reservada
-        item['consumido'] += asignacion.cantidad_consumida
-        detalle_asignaciones.append({
-            'articulo': articulo,
-            'origen': 'División',
-            'division': asignacion.division_articulo.division.nombre,
-            'departamento': departamento,
-            'cantidad_asignada': asignacion.cantidad_asignada,
-            'reservado': asignacion.cantidad_reservada,
-            'consumido': asignacion.cantidad_consumida,
-            'disponible': max(Decimal('0'), asignacion.disponible_ubicacion),
-            'fecha': asignacion.fecha_asignacion,
-            'descripcion': asignacion.division_articulo.observacion,
-            'transferible': False,
-        })
+        if fila['origen'] == 'Directo':
+            item['asignado_directo'] += fila['cantidad_asignada']
+        else:
+            item['asignado_division'] += fila['cantidad_asignada']
+        item['reservado'] += fila['reservado']
+        item['despachado'] += fila['consumido']
+        item['disponible'] += fila['disponible']
+        item['requiere_revision'] = item['requiere_revision'] or fila['requiere_revision']
 
     resumen_stock = []
     for item in resumen_por_articulo.values():
-        total_asignado = item['asignado_directo'] + item['asignado_division']
-        total_consumido = despachados_dict.get(item['articulo_id'], 0) + item['consumido']
-        disponible_real = total_asignado - item['reservado'] - total_consumido
-        item['asignado'] = total_asignado
-        item['despachado'] = total_consumido
-        item['disponible'] = max(0, disponible_real)
-        item['requiere_revision'] = disponible_real < 0
+        item['asignado'] = item['asignado_directo'] + item['asignado_division']
         resumen_stock.append(item)
 
     resumen_stock.sort(key=lambda item: item['nombre_articulo'])
+    detalle_asignaciones.sort(key=lambda item: (item['articulo'].nombre, item['origen'], item['division'] or ''))
     return resumen_stock, detalle_asignaciones
 
 @login_required
