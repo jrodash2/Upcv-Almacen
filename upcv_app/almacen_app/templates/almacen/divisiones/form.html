@@ -1,1 +1,46 @@
-{% extends 'almacen/base.html' %}{% block content %}<div class="container-fluid"><div class="card"><div class="card-header pb-0 card-no-border"><h5>{{ titulo }}</h5></div><div class="card-body"><form method="post">{% csrf_token %}{{ form.as_p }}<button class="btn btn-primary btn-sm">Guardar</button><a class="btn btn-outline-primary btn-sm" href="{% url 'almacen:division_list' %}">Volver</a></form></div></div></div>{% endblock %}
+{% extends 'almacen/base.html' %}
+{% load static %}
+{% block content %}
+<div class="page-body">
+  <div class="container-fluid">
+    <div class="page-title">
+      <div class="row">
+        <div class="col-6">
+          <h4 class="mb-0">{{ titulo }}</h4>
+        </div>
+        <div class="col-6">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'almacen:dahsboard' %}"><i data-feather="home"></i></a></li>
+            <li class="breadcrumb-item">Almacén</li>
+            <li class="breadcrumb-item"><a href="{% url 'almacen:division_list' %}">Divisiones</a></li>
+            <li class="breadcrumb-item active">Formulario</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container-fluid">
+    <div class="row justify-content-center">
+      <div class="col-xl-8 col-lg-10 col-md-12">
+        <div class="card">
+          <div class="card-header pb-0 card-no-border">
+            <h4 class="mb-1">{{ titulo }}</h4>
+            <span>Complete la información de la división operativa.</span>
+          </div>
+          <div class="card-body">
+            <form method="post">
+              {% csrf_token %}
+              {{ form.as_p }}
+              <div class="d-flex gap-2 mt-3">
+                <button class="btn btn-primary btn-sm" type="submit"><i data-feather="check-circle"></i> Guardar</button>
+                <a class="btn btn-outline-primary btn-sm" href="{% url 'almacen:division_list' %}">Volver</a>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

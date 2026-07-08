@@ -289,15 +289,15 @@
   {% endif %}
 
   {% if es_gestor %}
-    <li class="sidebar-list"><i class="fa fa-thumb-tack"></i><a class="sidebar-link " href="{% url 'almacen:mis_divisiones' %}"><i data-feather="layers"></i><span>Mis Divisiones</span></a></li>
-    <li class="sidebar-list"><i class="fa fa-thumb-tack"></i><a class="sidebar-link " href="{% url 'almacen:mis_articulos_asignados' %}"><i data-feather="box"></i><span>Mis Artículos Asignados</span></a></li>
+    <li class="sidebar-list"><i class="fa fa-thumb-tack"></i><a class="sidebar-link {% if request.resolver_match.url_name == 'mis_divisiones' %}active{% endif %}" href="{% url 'almacen:mis_divisiones' %}"><i data-feather="layers"></i><span>Mis Divisiones</span></a></li>
+    <li class="sidebar-list"><i class="fa fa-thumb-tack"></i><a class="sidebar-link {% if request.resolver_match.url_name == 'mis_articulos_asignados' %}active{% endif %}" href="{% url 'almacen:mis_articulos_asignados' %}"><i data-feather="box"></i><span>Mis Artículos Asignados</span></a></li>
     <li class="sidebar-list"><i class="fa fa-thumb-tack"></i><a class="sidebar-link " href="{% url 'almacen:crear_solicitud_requerimiento' %}"><span>Crear Solicitud</span></a></li>
     <li class="sidebar-list"><i class="fa fa-thumb-tack"></i><a class="sidebar-link " href="{% url 'almacen:listado_solicitudes_gestor' %}"><span>Mis Solicitudes</span></a></li>
   {% endif %}
 
   {# Mostrar "Configuración" solo a Administradores #}
   {% if es_administrador %}
-    <li class="sidebar-list"><i class="fa fa-thumb-tack"></i><a class="sidebar-link sidebar-title" href="#"><i data-feather="layers"></i><span>Divisiones de Almacén</span></a><ul class="sidebar-submenu"><li><a href="{% url 'almacen:division_list' %}">Listado</a></li><li><a href="{% url 'almacen:division_control' %}">Control General</a></li></ul></li>
+    <li class="sidebar-list"><i class="fa fa-thumb-tack"></i><a class="sidebar-link sidebar-title {% if request.resolver_match.url_name in 'division_list division_create division_update division_detail division_control' %}active{% endif %}" href="#"><i data-feather="layers"></i><span>Divisiones de Almacén</span></a><ul class="sidebar-submenu"><li><a class="{% if request.resolver_match.url_name == 'division_list' %}active{% endif %}" href="{% url 'almacen:division_list' %}">Listado</a></li><li><a class="{% if request.resolver_match.url_name == 'division_control' %}active{% endif %}" href="{% url 'almacen:division_control' %}">Control General</a></li></ul></li>
     <li class="sidebar-list" ><i class="fa fa-thumb-tack"> </i><a class="sidebar-link " href="{% url 'almacen:dahsboard' %}">
                     <svg >
                       <use href="../assets/svg/icon-sprite.svg#stroke-home"></use>

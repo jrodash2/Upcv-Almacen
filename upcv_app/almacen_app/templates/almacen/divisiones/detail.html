@@ -1,1 +1,100 @@
-{% extends 'almacen/base.html' %}{% block content %}<div class="container-fluid"><div class="card"><div class="card-header pb-0 card-no-border"><h5>{{ division.nombre }}</h5></div><div class="card-body"><p>{{ division.descripcion|default:'Sin descripción' }}</p></div></div><div class="row"><div class="col-md-6"><div class="card"><div class="card-header pb-0 card-no-border"><h5>Ubicaciones</h5></div><div class="card-body"><form method="post">{% csrf_token %}<input type="hidden" name="accion" value="agregar_ubicacion">{{ ubicacion_form.as_p }}<button class="btn btn-primary btn-sm">Agregar ubicación</button></form><table class="display datatables"><tbody>{% for u in division.ubicaciones.all %}<tr><td>{{ u.ubicacion }}</td><td>{{ u.activa|yesno:'Activa,Inactiva' }}</td><td><form method="post">{% csrf_token %}<input type="hidden" name="accion" value="desactivar_ubicacion"><input type="hidden" name="id" value="{{ u.id }}"><button class="btn btn-danger btn-sm">Desactivar</button></form></td></tr>{% endfor %}</tbody></table></div></div></div><div class="col-md-6"><div class="card"><div class="card-header pb-0 card-no-border"><h5>Artículos</h5></div><div class="card-body"><form method="post">{% csrf_token %}<input type="hidden" name="accion" value="agregar_articulo">{{ articulo_form.as_p }}<button class="btn btn-primary btn-sm">Agregar artículo</button></form><table class="display datatables"><thead><tr><th>Artículo</th><th>Asignado</th><th>Ubicaciones</th><th>Reservado</th><th>Disponible</th></tr></thead><tbody>{% for a in division.articulos.all %}<tr><td>{{ a.articulo }}</td><td>{{ a.cantidad_asignada }}</td><td>{{ a.total_asignado_ubicaciones }}</td><td>{{ a.total_reservado }}</td><td>{{ a.disponible_division }}</td></tr>{% endfor %}</tbody></table></div></div></div></div><div class="card"><div class="card-header pb-0 card-no-border"><h5>Asignaciones por ubicación</h5></div><div class="card-body"><table class="display datatables"><thead><tr><th>Artículo</th><th>Ubicación</th><th>Asignado</th><th>Reservado</th><th>Consumido</th><th>Disponible</th><th>Acciones</th></tr></thead><tbody>{% for a in division.articulos.all %}{% for x in a.asignaciones_ubicacion.all %}<tr><td>{{ a.articulo }}</td><td>{{ x.ubicacion }}</td><td>{{ x.cantidad_asignada }}</td><td>{{ x.cantidad_reservada }}</td><td>{{ x.cantidad_consumida }}</td><td>{{ x.disponible_ubicacion }}</td><td><form method="post">{% csrf_token %}<input type="hidden" name="accion" value="desasignar_ubicacion"><input type="hidden" name="id" value="{{ x.id }}"><button class="btn btn-danger btn-sm">Desasignar</button></form></td></tr>{% endfor %}{% endfor %}</tbody></table></div></div></div>{% endblock %}
+{% extends 'almacen/base.html' %}
+{% load static %}
+{% block content %}
+<div class="page-body">
+  <div class="container-fluid">
+    <div class="page-title">
+      <div class="row">
+        <div class="col-6"><h4 class="mb-0">Detalle de División</h4></div>
+        <div class="col-6">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'almacen:dahsboard' %}"><i data-feather="home"></i></a></li>
+            <li class="breadcrumb-item">Almacén</li>
+            <li class="breadcrumb-item"><a href="{% url 'almacen:division_list' %}">Divisiones</a></li>
+            <li class="breadcrumb-item active">{{ division.nombre }}</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container-fluid">
+    <div class="card">
+      <div class="card-header pb-0 card-no-border">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div>
+            <h4 class="mb-1">{{ division.nombre }}</h4>
+            <span>{{ division.descripcion|default:'Sin descripción' }}</span>
+          </div>
+          <a class="btn btn-outline-primary btn-sm" href="{% url 'almacen:division_list' %}">Volver</a>
+        </div>
+      </div>
+      <div class="card-body">
+        <span class="badge {% if division.activa %}badge-light-success{% else %}badge-light-danger{% endif %}">{{ division.activa|yesno:'Activa,Inactiva' }}</span>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-xl-6 col-lg-12">
+        <div class="card">
+          <div class="card-header pb-0 card-no-border"><h5>Ubicaciones agregadas</h5></div>
+          <div class="card-body">
+            <form method="post" class="mb-3">
+              {% csrf_token %}
+              <input type="hidden" name="accion" value="agregar_ubicacion">
+              {{ ubicacion_form.as_p }}
+              <button class="btn btn-primary btn-sm" type="submit"><i data-feather="plus-circle"></i> Agregar ubicación</button>
+            </form>
+            <div class="dt-ext table-responsive custom-scrollbar">
+              <table class="display datatables" id="tabla-division-ubicaciones">
+                <thead><tr><th>Ubicación</th><th>Estado</th><th class="text-center">Acciones</th></tr></thead>
+                <tbody>
+                  {% for u in division.ubicaciones.all %}
+                  <tr>
+                    <td>{{ u.ubicacion }}</td>
+                    <td><span class="badge {% if u.activa %}badge-light-success{% else %}badge-light-danger{% endif %}">{{ u.activa|yesno:'Activa,Inactiva' }}</span></td>
+                    <td class="text-center"><form method="post">{% csrf_token %}<input type="hidden" name="accion" value="desactivar_ubicacion"><input type="hidden" name="id" value="{{ u.id }}"><button class="btn btn-danger btn-sm" type="submit"><i data-feather="x-circle"></i> Desactivar</button></form></td>
+                  </tr>
+                  {% empty %}<tr><td colspan="3" class="text-center text-muted">Sin ubicaciones agregadas.</td></tr>{% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-xl-6 col-lg-12">
+        <div class="card">
+          <div class="card-header pb-0 card-no-border"><h5>Artículos asignados</h5></div>
+          <div class="card-body">
+            <form method="post" class="mb-3">
+              {% csrf_token %}
+              <input type="hidden" name="accion" value="agregar_articulo">
+              {{ articulo_form.as_p }}
+              <button class="btn btn-primary btn-sm" type="submit"><i data-feather="plus-circle"></i> Agregar artículo</button>
+            </form>
+            <div class="dt-ext table-responsive custom-scrollbar">
+              <table class="display datatables" id="tabla-division-articulos">
+                <thead><tr><th>Artículo</th><th>Asignado</th><th>Ubicaciones</th><th>Reservado</th><th>Disponible</th></tr></thead>
+                <tbody>{% for a in division.articulos.all %}<tr><td>{{ a.articulo }}</td><td>{{ a.cantidad_asignada }}</td><td>{{ a.total_asignado_ubicaciones }}</td><td>{{ a.total_reservado }}</td><td><span class="badge badge-light-info">{{ a.disponible_division }}</span></td></tr>{% empty %}<tr><td colspan="5" class="text-center text-muted">Sin artículos asignados.</td></tr>{% endfor %}</tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header pb-0 card-no-border"><h5>Asignaciones por ubicación</h5></div>
+      <div class="card-body">
+        <div class="dt-ext table-responsive custom-scrollbar">
+          <table class="display datatables" id="tabla-division-asignaciones">
+            <thead><tr><th>Artículo</th><th>Ubicación</th><th>Asignado</th><th>Reservado</th><th>Consumido</th><th>Disponible</th><th class="text-center">Acciones</th></tr></thead>
+            <tbody>{% for a in division.articulos.all %}{% for x in a.asignaciones_ubicacion.all %}<tr><td>{{ a.articulo }}</td><td>{{ x.ubicacion }}</td><td>{{ x.cantidad_asignada }}</td><td>{{ x.cantidad_reservada }}</td><td>{{ x.cantidad_consumida }}</td><td>{{ x.disponible_ubicacion }}</td><td class="text-center"><form method="post">{% csrf_token %}<input type="hidden" name="accion" value="desasignar_ubicacion"><input type="hidden" name="id" value="{{ x.id }}"><button class="btn btn-danger btn-sm" type="submit"><i data-feather="trash-2"></i> Desasignar</button></form></td></tr>{% endfor %}{% empty %}<tr><td colspan="7" class="text-center text-muted">Sin asignaciones registradas.</td></tr>{% endfor %}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
