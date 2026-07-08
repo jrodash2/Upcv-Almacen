@@ -137,10 +137,13 @@ urlpatterns = [
 
 
 
-
-
-
-
-
+    path('almacen/divisiones/', views.division_list, name='division_list'),
+    path('almacen/divisiones/crear/', views.division_create, name='division_create'),
+    path('almacen/divisiones/control/', views.division_control, name='division_control'),
+    path('almacen/divisiones/<int:pk>/', views.division_detail, name='division_detail'),
+    path('almacen/divisiones/<int:pk>/editar/', views.division_update, name='division_update'),
+    path('almacen/mis-divisiones/', views.mis_divisiones, name='mis_divisiones'),
+    path('almacen/divisiones/articulo/<int:pk>/autoasignar/', views.autoasignar_division_articulo, name='autoasignar_division_articulo'),
+    path('almacen/mis-articulos-asignados/', views.mis_articulos_asignados, name='mis_articulos_asignados'),
 
 ]

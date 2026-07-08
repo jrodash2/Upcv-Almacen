@@ -1,0 +1,73 @@
+{% extends 'almacen/base.html' %}
+{% load static %}
+{% block content %}
+<div class="page-body">
+  <div class="container-fluid">
+    <div class="page-title">
+      <div class="row">
+        <div class="col-6"><h4 class="mb-0">Control General de Divisiones</h4></div>
+        <div class="col-6">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'almacen:dahsboard' %}"><i data-feather="home"></i></a></li>
+            <li class="breadcrumb-item">Almacén</li>
+            <li class="breadcrumb-item">Divisiones</li>
+            <li class="breadcrumb-item active">Control General</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container-fluid">
+    <div class="card">
+      <div class="card-header pb-0 card-no-border">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div>
+            <h4 class="mb-1">Control General</h4>
+            <span>Revise asignaciones, reservas y disponibilidad por división.</span>
+          </div>
+          <a class="btn btn-outline-primary btn-sm" href="{% url 'almacen:division_list' %}"><i data-feather="layers"></i> Listado</a>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="dt-ext table-responsive custom-scrollbar">
+          <table class="display datatables" id="tabla-control-divisiones">
+            <thead>
+              <tr>
+                <th>División</th>
+                <th>Código</th>
+                <th>Artículo</th>
+                <th>Existencia</th>
+                <th>Asignado División</th>
+                <th>Asignado Ubicaciones</th>
+                <th>Reservado</th>
+                <th>Disponible</th>
+                <th>Ubicaciones</th>
+                <th class="text-center">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for a in articulos %}
+              <tr>
+                <td>{{ a.division }}</td>
+                <td><span class="badge badge-light-primary">{{ a.articulo.codigo }}</span></td>
+                <td>{{ a.articulo.nombre }}</td>
+                <td>{{ a.existencia_total }}</td>
+                <td>{{ a.cantidad_asignada }}</td>
+                <td>{{ a.total_asignado_ubicaciones }}</td>
+                <td>{{ a.total_reservado }}</td>
+                <td><span class="badge badge-light-info">{{ a.disponible_division }}</span></td>
+                <td>{% for x in a.asignaciones_ubicacion.all %}{{ x.ubicacion }} ({{ x.cantidad_asignada }}){% if not forloop.last %}, {% endif %}{% empty %}<span class="text-muted">Sin ubicaciones</span>{% endfor %}</td>
+                <td class="text-center"><a class="btn btn-outline-primary btn-sm" href="{% url 'almacen:division_detail' a.division.id %}"><i data-feather="eye"></i> Ver</a></td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="10" class="text-center text-muted">No hay artículos asignados a divisiones.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
