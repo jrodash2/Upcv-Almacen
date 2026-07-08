@@ -708,45 +708,58 @@ def solicitud_requerimiento_pdf(request, solicitud_id):
 
 @login_required
 @grupo_requerido('Administrador', 'Almacen', 'Departamento')
+@require_POST
 def convertir_solicitud_en_requerimiento(request, solicitud_id):
-    solicitud = get_object_or_404(SolicitudRequerimiento, id=solicitud_id)
+    solicitud = get_object_or_404(SolicitudRequerimiento.objects.select_related('requerimiento', 'departamento'), id=solicitud_id)
     es_admin = request.user.is_superuser or request.user.groups.filter(name='Administrador').exists()
     es_almacen = request.user.groups.filter(name='Almacen').exists()
     tiene_departamento_asignado = UsuarioDepartamento.objects.filter(usuario=request.user, departamento=solicitud.departamento).exists()
     if not (es_admin or es_almacen or tiene_departamento_asignado):
         messages.error(request, "No tiene permiso para convertir esta solicitud.")
         return redirect('almacen:acceso_denegado')
-    if solicitud.estado != 'pendiente' or solicitud.requerimiento_id:
+    if solicitud.requerimiento_id:
+        messages.warning(request, "Esta solicitud ya fue convertida.")
+        return redirect('almacen:detalle_requerimiento', requerimiento_id=solicitud.requerimiento_id)
+    if solicitud.estado != 'pendiente':
         messages.warning(request, "La solicitud ya fue procesada.")
-        return redirect('almacen:bandeja_solicitudes_requerimiento')
+        return redirect('almacen:detalle_solicitud_requerimiento', solicitud_id=solicitud.id)
     try:
         with transaction.atomic():
+            detalles = list(solicitud.detalles.select_related('articulo', 'division_articulo_ubicacion').all())
+            if not detalles:
+                raise ValidationError("La solicitud no tiene detalles para convertir.")
             requerimiento = Requerimiento.objects.create(
-            departamento=solicitud.departamento,
-            motivo=solicitud.justificacion or solicitud.observaciones,
-            creado_por=solicitud.usuario_solicitante,
-            estado='pendiente'
+                departamento=solicitud.departamento,
+                motivo=solicitud.justificacion or solicitud.observaciones,
+                creado_por=solicitud.usuario_solicitante,
+                estado='pendiente'
             )
-            for detalle in solicitud.detalles.all():
-                disponible = AsignacionDetalleFactura.objects.filter(
-                    destino=solicitud.departamento, articulo=detalle.articulo
-                ).aggregate(total=Coalesce(Sum('cantidad_asignada'), 0))['total'] or 0
-                despachado = DetalleRequerimiento.objects.filter(
-                    requerimiento__departamento=solicitud.departamento, articulo=detalle.articulo
-                ).aggregate(total=Coalesce(Sum('cantidad_despachada'), 0))['total'] or 0
-                if detalle.cantidad > (disponible - despachado):
-                    raise ValidationError(f"No hay stock suficiente para {detalle.articulo.nombre}.")
-                DetalleRequerimiento.objects.create(requerimiento=requerimiento, articulo=detalle.articulo, cantidad=detalle.cantidad, observacion=detalle.observacion)
+            for detalle in detalles:
+                if not detalle.division_articulo_ubicacion_id:
+                    disponible = AsignacionDetalleFactura.objects.filter(
+                        destino=solicitud.departamento, articulo=detalle.articulo
+                    ).aggregate(total=Coalesce(Sum('cantidad_asignada'), 0))['total'] or 0
+                    despachado = DetalleRequerimiento.objects.filter(
+                        requerimiento__departamento=solicitud.departamento, articulo=detalle.articulo
+                    ).aggregate(total=Coalesce(Sum('cantidad_despachada'), 0))['total'] or 0
+                    if detalle.cantidad > (disponible - despachado):
+                        raise ValidationError(f"No hay stock suficiente para {detalle.articulo.codigo}.")
+                DetalleRequerimiento.objects.create(
+                    requerimiento=requerimiento,
+                    articulo=detalle.articulo,
+                    cantidad=detalle.cantidad,
+                    observacion=detalle.observacion
+                )
             solicitud.estado = 'convertida'
             solicitud.requerimiento = requerimiento
             solicitud.convertido_por = request.user
             solicitud.convertido_en = timezone.now()
-            solicitud.save()
+            solicitud.save(update_fields=['estado', 'requerimiento', 'convertido_por', 'convertido_en', 'actualizado_en'])
     except ValidationError as e:
-        messages.error(request, str(e))
+        messages.error(request, e.message_dict if hasattr(e, 'message_dict') else e.messages)
         return redirect('almacen:detalle_solicitud_requerimiento', solicitud_id=solicitud.id)
     messages.success(request, "Solicitud convertida en requerimiento correctamente.")
-    return redirect('almacen:detalle_solicitud_requerimiento', solicitud_id=solicitud.id)
+    return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
 
 
 @login_required
