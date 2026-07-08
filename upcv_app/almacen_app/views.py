@@ -8,8 +8,8 @@ from django.contrib.auth.models import Group, User
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
-from .form import DependenciaForm, DetalleFacturaForm, DetalleRequerimientoForm, DetalleRequerimientoFormSet, Form1hForm, PerfilForm, ProgramaForm, RequerimientoForm, UserCreateForm, UserEditForm, UserCreateForm, UbicacionForm, UnidadDeMedidaForm, CategoriaForm, ProveedorForm, ArticuloForm, DepartamentoForm, SerieForm, AsignacionDetalleFacturaForm, UsuarioDepartamentoForm, InstitucionForm, SolicitudRequerimientoForm, DetalleSolicitudRequerimientoFormSet
-from .models import ContadorDetalleFactura, DetalleFactura, DetalleRequerimiento, HistorialTransferencia, InventarioDetalle, LineaLibre, Perfil, Requerimiento, Ubicacion, UnidadDeMedida, Categoria, Proveedor, Articulo, Departamento, Kardex, AsignacionDetalleFactura, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa, LineaReservada, UsuarioDepartamento, Institucion, SolicitudRequerimiento, DetalleSolicitudRequerimiento
+from .form import DependenciaForm, DetalleFacturaForm, DetalleRequerimientoForm, DetalleRequerimientoFormSet, Form1hForm, PerfilForm, ProgramaForm, RequerimientoForm, UserCreateForm, UserEditForm, UserCreateForm, UbicacionForm, UnidadDeMedidaForm, CategoriaForm, ProveedorForm, ArticuloForm, DepartamentoForm, SerieForm, AsignacionDetalleFacturaForm, UsuarioDepartamentoForm, InstitucionForm, SolicitudRequerimientoForm, DetalleSolicitudRequerimientoFormSet, DivisionAlmacenForm, DivisionUbicacionForm, DivisionArticuloForm
+from .models import existencia_general_articulo, ContadorDetalleFactura, DetalleFactura, DetalleRequerimiento, HistorialTransferencia, InventarioDetalle, LineaLibre, Perfil, Requerimiento, Ubicacion, UnidadDeMedida, Categoria, Proveedor, Articulo, Departamento, Kardex, AsignacionDetalleFactura, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa, LineaReservada, UsuarioDepartamento, Institucion, SolicitudRequerimiento, DetalleSolicitudRequerimiento, DivisionAlmacen, DivisionUbicacion, DivisionArticulo, DivisionArticuloUbicacion
 from django.views.generic import CreateView
 from django.views.generic import ListView
 from django.urls import reverse_lazy
@@ -290,6 +290,18 @@ def obtener_stock_disponible_por_departamento(departamento):
         disponible = a['total_asignado'] - despachados_dict.get(a['articulo_id'], 0)
         if disponible > 0:
             stock_disponible[a['articulo_id']] = disponible
+
+    asignaciones_division = (
+        DivisionArticuloUbicacion.objects
+        .filter(ubicacion=departamento, activo=True, division_articulo__activo=True)
+        .select_related('division_articulo__articulo')
+    )
+    for asignacion in asignaciones_division:
+        disponible = asignacion.disponible_ubicacion
+        if disponible > 0:
+            articulo_id = asignacion.division_articulo.articulo_id
+            stock_disponible[articulo_id] = stock_disponible.get(articulo_id, 0) + disponible
+
     return stock_disponible
 
 @login_required
@@ -315,6 +327,15 @@ def articulos_asignados(request, departamento_id):
             articulos = articulos.filter(categoria_query)
         articulos = articulos.order_by('nombre')
 
+        asignaciones_division = {
+            item.division_articulo.articulo_id: item
+            for item in DivisionArticuloUbicacion.objects.filter(
+                ubicacion=departamento,
+                activo=True,
+                division_articulo__activo=True,
+            ).select_related('division_articulo__division', 'division_articulo__articulo')
+            if item.disponible_ubicacion > 0
+        }
         data = {
             'articulos': [
                 {
@@ -323,8 +344,11 @@ def articulos_asignados(request, departamento_id):
                     'nombre': articulo.nombre,
                     'categoria': articulo.categoria.nombre if articulo.categoria else 'S/C',
                     'renglon_presupuestario': articulo.renglon_presupuestario or 'S/R',
+                    'division': asignaciones_division.get(articulo.id).division_articulo.division.nombre if asignaciones_division.get(articulo.id) else '',
                     'cantidad_disponible': str(stock_disponible.get(articulo.id, 0)),
-                    'cantidad_asignada': str(stock_disponible.get(articulo.id, 0))
+                    'cantidad_asignada': str(asignaciones_division.get(articulo.id).cantidad_asignada if asignaciones_division.get(articulo.id) else stock_disponible.get(articulo.id, 0)),
+                    'cantidad_reservada': str(asignaciones_division.get(articulo.id).cantidad_reservada if asignaciones_division.get(articulo.id) else 0),
+                    'cantidad_consumida': str(asignaciones_division.get(articulo.id).cantidad_consumida if asignaciones_division.get(articulo.id) else 0),
                 }
                 for articulo in articulos
             ]
@@ -423,6 +447,15 @@ def despachar_requerimiento(request, requerimiento_id):
             detalle.cantidad_despachada = cantidad_a_despachar
             detalle.estado = 'despachado' if cantidad_a_despachar == detalle.cantidad else 'parcial'
             detalle.save()
+            solicitud_origen = SolicitudRequerimiento.objects.filter(requerimiento=requerimiento).first()
+            if solicitud_origen:
+                detalle_solicitud = solicitud_origen.detalles.filter(articulo=detalle.articulo, division_articulo_ubicacion__isnull=False).first()
+                if detalle_solicitud:
+                    asignacion = detalle_solicitud.division_articulo_ubicacion
+                    mover = min(Decimal(cantidad_a_despachar), asignacion.cantidad_reservada)
+                    asignacion.cantidad_reservada -= mover
+                    asignacion.cantidad_consumida += mover
+                    asignacion.save(update_fields=['cantidad_reservada', 'cantidad_consumida', 'fecha_actualizacion'])
 
         # Verificar si todos los detalles fueron despachados completamente
         if all(d.estado == 'despachado' for d in detalles):
@@ -538,16 +571,41 @@ def crear_solicitud_requerimiento(request):
         messages.error(request, "No tiene artículos asignados disponibles para solicitar. Comuníquese con el administrador o con su departamento.")
 
     if request.method == 'POST' and form.is_valid() and formset.is_valid():
-        solicitud = form.save(commit=False)
-        solicitud.usuario_solicitante = request.user
-        solicitud.save()
-        for f in formset:
-            if f.cleaned_data and not f.cleaned_data.get('DELETE'):
-                detalle = f.save(commit=False)
-                detalle.solicitud = solicitud
-                detalle.save()
-        messages.success(request, "Solicitud creada correctamente.")
-        return redirect('almacen:listado_solicitudes_gestor')
+        try:
+            with transaction.atomic():
+                solicitud = form.save(commit=False)
+                solicitud.usuario_solicitante = request.user
+                solicitud.save()
+                for f in formset:
+                    if f.cleaned_data and not f.cleaned_data.get('DELETE'):
+                        detalle = f.save(commit=False)
+                        detalle.solicitud = solicitud
+                        asignaciones_division = (
+                            DivisionArticuloUbicacion.objects
+                            .select_for_update()
+                            .filter(
+                                ubicacion=solicitud.departamento,
+                                division_articulo__articulo=detalle.articulo,
+                                activo=True,
+                                division_articulo__activo=True,
+                            )
+                            .select_related('division_articulo')
+                            .order_by('division_articulo__division__nombre', 'id')
+                        )
+                        cantidad_detalle = Decimal(detalle.cantidad)
+                        asignacion_division = next((asig for asig in asignaciones_division if asig.disponible_ubicacion >= cantidad_detalle), None)
+                        if asignaciones_division.exists() and not asignacion_division:
+                            raise ValidationError(f"La cantidad solicitada supera el disponible de división para {detalle.articulo.codigo}.")
+                        if asignacion_division:
+                            asignacion_division.cantidad_reservada += cantidad_detalle
+                            asignacion_division.save(update_fields=['cantidad_reservada', 'fecha_actualizacion'])
+                            detalle.division_articulo_ubicacion = asignacion_division
+                        detalle.save()
+        except ValidationError as e:
+            messages.error(request, e.message_dict if hasattr(e, 'message_dict') else e.messages)
+        else:
+            messages.success(request, "Solicitud creada correctamente.")
+            return redirect('almacen:listado_solicitudes_gestor')
     return render(request, 'almacen/crear_solicitud_requerimiento.html', {
         'form': form,
         'formset': formset,
@@ -650,45 +708,58 @@ def solicitud_requerimiento_pdf(request, solicitud_id):
 
 @login_required
 @grupo_requerido('Administrador', 'Almacen', 'Departamento')
+@require_POST
 def convertir_solicitud_en_requerimiento(request, solicitud_id):
-    solicitud = get_object_or_404(SolicitudRequerimiento, id=solicitud_id)
+    solicitud = get_object_or_404(SolicitudRequerimiento.objects.select_related('requerimiento', 'departamento'), id=solicitud_id)
     es_admin = request.user.is_superuser or request.user.groups.filter(name='Administrador').exists()
     es_almacen = request.user.groups.filter(name='Almacen').exists()
     tiene_departamento_asignado = UsuarioDepartamento.objects.filter(usuario=request.user, departamento=solicitud.departamento).exists()
     if not (es_admin or es_almacen or tiene_departamento_asignado):
         messages.error(request, "No tiene permiso para convertir esta solicitud.")
         return redirect('almacen:acceso_denegado')
-    if solicitud.estado != 'pendiente' or solicitud.requerimiento_id:
+    if solicitud.requerimiento_id:
+        messages.warning(request, "Esta solicitud ya fue convertida.")
+        return redirect('almacen:detalle_requerimiento', requerimiento_id=solicitud.requerimiento_id)
+    if solicitud.estado != 'pendiente':
         messages.warning(request, "La solicitud ya fue procesada.")
-        return redirect('almacen:bandeja_solicitudes_requerimiento')
+        return redirect('almacen:detalle_solicitud_requerimiento', solicitud_id=solicitud.id)
     try:
         with transaction.atomic():
+            detalles = list(solicitud.detalles.select_related('articulo', 'division_articulo_ubicacion').all())
+            if not detalles:
+                raise ValidationError("La solicitud no tiene detalles para convertir.")
             requerimiento = Requerimiento.objects.create(
-            departamento=solicitud.departamento,
-            motivo=solicitud.justificacion or solicitud.observaciones,
-            creado_por=solicitud.usuario_solicitante,
-            estado='pendiente'
+                departamento=solicitud.departamento,
+                motivo=solicitud.justificacion or solicitud.observaciones,
+                creado_por=solicitud.usuario_solicitante,
+                estado='pendiente'
             )
-            for detalle in solicitud.detalles.all():
-                disponible = AsignacionDetalleFactura.objects.filter(
-                    destino=solicitud.departamento, articulo=detalle.articulo
-                ).aggregate(total=Coalesce(Sum('cantidad_asignada'), 0))['total'] or 0
-                despachado = DetalleRequerimiento.objects.filter(
-                    requerimiento__departamento=solicitud.departamento, articulo=detalle.articulo
-                ).aggregate(total=Coalesce(Sum('cantidad_despachada'), 0))['total'] or 0
-                if detalle.cantidad > (disponible - despachado):
-                    raise ValidationError(f"No hay stock suficiente para {detalle.articulo.nombre}.")
-                DetalleRequerimiento.objects.create(requerimiento=requerimiento, articulo=detalle.articulo, cantidad=detalle.cantidad, observacion=detalle.observacion)
+            for detalle in detalles:
+                if not detalle.division_articulo_ubicacion_id:
+                    disponible = AsignacionDetalleFactura.objects.filter(
+                        destino=solicitud.departamento, articulo=detalle.articulo
+                    ).aggregate(total=Coalesce(Sum('cantidad_asignada'), 0))['total'] or 0
+                    despachado = DetalleRequerimiento.objects.filter(
+                        requerimiento__departamento=solicitud.departamento, articulo=detalle.articulo
+                    ).aggregate(total=Coalesce(Sum('cantidad_despachada'), 0))['total'] or 0
+                    if detalle.cantidad > (disponible - despachado):
+                        raise ValidationError(f"No hay stock suficiente para {detalle.articulo.codigo}.")
+                DetalleRequerimiento.objects.create(
+                    requerimiento=requerimiento,
+                    articulo=detalle.articulo,
+                    cantidad=detalle.cantidad,
+                    observacion=detalle.observacion
+                )
             solicitud.estado = 'convertida'
             solicitud.requerimiento = requerimiento
             solicitud.convertido_por = request.user
             solicitud.convertido_en = timezone.now()
-            solicitud.save()
+            solicitud.save(update_fields=['estado', 'requerimiento', 'convertido_por', 'convertido_en', 'actualizado_en'])
     except ValidationError as e:
-        messages.error(request, str(e))
+        messages.error(request, e.message_dict if hasattr(e, 'message_dict') else e.messages)
         return redirect('almacen:detalle_solicitud_requerimiento', solicitud_id=solicitud.id)
     messages.success(request, "Solicitud convertida en requerimiento correctamente.")
-    return redirect('almacen:detalle_solicitud_requerimiento', solicitud_id=solicitud.id)
+    return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
 
 
 @login_required
@@ -711,6 +782,11 @@ def rechazar_solicitud_requerimiento(request, solicitud_id):
         solicitud.rechazado_por = request.user
         solicitud.rechazado_en = timezone.now()
         solicitud.save()
+        for detalle in solicitud.detalles.select_related('division_articulo_ubicacion'):
+            if detalle.division_articulo_ubicacion_id:
+                asignacion = detalle.division_articulo_ubicacion
+                asignacion.cantidad_reservada = max(Decimal('0'), asignacion.cantidad_reservada - Decimal(detalle.cantidad))
+                asignacion.save(update_fields=['cantidad_reservada', 'fecha_actualizacion'])
         messages.success(request, "Solicitud rechazada correctamente.")
         return redirect('almacen:bandeja_solicitudes_requerimiento')
     return render(request, 'almacen/rechazar_solicitud_requerimiento.html', {'solicitud': solicitud})
@@ -1106,71 +1182,114 @@ def historial_kardex_articulo(request, articulo_id):
     })
 
 
-@login_required
-@grupo_requerido('Administrador', 'Almacen')
-def ver_stock_formulario_1h(request):
+def construir_stock_list_administrador():
     ingresos = DetalleFactura.objects.filter(
         form1h__estado='confirmado'
-    ).values('articulo__id', 'articulo__codigo', 'articulo__nombre', 'articulo__categoria__nombre', 'articulo__renglon_presupuestario').annotate(
-        total_ingresado=Sum('cantidad')
-    )
+    ).values(
+        'articulo__id', 'articulo__codigo', 'articulo__nombre',
+        'articulo__categoria__nombre', 'articulo__renglon_presupuestario'
+    ).annotate(total_ingresado=Sum('cantidad'))
 
     ingreso_dict = {item['articulo__id']: item for item in ingresos}
+    articulo_ids = set(ingreso_dict.keys())
 
-    asignaciones = AsignacionDetalleFactura.objects.values('articulo__id').annotate(
+    asignaciones_directas = AsignacionDetalleFactura.objects.values('articulo__id').annotate(
         total_asignado=Sum('cantidad_asignada')
     )
+    asignado_directo_dict = {item['articulo__id']: item['total_asignado'] or 0 for item in asignaciones_directas}
+    articulo_ids.update(asignado_directo_dict.keys())
 
     asignaciones_departamento = AsignacionDetalleFactura.objects.values(
         'articulo__id', 'destino__nombre'
     ).annotate(total_asignado_dept=Sum('cantidad_asignada'))
-
     asignaciones_dept_dict = {}
     for asig in asignaciones_departamento:
-        art_id = asig['articulo__id']
-        depto_nombre = asig['destino__nombre']
-        cantidad = asig['total_asignado_dept']
-        if art_id not in asignaciones_dept_dict:
-            asignaciones_dept_dict[art_id] = []
-        asignaciones_dept_dict[art_id].append(f"{depto_nombre} ({cantidad})")
+        asignaciones_dept_dict.setdefault(asig['articulo__id'], []).append(
+            f"{asig['destino__nombre']} ({asig['total_asignado_dept']})"
+        )
 
-    for item in asignaciones:
-        articulo_id = item['articulo__id']
-        if articulo_id in ingreso_dict:
-            ingreso_dict[articulo_id]['total_asignado'] = item['total_asignado']
-        else:
-            articulo = Articulo.objects.get(id=articulo_id)
-            ingreso_dict[articulo_id] = {
-                'articulo__id': articulo_id,
+    asignaciones_division = DivisionArticulo.objects.filter(activo=True).values(
+        'articulo__id', 'division__nombre'
+    ).annotate(total_asignado=Sum('cantidad_asignada'))
+    asignado_division_dict = defaultdict(Decimal)
+    divisiones_dict = {}
+    for div in asignaciones_division:
+        articulo_id = div['articulo__id']
+        cantidad = div['total_asignado'] or Decimal('0')
+        asignado_division_dict[articulo_id] += cantidad
+        divisiones_dict.setdefault(articulo_id, []).append(f"{div['division__nombre']} ({cantidad})")
+        articulo_ids.add(articulo_id)
+
+    ubicaciones_division = DivisionArticuloUbicacion.objects.filter(activo=True).values(
+        'division_articulo__articulo__id'
+    ).annotate(
+        asignado_ubicaciones=Sum('cantidad_asignada'),
+        reservado=Sum('cantidad_reservada'),
+        consumido=Sum('cantidad_consumida')
+    )
+    asignado_ubicaciones_dict = defaultdict(Decimal)
+    reservado_dict = defaultdict(Decimal)
+    consumido_dict = defaultdict(Decimal)
+    for item in ubicaciones_division:
+        articulo_id = item['division_articulo__articulo__id']
+        asignado_ubicaciones_dict[articulo_id] = item['asignado_ubicaciones'] or Decimal('0')
+        reservado_dict[articulo_id] = item['reservado'] or Decimal('0')
+        consumido_dict[articulo_id] = item['consumido'] or Decimal('0')
+        articulo_ids.add(articulo_id)
+
+    faltantes = articulo_ids - set(ingreso_dict.keys())
+    if faltantes:
+        for articulo in Articulo.objects.filter(id__in=faltantes).select_related('categoria'):
+            ingreso_dict[articulo.id] = {
+                'articulo__id': articulo.id,
                 'articulo__codigo': articulo.codigo,
                 'articulo__nombre': articulo.nombre,
                 'articulo__categoria__nombre': articulo.categoria.nombre if articulo.categoria else None,
                 'articulo__renglon_presupuestario': articulo.renglon_presupuestario,
                 'total_ingresado': 0,
-                'total_asignado': item['total_asignado'],
             }
 
     stock_list = []
-    for item in ingreso_dict.values():
+    for articulo_id, item in ingreso_dict.items():
         total_ingresado = item.get('total_ingresado') or 0
-        total_asignado = item.get('total_asignado') or 0
-        disponible = total_ingresado - total_asignado
-        departamentos = ", ".join(asignaciones_dept_dict.get(item['articulo__id'], [])) or "Sin asignar"
+        asignado_directo = asignado_directo_dict.get(articulo_id, 0)
+        asignado_divisiones = asignado_division_dict.get(articulo_id, Decimal('0'))
+        asignado_ubicaciones = asignado_ubicaciones_dict.get(articulo_id, Decimal('0'))
+        reservado_total = reservado_dict.get(articulo_id, Decimal('0'))
+        consumido_total = consumido_dict.get(articulo_id, Decimal('0'))
+        asignado_total = asignado_directo + asignado_divisiones
+        disponible_real = total_ingresado - asignado_total
+        requiere_revision = disponible_real < 0
+        disponible_general = max(0, disponible_real)
+        departamentos = ", ".join(asignaciones_dept_dict.get(articulo_id, [])) or "Sin asignar"
+        divisiones = ", ".join(divisiones_dict.get(articulo_id, [])) or "Sin división"
 
         stock_list.append({
-            'articulo_id': item['articulo__id'],
+            'articulo_id': articulo_id,
             'articulo_codigo': item.get('articulo__codigo'),
             'renglon_presupuestario': item.get('articulo__renglon_presupuestario'),
             'categoria': item.get('articulo__categoria__nombre'),
             'articulo': item['articulo__nombre'],
             'ingresado': total_ingresado,
-            'asignado': total_asignado,
-            'disponible': disponible,
+            'asignado': asignado_total,
+            'asignado_directo': asignado_directo,
+            'asignado_divisiones': asignado_divisiones,
+            'asignado_ubicaciones_division': asignado_ubicaciones,
+            'reservado_total': reservado_total,
+            'consumido_total': consumido_total,
+            'disponible': disponible_general,
+            'requiere_revision': requiere_revision,
             'departamentos': departamentos,
+            'divisiones': divisiones,
         })
+    return stock_list
 
+
+@login_required
+@grupo_requerido('Administrador', 'Almacen')
+def ver_stock_formulario_1h(request):
     context = {
-        'stock_list': stock_list,
+        'stock_list': construir_stock_list_administrador(),
         'departamentos': Departamento.objects.all(),
     }
     return render(request, 'almacen/stock_formulario_1h.html', context)
@@ -1500,11 +1619,10 @@ def crear_asignacion_detalle_articulo(request):
         })
 
     context = {
-    'form': form,
-    'stock_list': stock_list,
-    'departamentos': Departamento.objects.all(),  
-}
-
+        'form': form,
+        'stock_list': construir_stock_list_administrador(),
+        'departamentos': Departamento.objects.all(),
+    }
 
     return render(request, 'almacen/stock_formulario_1h.html', context)
 
@@ -1589,6 +1707,13 @@ def anular_requerimiento(request, requerimiento_id):
         requerimiento.fecha_rechazado = timezone.now()
         requerimiento.rechazado_por = request.user
         requerimiento.save()
+        solicitud_origen = requerimiento.solicitudes_origen.first()
+        if solicitud_origen:
+            for detalle in solicitud_origen.detalles.select_related('division_articulo_ubicacion'):
+                if detalle.division_articulo_ubicacion_id:
+                    asignacion = detalle.division_articulo_ubicacion
+                    asignacion.cantidad_reservada = max(Decimal('0'), asignacion.cantidad_reservada - Decimal(detalle.cantidad))
+                    asignacion.save(update_fields=['cantidad_reservada', 'fecha_actualizacion'])
 
         messages.success(request, "Requerimiento anulado exitosamente.")
         return redirect('almacen:detalle_requerimiento', requerimiento_id=requerimiento.id)
@@ -2655,3 +2780,148 @@ def libro_mayor_movimientos(request, articulo_id):
         'movimientos': calculo['movimientos'],
         'filtros': {'fecha_inicio': fecha_inicio, 'fecha_fin': fecha_fin},
     })
+
+@login_required
+@grupo_requerido('Administrador', 'Almacen')
+def articulo_disponibilidad_json(request, articulo_id):
+    articulo = get_object_or_404(Articulo, pk=articulo_id)
+    existencia_total = Decimal(existencia_general_articulo(articulo))
+    asignado_divisiones = DivisionArticulo.objects.filter(articulo=articulo, activo=True).aggregate(total=Sum('cantidad_asignada'))['total'] or Decimal('0')
+    asignado_ubicaciones = DivisionArticuloUbicacion.objects.filter(division_articulo__articulo=articulo, activo=True).aggregate(total=Sum('cantidad_asignada'))['total'] or Decimal('0')
+    reservado = DivisionArticuloUbicacion.objects.filter(division_articulo__articulo=articulo, activo=True).aggregate(total=Sum('cantidad_reservada'))['total'] or Decimal('0')
+    disponible_sin_reservar = max(Decimal('0'), existencia_total - reservado)
+    disponible_para_division = max(Decimal('0'), existencia_total - asignado_divisiones)
+    return JsonResponse({
+        'codigo': articulo.codigo,
+        'nombre': articulo.nombre,
+        'existencia_total': str(existencia_total),
+        'asignado_divisiones': str(asignado_divisiones),
+        'asignado_ubicaciones': str(asignado_ubicaciones),
+        'reservado': str(reservado),
+        'disponible_sin_reservar': str(disponible_sin_reservar),
+        'disponible_para_division': str(disponible_para_division),
+        'revisar': disponible_sin_reservar <= 0,
+    })
+
+@login_required
+@grupo_requerido('Administrador', 'Almacen')
+@require_POST
+def desasignar_articulo_ubicacion(request, asignacion_id):
+    asignacion = get_object_or_404(DivisionArticuloUbicacion, pk=asignacion_id)
+    redirect_to = request.POST.get('next') or reverse('almacen:division_detail', kwargs={'pk': asignacion.division_articulo.division_id})
+    try:
+        cantidad = Decimal(request.POST.get('cantidad_desasignar') or '0')
+    except Exception:
+        messages.error(request, 'Cantidad inválida para desasignar.')
+        return redirect(redirect_to)
+    disponible_para_desasignar = max(Decimal('0'), asignacion.cantidad_asignada - asignacion.cantidad_reservada - asignacion.cantidad_consumida)
+    if cantidad <= 0:
+        messages.error(request, 'La cantidad a desasignar debe ser mayor a cero.')
+        return redirect(redirect_to)
+    if cantidad > disponible_para_desasignar:
+        messages.error(request, 'No puede desasignar más de la cantidad disponible sin reservar.')
+        return redirect(redirect_to)
+    asignacion.cantidad_asignada -= cantidad
+    if asignacion.cantidad_asignada <= 0 and asignacion.cantidad_reservada <= 0 and asignacion.cantidad_consumida <= 0:
+        asignacion.activo = False
+    asignacion.save(update_fields=['cantidad_asignada', 'activo', 'fecha_actualizacion'])
+    messages.success(request, f'Se desasignaron {cantidad} unidades correctamente.')
+    return redirect(redirect_to)
+
+@login_required
+@grupo_requerido('Administrador', 'Almacen')
+def division_list(request):
+    divisiones = DivisionAlmacen.objects.annotate(cantidad_ubicaciones=Count('ubicaciones', filter=Q(ubicaciones__activa=True)), cantidad_articulos=Count('articulos', filter=Q(articulos__activo=True))).order_by('nombre')
+    return render(request, 'almacen/divisiones/list.html', {'divisiones': divisiones})
+
+@login_required
+@grupo_requerido('Administrador', 'Almacen')
+def division_create(request):
+    form = DivisionAlmacenForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        division = form.save(commit=False); division.creado_por = request.user; division.save()
+        messages.success(request, 'División creada correctamente.')
+        return redirect('almacen:division_detail', pk=division.pk)
+    return render(request, 'almacen/divisiones/form.html', {'form': form, 'titulo': 'Crear División'})
+
+@login_required
+@grupo_requerido('Administrador', 'Almacen')
+def division_update(request, pk):
+    division = get_object_or_404(DivisionAlmacen, pk=pk)
+    form = DivisionAlmacenForm(request.POST or None, instance=division)
+    if request.method == 'POST' and form.is_valid():
+        form.save(); messages.success(request, 'División actualizada correctamente.')
+        return redirect('almacen:division_detail', pk=division.pk)
+    return render(request, 'almacen/divisiones/form.html', {'form': form, 'titulo': 'Editar División'})
+
+@login_required
+@grupo_requerido('Administrador', 'Almacen')
+def division_detail(request, pk):
+    division = get_object_or_404(DivisionAlmacen, pk=pk)
+    ubicacion_form = DivisionUbicacionForm(prefix='ubicacion')
+    articulo_form = DivisionArticuloForm(prefix='articulo')
+    if request.method == 'POST':
+        accion = request.POST.get('accion')
+        try:
+            if accion == 'agregar_ubicacion':
+                ubicacion_form = DivisionUbicacionForm(request.POST, prefix='ubicacion')
+                if ubicacion_form.is_valid():
+                    obj = ubicacion_form.save(commit=False); obj.division = division; obj.save(); messages.success(request, 'Ubicación agregada.')
+            elif accion == 'agregar_articulo':
+                articulo_form = DivisionArticuloForm(request.POST, prefix='articulo')
+                if articulo_form.is_valid():
+                    obj = articulo_form.save(commit=False); obj.division = division; obj.asignado_por = request.user; obj.save(); messages.success(request, 'Artículo agregado.')
+            elif accion == 'desactivar_ubicacion':
+                DivisionUbicacion.objects.filter(pk=request.POST.get('id'), division=division).update(activa=False); messages.success(request, 'Ubicación desactivada.')
+            elif accion == 'desactivar_articulo':
+                DivisionArticulo.objects.filter(pk=request.POST.get('id'), division=division).update(activo=False); messages.success(request, 'Artículo desactivado.')
+            elif accion == 'desasignar_ubicacion':
+                messages.error(request, 'Use la opción de desasignación parcial e indique una cantidad.')
+        except ValidationError as e:
+            messages.error(request, e.message_dict if hasattr(e, 'message_dict') else e.messages)
+        return redirect('almacen:division_detail', pk=division.pk)
+    return render(request, 'almacen/divisiones/detail.html', {'division': division, 'ubicacion_form': ubicacion_form, 'articulo_form': articulo_form})
+
+@login_required
+@grupo_requerido('Administrador', 'Almacen')
+def division_control(request):
+    articulos = DivisionArticulo.objects.select_related('division','articulo','articulo__categoria').filter(activo=True).order_by('division__nombre','articulo__nombre')
+    asignaciones = DivisionArticuloUbicacion.objects.filter(activo=True).select_related('division_articulo__division', 'division_articulo__articulo', 'ubicacion').order_by('division_articulo__division__nombre', 'ubicacion__nombre', 'division_articulo__articulo__nombre')
+    return render(request, 'almacen/divisiones/control.html', {'articulos': articulos, 'asignaciones': asignaciones})
+
+@login_required
+@grupo_requerido('Gestor', 'Departamento')
+def mis_divisiones(request):
+    deptos = UsuarioDepartamento.objects.filter(usuario=request.user).values_list('departamento_id', flat=True)
+    articulos = DivisionArticulo.objects.filter(activo=True, division__ubicaciones__ubicacion_id__in=deptos, division__ubicaciones__activa=True).select_related('division','articulo','articulo__categoria','articulo__unidad_medida').distinct()
+    asignaciones = DivisionArticuloUbicacion.objects.filter(ubicacion_id__in=deptos, activo=True)
+    asignacion_map = {(a.division_articulo_id, a.ubicacion_id): a for a in asignaciones}
+    return render(request, 'almacen/divisiones/mis_divisiones.html', {'articulos': articulos, 'deptos': deptos, 'asignacion_map': asignacion_map})
+
+@login_required
+@grupo_requerido('Gestor', 'Departamento')
+def autoasignar_division_articulo(request, pk):
+    da = get_object_or_404(DivisionArticulo, pk=pk, activo=True)
+    depto = UsuarioDepartamento.objects.filter(usuario=request.user, departamento__divisiones_almacen__division=da.division, departamento__divisiones_almacen__activa=True).first()
+    if not depto:
+        messages.error(request, 'No pertenece a esta división.'); return redirect('almacen:mis_divisiones')
+    if request.method == 'POST':
+        cantidad = Decimal(request.POST.get('cantidad') or '0')
+        obj = DivisionArticuloUbicacion.objects.filter(division_articulo=da, ubicacion=depto.departamento).first()
+        if obj:
+            obj.cantidad_asignada += cantidad
+        else:
+            obj = DivisionArticuloUbicacion(division_articulo=da, ubicacion=depto.departamento, cantidad_asignada=cantidad)
+        obj.activo = True; obj.asignado_por = request.user
+        try:
+            obj.save(); messages.success(request, 'Artículo autoasignado correctamente.')
+        except ValidationError as e:
+            messages.error(request, e.message_dict if hasattr(e, 'message_dict') else e.messages)
+    return redirect('almacen:mis_divisiones')
+
+@login_required
+@grupo_requerido('Gestor', 'Departamento')
+def mis_articulos_asignados(request):
+    deptos = UsuarioDepartamento.objects.filter(usuario=request.user).values_list('departamento_id', flat=True)
+    asignaciones = DivisionArticuloUbicacion.objects.filter(ubicacion_id__in=deptos, activo=True).select_related('division_articulo__division','division_articulo__articulo')
+    return render(request, 'almacen/divisiones/mis_articulos_asignados.html', {'asignaciones': asignaciones})
