@@ -550,6 +550,7 @@ class DetalleRequerimientoForm(forms.ModelForm):
 
 from django.forms import BaseModelFormSet
 from collections import defaultdict
+from decimal import Decimal
 
 class BaseDetalleRequerimientoFormSet(BaseModelFormSet):
     def __init__(self, *args, **kwargs):
@@ -744,3 +745,28 @@ DetalleSolicitudRequerimientoFormSet = modelformset_factory(
     extra=1,
     can_delete=True
 )
+
+from .models import DivisionAlmacen, DivisionUbicacion, DivisionArticulo, DivisionArticuloUbicacion
+
+class DivisionAlmacenForm(forms.ModelForm):
+    class Meta:
+        model = DivisionAlmacen
+        fields = ['nombre', 'descripcion', 'activa']
+
+class DivisionUbicacionForm(forms.ModelForm):
+    class Meta:
+        model = DivisionUbicacion
+        fields = ['ubicacion', 'activa']
+
+class DivisionArticuloForm(forms.ModelForm):
+    class Meta:
+        model = DivisionArticulo
+        fields = ['articulo', 'cantidad_asignada', 'observacion', 'activo']
+
+class DivisionArticuloUbicacionForm(forms.ModelForm):
+    class Meta:
+        model = DivisionArticuloUbicacion
+        fields = ['cantidad_asignada']
+
+class AutoAsignacionDivisionForm(forms.Form):
+    cantidad = forms.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal('0.01'))
