@@ -1356,6 +1356,108 @@ def acceso_denegado(request, exception=None):
 
 from django.db.models import Q
 
+
+def construir_resumen_gestor_departamento(departamento):
+    resumen_por_articulo = {}
+    detalle_asignaciones = []
+
+    despachados = (
+        DetalleRequerimiento.objects
+        .filter(requerimiento__departamento=departamento)
+        .values('articulo__id')
+        .annotate(total_despachado=Sum('cantidad_despachada'))
+    )
+    despachados_dict = {d['articulo__id']: d['total_despachado'] or 0 for d in despachados}
+
+    directas = (
+        AsignacionDetalleFactura.objects
+        .filter(destino=departamento)
+        .select_related('articulo', 'articulo__categoria')
+        .order_by('-fecha_asignacion')
+    )
+    for asignacion in directas:
+        articulo = asignacion.articulo
+        item = resumen_por_articulo.setdefault(articulo.id, {
+            'articulo_id': articulo.id,
+            'articulo_codigo': articulo.codigo,
+            'renglon_presupuestario': articulo.renglon_presupuestario,
+            'nombre_articulo': articulo.nombre,
+            'categoria': articulo.categoria.nombre if articulo.categoria else None,
+            'asignado_directo': 0,
+            'asignado_division': Decimal('0'),
+            'reservado': Decimal('0'),
+            'consumido': Decimal('0'),
+        })
+        item['asignado_directo'] += asignacion.cantidad_asignada
+        detalle_asignaciones.append({
+            'articulo': articulo,
+            'origen': 'Directo',
+            'division': None,
+            'departamento': departamento,
+            'cantidad_asignada': asignacion.cantidad_asignada,
+            'reservado': 0,
+            'consumido': despachados_dict.get(articulo.id, 0),
+            'disponible': max(0, asignacion.cantidad_asignada - despachados_dict.get(articulo.id, 0)),
+            'fecha': asignacion.fecha_asignacion,
+            'descripcion': asignacion.descripcion,
+            'transferible': True,
+        })
+
+    asignaciones_division = (
+        DivisionArticuloUbicacion.objects
+        .filter(
+            ubicacion=departamento,
+            activo=True,
+            division_articulo__activo=True,
+            division_articulo__division__activa=True,
+        )
+        .select_related('division_articulo__articulo', 'division_articulo__articulo__categoria', 'division_articulo__division')
+        .order_by('division_articulo__division__nombre', 'division_articulo__articulo__nombre')
+    )
+    for asignacion in asignaciones_division:
+        articulo = asignacion.division_articulo.articulo
+        item = resumen_por_articulo.setdefault(articulo.id, {
+            'articulo_id': articulo.id,
+            'articulo_codigo': articulo.codigo,
+            'renglon_presupuestario': articulo.renglon_presupuestario,
+            'nombre_articulo': articulo.nombre,
+            'categoria': articulo.categoria.nombre if articulo.categoria else None,
+            'asignado_directo': 0,
+            'asignado_division': Decimal('0'),
+            'reservado': Decimal('0'),
+            'consumido': Decimal('0'),
+        })
+        item['asignado_division'] += asignacion.cantidad_asignada
+        item['reservado'] += asignacion.cantidad_reservada
+        item['consumido'] += asignacion.cantidad_consumida
+        detalle_asignaciones.append({
+            'articulo': articulo,
+            'origen': 'División',
+            'division': asignacion.division_articulo.division.nombre,
+            'departamento': departamento,
+            'cantidad_asignada': asignacion.cantidad_asignada,
+            'reservado': asignacion.cantidad_reservada,
+            'consumido': asignacion.cantidad_consumida,
+            'disponible': max(Decimal('0'), asignacion.disponible_ubicacion),
+            'fecha': asignacion.fecha_asignacion,
+            'descripcion': asignacion.division_articulo.observacion,
+            'transferible': False,
+        })
+
+    resumen_stock = []
+    for item in resumen_por_articulo.values():
+        total_asignado = item['asignado_directo'] + item['asignado_division']
+        total_consumido = despachados_dict.get(item['articulo_id'], 0) + item['consumido']
+        disponible_real = total_asignado - item['reservado'] - total_consumido
+        item['asignado'] = total_asignado
+        item['despachado'] = total_consumido
+        item['disponible'] = max(0, disponible_real)
+        item['requiere_revision'] = disponible_real < 0
+        resumen_stock.append(item)
+
+    resumen_stock.sort(key=lambda item: item['nombre_articulo'])
+    return resumen_stock, detalle_asignaciones
+
 @login_required
 def detalle_departamento(request, pk):
     departamento = get_object_or_404(Departamento, pk=pk)
@@ -1375,45 +1477,8 @@ def detalle_departamento(request, pk):
     if tiene_acceso:
         departamentos = Departamento.objects.exclude(id=departamento.id)
 
-        asignaciones_agrupadas = (
-            AsignacionDetalleFactura.objects
-            .filter(destino=departamento)
-            .values('articulo__id', 'articulo__codigo', 'articulo__nombre', 'articulo__categoria__nombre', 'articulo__renglon_presupuestario')
-            .annotate(total_asignado=Sum('cantidad_asignada'))
-            .order_by('articulo__nombre')
-        )
-
-        despachados = (
-            DetalleRequerimiento.objects
-            .filter(requerimiento__departamento=departamento)
-            .values('articulo__id')
-            .annotate(total_despachado=Sum('cantidad_despachada'))
-        )
-        despachados_dict = {d['articulo__id']: d['total_despachado'] for d in despachados}
-
-        resumen_stock = []
-        for item in asignaciones_agrupadas:
-            articulo_id = item['articulo__id']
-            total_asignado = item['total_asignado']
-            total_despachado = despachados_dict.get(articulo_id, 0)
-            disponible = total_asignado - total_despachado
-
-            resumen_stock.append({
-                'articulo_id': articulo_id,
-                'articulo_codigo': item.get('articulo__codigo'),
-                'renglon_presupuestario': item.get('articulo__renglon_presupuestario'),
-                'categoria': item.get('articulo__categoria__nombre'),
-                'nombre_articulo': item['articulo__nombre'],
-                'asignado': total_asignado,
-                'despachado': total_despachado,
-                'disponible': disponible
-            })
-
-        asignaciones_detalle = (
-            AsignacionDetalleFactura.objects
-            .filter(destino=departamento)
-            .order_by('-fecha_asignacion')
-        )
+        resumen_stock, asignaciones_detalle = construir_resumen_gestor_departamento(departamento)
+        asignaciones_agrupadas = resumen_stock
 
         # Historial de transferencias donde el departamento es origen o destino
         historial_transferencias = (
@@ -1430,6 +1495,7 @@ def detalle_departamento(request, pk):
         'tiene_acceso': tiene_acceso,
         'es_departamento': es_departamento,
         'es_gestor': es_gestor,
+        'es_administrador': es_admin,
         'departamentos': departamentos,
         'historial_transferencias': historial_transferencias,
     })
