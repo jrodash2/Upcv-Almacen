@@ -1,7 +1,15 @@
 {% extends 'almacen/base.html' %}
 {% load static %}
 {% block content %}
-<div class="page-body">
+<style>
+  .divisiones-module .form-select,
+  .divisiones-module .form-control {
+    width: 100% !important;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+</style>
+<div class="page-body divisiones-module">
   <div class="container-fluid">
     <div class="page-title">
       <div class="row">
@@ -75,8 +83,8 @@
                 <input type="number" name="cantidad" id="id_cantidad" class="form-control" min="0.01" step="0.01" max="{{ disponibilidad.disponible_para_division }}" required>
               </div>
               <div class="col-12 d-flex justify-content-end gap-2">
-                <a href="{% url 'almacen:ver_stock_formulario_1h' %}" class="btn btn-secondary">Cancelar</a>
-                <button type="submit" class="btn btn-primary" {% if disponibilidad.disponible_para_division <= 0 %}disabled{% endif %}>Guardar</button>
+                <a href="{% url 'almacen:ver_stock_formulario_1h' %}" class="btn btn-outline-primary btn-sm">Cancelar</a>
+                <button type="submit" class="btn btn-primary btn-sm" {% if disponibilidad.disponible_para_division <= 0 %}disabled{% endif %}>Guardar</button>
               </div>
             </form>
           </div>

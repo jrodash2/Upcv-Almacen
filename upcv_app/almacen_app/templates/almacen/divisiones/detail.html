@@ -1,7 +1,20 @@
 {% extends 'almacen/base.html' %}
 {% load static %}
 {% block content %}
-<div class="page-body">
+<style>
+  .divisiones-module .form-select,
+  .divisiones-module .form-control,
+  .divisiones-module textarea,
+  .divisiones-module .select2-container {
+    width: 100% !important;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  .divisiones-module .articulo-search-help {
+    font-size: 12px;
+  }
+</style>
+<div class="page-body divisiones-module">
   <div class="container-fluid">
     <div class="page-title">
       <div class="row">
@@ -26,7 +39,7 @@
             <h4 class="mb-1">{{ division.nombre }}</h4>
             <span>{{ division.descripcion|default:'Sin descripción' }}</span>
           </div>
-          <a class="btn btn-outline-primary btn-sm" href="{% url 'almacen:division_list' %}">Volver</a>
+          <a class="btn btn-outline-primary btn-sm" href="{% url 'almacen:division_list' %}"><i data-feather="arrow-left"></i> Volver</a>
         </div>
       </div>
       <div class="card-body">
@@ -37,13 +50,28 @@
     <div class="row">
       <div class="col-xl-6 col-lg-12">
         <div class="card">
-          <div class="card-header pb-0 card-no-border"><h5>Ubicaciones agregadas</h5></div>
+          <div class="card-header pb-0 card-no-border">
+            <h5 class="mb-1">Ubicaciones agregadas</h5>
+            <span>Agregue o desactive ubicaciones pertenecientes a la división.</span>
+          </div>
           <div class="card-body">
-            <form method="post" class="mb-3">
+            <form method="post" class="row g-3 mb-3">
               {% csrf_token %}
               <input type="hidden" name="accion" value="agregar_ubicacion">
-              {{ ubicacion_form.as_p }}
-              <button class="btn btn-primary btn-sm" type="submit"><i data-feather="plus-circle"></i> Agregar ubicación</button>
+              <div class="col-md-12">
+                <label class="form-label" for="{{ ubicacion_form.ubicacion.id_for_label }}">Ubicación</label>
+                {{ ubicacion_form.ubicacion }}
+                {{ ubicacion_form.ubicacion.errors }}
+              </div>
+              <div class="col-md-12">
+                <div class="form-check checkbox checkbox-primary mb-3">
+                  {{ ubicacion_form.activa }}
+                  <label class="form-check-label" for="{{ ubicacion_form.activa.id_for_label }}">Activa</label>
+                </div>
+              </div>
+              <div class="col-12">
+                <button class="btn btn-primary btn-sm" type="submit"><i data-feather="plus-circle"></i> Agregar ubicación</button>
+              </div>
             </form>
             <div class="dt-ext table-responsive custom-scrollbar">
               <table class="display datatables" id="tabla-division-ubicaciones">
@@ -53,7 +81,9 @@
                   <tr>
                     <td>{{ u.ubicacion }}</td>
                     <td><span class="badge {% if u.activa %}badge-light-success{% else %}badge-light-danger{% endif %}">{{ u.activa|yesno:'Activa,Inactiva' }}</span></td>
-                    <td class="text-center"><form method="post">{% csrf_token %}<input type="hidden" name="accion" value="desactivar_ubicacion"><input type="hidden" name="id" value="{{ u.id }}"><button class="btn btn-danger btn-sm" type="submit"><i data-feather="x-circle"></i> Desactivar</button></form></td>
+                    <td class="text-center">
+                      <form method="post">{% csrf_token %}<input type="hidden" name="accion" value="desactivar_ubicacion"><input type="hidden" name="id" value="{{ u.id }}"><button class="btn btn-danger btn-sm" type="submit"><i data-feather="x-circle"></i> Desactivar</button></form>
+                    </td>
                   </tr>
                   {% empty %}<tr><td colspan="3" class="text-center text-muted">Sin ubicaciones agregadas.</td></tr>{% endfor %}
                 </tbody>
@@ -65,29 +95,72 @@
 
       <div class="col-xl-6 col-lg-12">
         <div class="card">
-          <div class="card-header pb-0 card-no-border"><h5>Artículos asignados</h5></div>
+          <div class="card-header pb-0 card-no-border">
+            <h5 class="mb-1">Artículos asignados</h5>
+            <span>Agregue artículos a esta división indicando cantidad disponible.</span>
+          </div>
           <div class="card-body">
-            <form method="post" class="mb-3">
+            <form method="post" class="row g-3 mb-3">
               {% csrf_token %}
               <input type="hidden" name="accion" value="agregar_articulo">
-              {{ articulo_form.as_p }}
-              <div id="articulo-disponibilidad-card" class="card mt-3 d-none">
-                <div class="card-body">
-                  <div class="mb-2"><span class="badge badge-light-primary" id="articulo-codigo">-</span> <strong id="articulo-nombre">Seleccione un artículo</strong></div>
-                  <div class="row g-3">
-                    <div class="col-md-3"><small class="text-muted">Existencia total</small><h5 id="existencia-total">0</h5></div>
-                    <div class="col-md-3"><small class="text-muted">Asignado</small><h5 id="asignado-total">0</h5></div>
-                    <div class="col-md-3"><small class="text-muted">Reservado</small><h5 id="reservado-total">0</h5></div>
-                    <div class="col-md-3"><small class="text-muted">Disponible</small><h5 id="disponible-total" class="text-success">0</h5></div>
+              <div class="col-md-12">
+                <label class="form-label" for="{{ articulo_form.articulo.id_for_label }}">Artículo</label>
+                <input type="search" class="form-control form-control-sm mb-2 articulo-search-input" data-target-id="{{ articulo_form.articulo.id_for_label }}" placeholder="Filtrar por código, renglón o nombre">
+                {{ articulo_form.articulo }}
+                {{ articulo_form.articulo.errors }}
+                <small class="text-muted articulo-search-help">Busque por código, nombre o renglón presupuestario.</small>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label" for="{{ articulo_form.cantidad_asignada.id_for_label }}">Cantidad asignada</label>
+                {{ articulo_form.cantidad_asignada }}
+                {{ articulo_form.cantidad_asignada.errors }}
+              </div>
+              <div class="col-md-8">
+                <label class="form-label" for="{{ articulo_form.observacion.id_for_label }}">Observación</label>
+                {{ articulo_form.observacion }}
+                {{ articulo_form.observacion.errors }}
+              </div>
+              <div class="col-md-12">
+                <div class="form-check checkbox checkbox-primary mb-3">
+                  {{ articulo_form.activo }}
+                  <label class="form-check-label" for="{{ articulo_form.activo.id_for_label }}">Activo</label>
+                </div>
+              </div>
+              <div class="col-12">
+                <div id="articulo-disponibilidad-card" class="card mt-1 d-none">
+                  <div class="card-body">
+                    <div class="mb-2"><span class="badge badge-light-primary" id="articulo-codigo">-</span> <strong id="articulo-nombre">Seleccione un artículo</strong></div>
+                    <div class="row g-3">
+                      <div class="col-md-3"><small class="text-muted">Existencia total</small><h5 id="existencia-total">0</h5></div>
+                      <div class="col-md-3"><small class="text-muted">Asignado</small><h5 id="asignado-total">0</h5></div>
+                      <div class="col-md-3"><small class="text-muted">Reservado</small><h5 id="reservado-total">0</h5></div>
+                      <div class="col-md-3"><small class="text-muted">Disponible</small><h5 id="disponible-total" class="text-success">0</h5></div>
+                    </div>
                   </div>
                 </div>
               </div>
-              <button class="btn btn-primary btn-sm mt-3" type="submit"><i data-feather="plus-circle"></i> Agregar artículo</button>
+              <div class="col-12">
+                <button class="btn btn-primary btn-sm" type="submit"><i data-feather="plus-circle"></i> Agregar artículo</button>
+              </div>
             </form>
             <div class="dt-ext table-responsive custom-scrollbar">
               <table class="display datatables" id="tabla-division-articulos">
-                <thead><tr><th>Artículo</th><th>Asignado</th><th>Ubicaciones</th><th>Reservado</th><th>Disponible</th></tr></thead>
-                <tbody>{% for a in division.articulos.all %}<tr><td>{{ a.articulo }}</td><td>{{ a.cantidad_asignada }}</td><td>{{ a.total_asignado_ubicaciones }}</td><td>{{ a.total_reservado }}</td><td><span class="badge badge-light-info">{{ a.disponible_division }}</span></td></tr>{% empty %}<tr><td colspan="5" class="text-center text-muted">Sin artículos asignados.</td></tr>{% endfor %}</tbody>
+                <thead>
+                  <tr><th>Código</th><th>Renglón</th><th>Artículo</th><th>Asignado</th><th>Ubicaciones</th><th>Reservado</th><th>Disponible</th></tr>
+                </thead>
+                <tbody>
+                  {% for a in division.articulos.all %}
+                  <tr>
+                    <td><span class="badge badge-light-primary">{{ a.articulo.codigo }}</span></td>
+                    <td>{{ a.articulo.renglon_presupuestario|default:'S/R' }}</td>
+                    <td>{{ a.articulo.nombre }}</td>
+                    <td>{{ a.cantidad_asignada }}</td>
+                    <td>{{ a.total_asignado_ubicaciones }}</td>
+                    <td>{{ a.total_reservado }}</td>
+                    <td><span class="badge badge-light-info">{{ a.disponible_division }}</span></td>
+                  </tr>
+                  {% empty %}<tr><td colspan="7" class="text-center text-muted">Sin artículos asignados.</td></tr>{% endfor %}
+                </tbody>
               </table>
             </div>
           </div>
@@ -100,15 +173,28 @@
       <div class="card-body">
         <div class="dt-ext table-responsive custom-scrollbar">
           <table class="display datatables" id="tabla-division-asignaciones">
-            <thead><tr><th>Artículo</th><th>Ubicación</th><th>Asignado</th><th>Reservado</th><th>Consumido</th><th>Disponible</th><th class="text-center">Acciones</th></tr></thead>
-            <tbody>{% for a in division.articulos.all %}{% for x in a.asignaciones_ubicacion.all %}<tr><td>{{ a.articulo }}</td><td>{{ x.ubicacion }}</td><td>{{ x.cantidad_asignada }}</td><td>{{ x.cantidad_reservada }}</td><td>{{ x.cantidad_consumida }}</td><td>{{ x.disponible_ubicacion }}</td><td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#desasignarDetalle{{ x.id }}"><i data-feather="trash-2"></i> Desasignar</button></td></tr>{% endfor %}{% empty %}<tr><td colspan="7" class="text-center text-muted">Sin asignaciones registradas.</td></tr>{% endfor %}</tbody>
+            <thead><tr><th>Código</th><th>Renglón</th><th>Artículo</th><th>Ubicación</th><th>Asignado</th><th>Reservado</th><th>Consumido</th><th>Disponible</th><th class="text-center">Acciones</th></tr></thead>
+            <tbody>
+              {% for a in division.articulos.all %}{% for x in a.asignaciones_ubicacion.all %}
+              <tr>
+                <td><span class="badge badge-light-primary">{{ a.articulo.codigo }}</span></td>
+                <td>{{ a.articulo.renglon_presupuestario|default:'S/R' }}</td>
+                <td>{{ a.articulo.nombre }}</td>
+                <td>{{ x.ubicacion }}</td>
+                <td>{{ x.cantidad_asignada }}</td>
+                <td>{{ x.cantidad_reservada }}</td>
+                <td>{{ x.cantidad_consumida }}</td>
+                <td>{{ x.disponible_ubicacion }}</td>
+                <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#desasignarDetalle{{ x.id }}"><i data-feather="trash-2"></i> Desasignar</button></td>
+              </tr>
+              {% endfor %}{% empty %}<tr><td colspan="9" class="text-center text-muted">Sin asignaciones registradas.</td></tr>{% endfor %}
+            </tbody>
           </table>
         </div>
       </div>
     </div>
   </div>
 </div>
-
 
 {% for a in division.articulos.all %}
   {% for x in a.asignaciones_ubicacion.all %}
@@ -125,6 +211,7 @@
           <div class="modal-body">
             <p class="mb-1"><strong>División:</strong> {{ division.nombre }}</p>
             <p class="mb-1"><strong>Código:</strong> {{ a.articulo.codigo }}</p>
+            <p class="mb-1"><strong>Renglón:</strong> {{ a.articulo.renglon_presupuestario|default:'S/R' }}</p>
             <p class="mb-1"><strong>Artículo:</strong> {{ a.articulo.nombre }}</p>
             <p class="mb-1"><strong>Ubicación:</strong> {{ x.ubicacion }}</p>
             <div class="row g-3 mt-2">
@@ -149,6 +236,24 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
+  document.querySelectorAll(".articulo-search-input").forEach(function (input) {
+    const select = document.getElementById(input.dataset.targetId);
+    if (!select) return;
+    const options = Array.from(select.options).map(function (option) {
+      return { option: option, text: option.textContent.toLowerCase() };
+    });
+    input.addEventListener("input", function () {
+      const term = input.value.trim().toLowerCase();
+      options.forEach(function (item) {
+        item.option.hidden = term && item.option.value ? !item.text.includes(term) : false;
+      });
+      if (select.selectedOptions.length && select.selectedOptions[0].hidden) {
+        select.value = "";
+        select.dispatchEvent(new Event("change"));
+      }
+    });
+  });
+
   const select = document.getElementById("id_articulo-articulo");
   const card = document.getElementById("articulo-disponibilidad-card");
   if (!select || !card) return;

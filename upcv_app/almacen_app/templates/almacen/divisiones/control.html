@@ -37,6 +37,7 @@
                 <th>División</th>
                 <th>Ubicación</th>
                 <th>Código</th>
+                <th>Renglón</th>
                 <th>Artículo</th>
                 <th>Asignado</th>
                 <th>Reservado</th>
@@ -51,6 +52,7 @@
                 <td>{{ x.division_articulo.division }}</td>
                 <td>{{ x.ubicacion }}</td>
                 <td><span class="badge badge-light-primary">{{ x.division_articulo.articulo.codigo }}</span></td>
+                <td>{{ x.division_articulo.articulo.renglon_presupuestario|default:'S/R' }}</td>
                 <td>{{ x.division_articulo.articulo.nombre }}</td>
                 <td>{{ x.cantidad_asignada }}</td>
                 <td>{{ x.cantidad_reservada }}</td>
@@ -63,7 +65,7 @@
                 </td>
               </tr>
               {% empty %}
-              <tr><td colspan="9" class="text-center text-muted">No hay asignaciones por ubicación.</td></tr>
+              <tr><td colspan="10" class="text-center text-muted">No hay asignaciones por ubicación.</td></tr>
               {% endfor %}
             </tbody>
           </table>
@@ -88,6 +90,7 @@
         <div class="modal-body">
           <p class="mb-1"><strong>División:</strong> {{ x.division_articulo.division }}</p>
           <p class="mb-1"><strong>Código:</strong> {{ x.division_articulo.articulo.codigo }}</p>
+          <p class="mb-1"><strong>Renglón:</strong> {{ x.division_articulo.articulo.renglon_presupuestario|default:'S/R' }}</p>
           <p class="mb-1"><strong>Artículo:</strong> {{ x.division_articulo.articulo.nombre }}</p>
           <p class="mb-1"><strong>Ubicación:</strong> {{ x.ubicacion }}</p>
           <div class="row g-3 mt-2">

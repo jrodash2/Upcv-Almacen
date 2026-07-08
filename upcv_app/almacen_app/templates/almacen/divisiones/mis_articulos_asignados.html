@@ -35,6 +35,7 @@
               <tr>
                 <th>División</th>
                 <th>Código</th>
+                <th>Renglón</th>
                 <th>Artículo</th>
                 <th>Asignado</th>
                 <th>Reservado</th>
@@ -48,6 +49,7 @@
               <tr>
                 <td>{{ x.division_articulo.division }}</td>
                 <td><span class="badge badge-light-primary">{{ x.division_articulo.articulo.codigo }}</span></td>
+                <td>{{ x.division_articulo.articulo.renglon_presupuestario|default:'S/R' }}</td>
                 <td>{{ x.division_articulo.articulo.nombre }}</td>
                 <td>{{ x.cantidad_asignada }}</td>
                 <td>{{ x.cantidad_reservada }}</td>
@@ -56,7 +58,7 @@
                 <td class="text-center"><a class="btn btn-outline-primary btn-sm" href="{% url 'almacen:crear_solicitud_requerimiento' %}"><i data-feather="plus-circle"></i> Crear solicitud</a></td>
               </tr>
               {% empty %}
-              <tr><td colspan="8" class="text-center text-muted">No tiene artículos autoasignados.</td></tr>
+              <tr><td colspan="9" class="text-center text-muted">No tiene artículos autoasignados.</td></tr>
               {% endfor %}
             </tbody>
           </table>

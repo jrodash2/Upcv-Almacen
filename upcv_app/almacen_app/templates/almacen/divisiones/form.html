@@ -1,7 +1,16 @@
 {% extends 'almacen/base.html' %}
 {% load static %}
 {% block content %}
-<div class="page-body">
+<style>
+  .divisiones-module .form-select,
+  .divisiones-module .form-control,
+  .divisiones-module textarea {
+    width: 100% !important;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+</style>
+<div class="page-body divisiones-module">
   <div class="container-fluid">
     <div class="page-title">
       <div class="row">
@@ -29,12 +38,27 @@
             <span>Complete la información de la división operativa.</span>
           </div>
           <div class="card-body">
-            <form method="post">
+            <form method="post" class="row g-3">
               {% csrf_token %}
-              {{ form.as_p }}
-              <div class="d-flex gap-2 mt-3">
+              <div class="col-md-12">
+                <label class="form-label" for="{{ form.nombre.id_for_label }}">Nombre</label>
+                {{ form.nombre }}
+                {{ form.nombre.errors }}
+              </div>
+              <div class="col-md-12">
+                <label class="form-label" for="{{ form.descripcion.id_for_label }}">Descripción</label>
+                {{ form.descripcion }}
+                {{ form.descripcion.errors }}
+              </div>
+              <div class="col-md-12">
+                <div class="form-check checkbox checkbox-primary mb-3">
+                  {{ form.activa }}
+                  <label class="form-check-label" for="{{ form.activa.id_for_label }}">Activa</label>
+                </div>
+              </div>
+              <div class="col-12 d-flex gap-2">
                 <button class="btn btn-primary btn-sm" type="submit"><i data-feather="check-circle"></i> Guardar</button>
-                <a class="btn btn-outline-primary btn-sm" href="{% url 'almacen:division_list' %}">Volver</a>
+                <a class="btn btn-outline-primary btn-sm" href="{% url 'almacen:division_list' %}"><i data-feather="arrow-left"></i> Volver</a>
               </div>
             </form>
           </div>
