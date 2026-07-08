@@ -547,7 +547,7 @@ class DivisionArticulo(models.Model):
             raise ValidationError({'cantidad_asignada': 'La cantidad debe ser mayor a cero.'})
         total_otras = DivisionArticulo.objects.filter(articulo=self.articulo, activo=True).exclude(pk=self.pk).aggregate(total=Sum('cantidad_asignada'))['total'] or 0
         if total_otras + self.cantidad_asignada > self.existencia_total:
-            raise ValidationError({'cantidad_asignada': 'La cantidad asignada a divisiones supera la existencia general disponible.'})
+            raise ValidationError({'cantidad_asignada': 'No puede asignar más de la existencia disponible del artículo.'})
         if self.pk and self.cantidad_asignada < self.total_asignado_ubicaciones:
             raise ValidationError({'cantidad_asignada': 'No puede ser menor a lo ya asignado a ubicaciones.'})
 
@@ -582,7 +582,9 @@ class DivisionArticuloUbicacion(models.Model):
             value = getattr(self, field)
             if value is not None and value < 0:
                 raise ValidationError({field: 'La cantidad no puede ser negativa.'})
-        if self.cantidad_asignada is None or self.cantidad_asignada <= 0:
+        if self.cantidad_asignada is None:
+            raise ValidationError({'cantidad_asignada': 'La cantidad debe ser mayor a cero.'})
+        if self.activo and self.cantidad_asignada <= 0:
             raise ValidationError({'cantidad_asignada': 'La cantidad debe ser mayor a cero.'})
         if self.cantidad_reservada > (self.cantidad_asignada - self.cantidad_consumida):
             raise ValidationError({'cantidad_reservada': 'No puede reservar más de lo disponible en la ubicación.'})
@@ -591,7 +593,7 @@ class DivisionArticuloUbicacion(models.Model):
             raise ValidationError({'ubicacion': 'La ubicación no pertenece a esta división.'})
         total_otras = DivisionArticuloUbicacion.objects.filter(division_articulo=self.division_articulo, activo=True).exclude(pk=self.pk).aggregate(total=Sum('cantidad_asignada'))['total'] or 0
         if total_otras + self.cantidad_asignada > self.division_articulo.cantidad_asignada:
-            raise ValidationError({'cantidad_asignada': 'La suma asignada a ubicaciones supera lo disponible en la división.'})
+            raise ValidationError({'cantidad_asignada': 'No puede asignarse más de la cantidad disponible en la división.'})
 
     def save(self, *args, **kwargs):
         self.full_clean()
@@ -725,7 +727,7 @@ class SolicitudRequerimiento(models.Model):
 class DetalleSolicitudRequerimiento(models.Model):
     solicitud = models.ForeignKey(SolicitudRequerimiento, on_delete=models.CASCADE, related_name='detalles')
     articulo = models.ForeignKey(Articulo, on_delete=models.CASCADE)
-    division_articulo_ubicacion = models.ForeignKey(DivisionArticuloUbicacion, on_delete=models.SET_NULL, null=True, blank=True)
+    division_articulo_ubicacion = models.ForeignKey(DivisionArticuloUbicacion, on_delete=models.SET_NULL, null=True, blank=True, related_name="detalles_solicitud")
     cantidad = models.PositiveIntegerField()
     observacion = models.TextField(blank=True, null=True)
 

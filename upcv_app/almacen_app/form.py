@@ -647,8 +647,7 @@ class DetalleSolicitudRequerimientoForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if self.departamento:
             articulos = Articulo.objects.filter(
-                id__in=self.stock_disponible.keys(),
-                asignaciondetallefactura__destino=self.departamento
+                id__in=self.stock_disponible.keys()
             )
             if self.tipos_solicitud:
                 categoria_query = Q()

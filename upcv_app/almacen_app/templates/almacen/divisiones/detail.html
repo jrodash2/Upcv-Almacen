@@ -71,7 +71,18 @@
               {% csrf_token %}
               <input type="hidden" name="accion" value="agregar_articulo">
               {{ articulo_form.as_p }}
-              <button class="btn btn-primary btn-sm" type="submit"><i data-feather="plus-circle"></i> Agregar artículo</button>
+              <div id="articulo-disponibilidad-card" class="card mt-3 d-none">
+                <div class="card-body">
+                  <div class="mb-2"><span class="badge badge-light-primary" id="articulo-codigo">-</span> <strong id="articulo-nombre">Seleccione un artículo</strong></div>
+                  <div class="row g-3">
+                    <div class="col-md-3"><small class="text-muted">Existencia total</small><h5 id="existencia-total">0</h5></div>
+                    <div class="col-md-3"><small class="text-muted">Asignado</small><h5 id="asignado-total">0</h5></div>
+                    <div class="col-md-3"><small class="text-muted">Reservado</small><h5 id="reservado-total">0</h5></div>
+                    <div class="col-md-3"><small class="text-muted">Disponible</small><h5 id="disponible-total" class="text-success">0</h5></div>
+                  </div>
+                </div>
+              </div>
+              <button class="btn btn-primary btn-sm mt-3" type="submit"><i data-feather="plus-circle"></i> Agregar artículo</button>
             </form>
             <div class="dt-ext table-responsive custom-scrollbar">
               <table class="display datatables" id="tabla-division-articulos">
@@ -90,11 +101,86 @@
         <div class="dt-ext table-responsive custom-scrollbar">
           <table class="display datatables" id="tabla-division-asignaciones">
             <thead><tr><th>Artículo</th><th>Ubicación</th><th>Asignado</th><th>Reservado</th><th>Consumido</th><th>Disponible</th><th class="text-center">Acciones</th></tr></thead>
-            <tbody>{% for a in division.articulos.all %}{% for x in a.asignaciones_ubicacion.all %}<tr><td>{{ a.articulo }}</td><td>{{ x.ubicacion }}</td><td>{{ x.cantidad_asignada }}</td><td>{{ x.cantidad_reservada }}</td><td>{{ x.cantidad_consumida }}</td><td>{{ x.disponible_ubicacion }}</td><td class="text-center"><form method="post">{% csrf_token %}<input type="hidden" name="accion" value="desasignar_ubicacion"><input type="hidden" name="id" value="{{ x.id }}"><button class="btn btn-danger btn-sm" type="submit"><i data-feather="trash-2"></i> Desasignar</button></form></td></tr>{% endfor %}{% empty %}<tr><td colspan="7" class="text-center text-muted">Sin asignaciones registradas.</td></tr>{% endfor %}</tbody>
+            <tbody>{% for a in division.articulos.all %}{% for x in a.asignaciones_ubicacion.all %}<tr><td>{{ a.articulo }}</td><td>{{ x.ubicacion }}</td><td>{{ x.cantidad_asignada }}</td><td>{{ x.cantidad_reservada }}</td><td>{{ x.cantidad_consumida }}</td><td>{{ x.disponible_ubicacion }}</td><td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#desasignarDetalle{{ x.id }}"><i data-feather="trash-2"></i> Desasignar</button></td></tr>{% endfor %}{% empty %}<tr><td colspan="7" class="text-center text-muted">Sin asignaciones registradas.</td></tr>{% endfor %}</tbody>
           </table>
         </div>
       </div>
     </div>
   </div>
 </div>
+
+
+{% for a in division.articulos.all %}
+  {% for x in a.asignaciones_ubicacion.all %}
+  <div class="modal fade" id="desasignarDetalle{{ x.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form method="post" action="{% url 'almacen:desasignar_articulo_ubicacion' x.id %}">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.path }}">
+          <div class="modal-header">
+            <h5 class="modal-title">Desasignar artículo de ubicación</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body">
+            <p class="mb-1"><strong>División:</strong> {{ division.nombre }}</p>
+            <p class="mb-1"><strong>Código:</strong> {{ a.articulo.codigo }}</p>
+            <p class="mb-1"><strong>Artículo:</strong> {{ a.articulo.nombre }}</p>
+            <p class="mb-1"><strong>Ubicación:</strong> {{ x.ubicacion }}</p>
+            <div class="row g-3 mt-2">
+              <div class="col-6"><small class="text-muted">Asignado</small><h6>{{ x.cantidad_asignada }}</h6></div>
+              <div class="col-6"><small class="text-muted">Reservado</small><h6>{{ x.cantidad_reservada }}</h6></div>
+              <div class="col-6"><small class="text-muted">Consumido</small><h6>{{ x.cantidad_consumida }}</h6></div>
+              <div class="col-6"><small class="text-muted">Disponible para desasignar</small><h6 class="text-success">{{ x.disponible_ubicacion }}</h6></div>
+            </div>
+            <label class="form-label mt-3">Cantidad a desasignar</label>
+            <input type="number" name="cantidad_desasignar" class="form-control" min="0.01" step="0.01" max="{{ x.disponible_ubicacion }}" required>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-outline-danger">Desasignar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+{% endfor %}
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const select = document.getElementById("id_articulo-articulo");
+  const card = document.getElementById("articulo-disponibilidad-card");
+  if (!select || !card) return;
+  const urlTemplate = "{% url 'almacen:articulo_disponibilidad_json' 0 %}";
+  const fields = {
+    codigo: document.getElementById("articulo-codigo"),
+    nombre: document.getElementById("articulo-nombre"),
+    existencia: document.getElementById("existencia-total"),
+    asignado: document.getElementById("asignado-total"),
+    reservado: document.getElementById("reservado-total"),
+    disponible: document.getElementById("disponible-total"),
+  };
+  async function cargarDisponibilidad() {
+    if (!select.value) {
+      card.classList.add("d-none");
+      return;
+    }
+    const response = await fetch(urlTemplate.replace('/0/', '/' + select.value + '/'));
+    if (!response.ok) return;
+    const data = await response.json();
+    fields.codigo.textContent = data.codigo;
+    fields.nombre.textContent = data.nombre;
+    fields.existencia.textContent = data.existencia_total;
+    fields.asignado.textContent = data.asignado_divisiones;
+    fields.reservado.textContent = data.reservado;
+    fields.disponible.textContent = data.disponible_para_division;
+    fields.disponible.classList.toggle("text-danger", data.revisar);
+    fields.disponible.classList.toggle("text-success", !data.revisar);
+    card.classList.remove("d-none");
+  }
+  select.addEventListener("change", cargarDisponibilidad);
+  cargarDisponibilidad();
+});
+</script>
 {% endblock %}

@@ -35,33 +35,35 @@
             <thead>
               <tr>
                 <th>División</th>
+                <th>Ubicación</th>
                 <th>Código</th>
                 <th>Artículo</th>
-                <th>Existencia</th>
-                <th>Asignado División</th>
-                <th>Asignado Ubicaciones</th>
+                <th>Asignado</th>
                 <th>Reservado</th>
+                <th>Consumido</th>
                 <th>Disponible</th>
-                <th>Ubicaciones</th>
-                <th class="text-center">Acciones</th>
+                <th class="text-center">Acción</th>
               </tr>
             </thead>
             <tbody>
-              {% for a in articulos %}
+              {% for x in asignaciones %}
               <tr>
-                <td>{{ a.division }}</td>
-                <td><span class="badge badge-light-primary">{{ a.articulo.codigo }}</span></td>
-                <td>{{ a.articulo.nombre }}</td>
-                <td>{{ a.existencia_total }}</td>
-                <td>{{ a.cantidad_asignada }}</td>
-                <td>{{ a.total_asignado_ubicaciones }}</td>
-                <td>{{ a.total_reservado }}</td>
-                <td><span class="badge badge-light-info">{{ a.disponible_division }}</span></td>
-                <td>{% for x in a.asignaciones_ubicacion.all %}{{ x.ubicacion }} ({{ x.cantidad_asignada }}){% if not forloop.last %}, {% endif %}{% empty %}<span class="text-muted">Sin ubicaciones</span>{% endfor %}</td>
-                <td class="text-center"><a class="btn btn-outline-primary btn-sm" href="{% url 'almacen:division_detail' a.division.id %}"><i data-feather="eye"></i> Ver</a></td>
+                <td>{{ x.division_articulo.division }}</td>
+                <td>{{ x.ubicacion }}</td>
+                <td><span class="badge badge-light-primary">{{ x.division_articulo.articulo.codigo }}</span></td>
+                <td>{{ x.division_articulo.articulo.nombre }}</td>
+                <td>{{ x.cantidad_asignada }}</td>
+                <td>{{ x.cantidad_reservada }}</td>
+                <td>{{ x.cantidad_consumida }}</td>
+                <td><span class="badge badge-light-info">{{ x.disponible_ubicacion }}</span></td>
+                <td class="text-center">
+                  <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#desasignarControl{{ x.id }}">
+                    <i data-feather="trash-2"></i> Desasignar
+                  </button>
+                </td>
               </tr>
               {% empty %}
-              <tr><td colspan="10" class="text-center text-muted">No hay artículos asignados a divisiones.</td></tr>
+              <tr><td colspan="9" class="text-center text-muted">No hay asignaciones por ubicación.</td></tr>
               {% endfor %}
             </tbody>
           </table>
@@ -70,4 +72,40 @@
     </div>
   </div>
 </div>
+
+
+{% for x in asignaciones %}
+<div class="modal fade" id="desasignarControl{{ x.id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="post" action="{% url 'almacen:desasignar_articulo_ubicacion' x.id %}">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.path }}">
+        <div class="modal-header">
+          <h5 class="modal-title">Desasignar artículo de ubicación</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-1"><strong>División:</strong> {{ x.division_articulo.division }}</p>
+          <p class="mb-1"><strong>Código:</strong> {{ x.division_articulo.articulo.codigo }}</p>
+          <p class="mb-1"><strong>Artículo:</strong> {{ x.division_articulo.articulo.nombre }}</p>
+          <p class="mb-1"><strong>Ubicación:</strong> {{ x.ubicacion }}</p>
+          <div class="row g-3 mt-2">
+            <div class="col-6"><small class="text-muted">Asignado</small><h6>{{ x.cantidad_asignada }}</h6></div>
+            <div class="col-6"><small class="text-muted">Reservado</small><h6>{{ x.cantidad_reservada }}</h6></div>
+            <div class="col-6"><small class="text-muted">Consumido</small><h6>{{ x.cantidad_consumida }}</h6></div>
+            <div class="col-6"><small class="text-muted">Disponible para desasignar</small><h6 class="text-success">{{ x.disponible_ubicacion }}</h6></div>
+          </div>
+          <label class="form-label mt-3">Cantidad a desasignar</label>
+          <input type="number" name="cantidad_desasignar" class="form-control" min="0.01" step="0.01" max="{{ x.disponible_ubicacion }}" required>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-outline-danger">Desasignar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endfor %}
 {% endblock %}

@@ -77,6 +77,7 @@ urlpatterns = [
     path('buscar-proveedor-nit/<str:nit>/', views.buscar_proveedor_nit, name='buscar_proveedor_nit'),
     path('buscar-proveedor-id/<int:proveedor_id>/', views.buscar_proveedor_id, name='buscar_proveedor_id'),
     path('buscar-articulos/', views.buscar_articulos, name='buscar_articulos'),
+    path('almacen/articulos/<int:articulo_id>/disponibilidad-json/', views.articulo_disponibilidad_json, name='articulo_disponibilidad_json'),
     path('stock-formulario-1h/', views.ver_stock_formulario_1h, name='ver_stock_formulario_1h'),
     
     # Kardex
@@ -145,5 +146,6 @@ urlpatterns = [
     path('almacen/mis-divisiones/', views.mis_divisiones, name='mis_divisiones'),
     path('almacen/divisiones/articulo/<int:pk>/autoasignar/', views.autoasignar_division_articulo, name='autoasignar_division_articulo'),
     path('almacen/mis-articulos-asignados/', views.mis_articulos_asignados, name='mis_articulos_asignados'),
+    path('almacen/divisiones/asignacion/<int:asignacion_id>/desasignar/', views.desasignar_articulo_ubicacion, name='desasignar_articulo_ubicacion'),
 
 ]
