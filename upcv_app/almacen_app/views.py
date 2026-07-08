@@ -1182,71 +1182,114 @@ def historial_kardex_articulo(request, articulo_id):
     })
 
 
-@login_required
-@grupo_requerido('Administrador', 'Almacen')
-def ver_stock_formulario_1h(request):
+def construir_stock_list_administrador():
     ingresos = DetalleFactura.objects.filter(
         form1h__estado='confirmado'
-    ).values('articulo__id', 'articulo__codigo', 'articulo__nombre', 'articulo__categoria__nombre', 'articulo__renglon_presupuestario').annotate(
-        total_ingresado=Sum('cantidad')
-    )
+    ).values(
+        'articulo__id', 'articulo__codigo', 'articulo__nombre',
+        'articulo__categoria__nombre', 'articulo__renglon_presupuestario'
+    ).annotate(total_ingresado=Sum('cantidad'))
 
     ingreso_dict = {item['articulo__id']: item for item in ingresos}
+    articulo_ids = set(ingreso_dict.keys())
 
-    asignaciones = AsignacionDetalleFactura.objects.values('articulo__id').annotate(
+    asignaciones_directas = AsignacionDetalleFactura.objects.values('articulo__id').annotate(
         total_asignado=Sum('cantidad_asignada')
     )
+    asignado_directo_dict = {item['articulo__id']: item['total_asignado'] or 0 for item in asignaciones_directas}
+    articulo_ids.update(asignado_directo_dict.keys())
 
     asignaciones_departamento = AsignacionDetalleFactura.objects.values(
         'articulo__id', 'destino__nombre'
     ).annotate(total_asignado_dept=Sum('cantidad_asignada'))
-
     asignaciones_dept_dict = {}
     for asig in asignaciones_departamento:
-        art_id = asig['articulo__id']
-        depto_nombre = asig['destino__nombre']
-        cantidad = asig['total_asignado_dept']
-        if art_id not in asignaciones_dept_dict:
-            asignaciones_dept_dict[art_id] = []
-        asignaciones_dept_dict[art_id].append(f"{depto_nombre} ({cantidad})")
+        asignaciones_dept_dict.setdefault(asig['articulo__id'], []).append(
+            f"{asig['destino__nombre']} ({asig['total_asignado_dept']})"
+        )
 
-    for item in asignaciones:
-        articulo_id = item['articulo__id']
-        if articulo_id in ingreso_dict:
-            ingreso_dict[articulo_id]['total_asignado'] = item['total_asignado']
-        else:
-            articulo = Articulo.objects.get(id=articulo_id)
-            ingreso_dict[articulo_id] = {
-                'articulo__id': articulo_id,
+    asignaciones_division = DivisionArticulo.objects.filter(activo=True).values(
+        'articulo__id', 'division__nombre'
+    ).annotate(total_asignado=Sum('cantidad_asignada'))
+    asignado_division_dict = defaultdict(Decimal)
+    divisiones_dict = {}
+    for div in asignaciones_division:
+        articulo_id = div['articulo__id']
+        cantidad = div['total_asignado'] or Decimal('0')
+        asignado_division_dict[articulo_id] += cantidad
+        divisiones_dict.setdefault(articulo_id, []).append(f"{div['division__nombre']} ({cantidad})")
+        articulo_ids.add(articulo_id)
+
+    ubicaciones_division = DivisionArticuloUbicacion.objects.filter(activo=True).values(
+        'division_articulo__articulo__id'
+    ).annotate(
+        asignado_ubicaciones=Sum('cantidad_asignada'),
+        reservado=Sum('cantidad_reservada'),
+        consumido=Sum('cantidad_consumida')
+    )
+    asignado_ubicaciones_dict = defaultdict(Decimal)
+    reservado_dict = defaultdict(Decimal)
+    consumido_dict = defaultdict(Decimal)
+    for item in ubicaciones_division:
+        articulo_id = item['division_articulo__articulo__id']
+        asignado_ubicaciones_dict[articulo_id] = item['asignado_ubicaciones'] or Decimal('0')
+        reservado_dict[articulo_id] = item['reservado'] or Decimal('0')
+        consumido_dict[articulo_id] = item['consumido'] or Decimal('0')
+        articulo_ids.add(articulo_id)
+
+    faltantes = articulo_ids - set(ingreso_dict.keys())
+    if faltantes:
+        for articulo in Articulo.objects.filter(id__in=faltantes).select_related('categoria'):
+            ingreso_dict[articulo.id] = {
+                'articulo__id': articulo.id,
                 'articulo__codigo': articulo.codigo,
                 'articulo__nombre': articulo.nombre,
                 'articulo__categoria__nombre': articulo.categoria.nombre if articulo.categoria else None,
                 'articulo__renglon_presupuestario': articulo.renglon_presupuestario,
                 'total_ingresado': 0,
-                'total_asignado': item['total_asignado'],
             }
 
     stock_list = []
-    for item in ingreso_dict.values():
+    for articulo_id, item in ingreso_dict.items():
         total_ingresado = item.get('total_ingresado') or 0
-        total_asignado = item.get('total_asignado') or 0
-        disponible = total_ingresado - total_asignado
-        departamentos = ", ".join(asignaciones_dept_dict.get(item['articulo__id'], [])) or "Sin asignar"
+        asignado_directo = asignado_directo_dict.get(articulo_id, 0)
+        asignado_divisiones = asignado_division_dict.get(articulo_id, Decimal('0'))
+        asignado_ubicaciones = asignado_ubicaciones_dict.get(articulo_id, Decimal('0'))
+        reservado_total = reservado_dict.get(articulo_id, Decimal('0'))
+        consumido_total = consumido_dict.get(articulo_id, Decimal('0'))
+        asignado_total = asignado_directo + asignado_divisiones
+        disponible_real = total_ingresado - asignado_total
+        requiere_revision = disponible_real < 0
+        disponible_general = max(0, disponible_real)
+        departamentos = ", ".join(asignaciones_dept_dict.get(articulo_id, [])) or "Sin asignar"
+        divisiones = ", ".join(divisiones_dict.get(articulo_id, [])) or "Sin división"
 
         stock_list.append({
-            'articulo_id': item['articulo__id'],
+            'articulo_id': articulo_id,
             'articulo_codigo': item.get('articulo__codigo'),
             'renglon_presupuestario': item.get('articulo__renglon_presupuestario'),
             'categoria': item.get('articulo__categoria__nombre'),
             'articulo': item['articulo__nombre'],
             'ingresado': total_ingresado,
-            'asignado': total_asignado,
-            'disponible': disponible,
+            'asignado': asignado_total,
+            'asignado_directo': asignado_directo,
+            'asignado_divisiones': asignado_divisiones,
+            'asignado_ubicaciones_division': asignado_ubicaciones,
+            'reservado_total': reservado_total,
+            'consumido_total': consumido_total,
+            'disponible': disponible_general,
+            'requiere_revision': requiere_revision,
             'departamentos': departamentos,
+            'divisiones': divisiones,
         })
+    return stock_list
 
+
+@login_required
+@grupo_requerido('Administrador', 'Almacen')
+def ver_stock_formulario_1h(request):
     context = {
-        'stock_list': stock_list,
+        'stock_list': construir_stock_list_administrador(),
         'departamentos': Departamento.objects.all(),
     }
     return render(request, 'almacen/stock_formulario_1h.html', context)
@@ -1576,11 +1619,10 @@ def crear_asignacion_detalle_articulo(request):
         })
 
     context = {
-    'form': form,
-    'stock_list': stock_list,
-    'departamentos': Departamento.objects.all(),  
-}
-
+        'form': form,
+        'stock_list': construir_stock_list_administrador(),
+        'departamentos': Departamento.objects.all(),
+    }
 
     return render(request, 'almacen/stock_formulario_1h.html', context)
 

@@ -45,7 +45,8 @@
       <th>Categoría</th>
       <th>Ingresado</th>
       <th>Asignado</th>
-      <th>Departamento(s)</th>
+      <th>Reservado</th>
+      <th>Departamento(s) / División(es)</th>
       <th>Disponible</th>
       <th>Acción</th> <!-- Nueva columna -->
     </tr>
@@ -71,11 +72,25 @@
           <span class="text-muted">S/C</span>
         {% endif %}
       </td>
-      <td>{{ item.ingresado }}</td>
-      <td>{{ item.asignado }}</td>
-      <td>{{ item.departamentos }}</td>
+      <td><span class="badge badge-light-primary">{{ item.ingresado }}</span></td>
       <td>
-        {% if item.disponible > 0 %}
+        <span class="badge badge-light-info">{{ item.asignado }}</span>
+        <small class="d-block text-muted">Directo: {{ item.asignado_directo }} | Divisiones: {{ item.asignado_divisiones }}</small>
+        <small class="d-block text-muted">Ubicaciones división: {{ item.asignado_ubicaciones_division }}</small>
+      </td>
+      <td>
+        <span class="badge badge-light-warning">{{ item.reservado_total }}</span>
+        <small class="d-block text-muted">Consumido divisiones: {{ item.consumido_total }}</small>
+      </td>
+      <td>
+        <div><strong>Deptos:</strong> {{ item.departamentos }}</div>
+        <div class="text-muted"><strong>Divisiones:</strong> {{ item.divisiones }}</div>
+      </td>
+      <td>
+        {% if item.requiere_revision %}
+          <span class="badge badge-light-danger">Revisar</span>
+          <small class="d-block text-muted">Disponible calculado: 0</small>
+        {% elif item.disponible > 0 %}
           <span class="badge badge-light-success">{{ item.disponible }}</span>
         {% else %}
           <span class="badge badge-light-danger">0</span>
@@ -150,7 +165,6 @@
       </div>
     </div>
   </div>
-</div>
 
 <!-- Script para pasar datos al modal -->
 <script>
