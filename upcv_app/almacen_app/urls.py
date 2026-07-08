@@ -77,7 +77,9 @@ urlpatterns = [
     path('buscar-proveedor-nit/<str:nit>/', views.buscar_proveedor_nit, name='buscar_proveedor_nit'),
     path('buscar-proveedor-id/<int:proveedor_id>/', views.buscar_proveedor_id, name='buscar_proveedor_id'),
     path('buscar-articulos/', views.buscar_articulos, name='buscar_articulos'),
+    path('almacen/articulos/<int:articulo_id>/disponibilidad-json/', views.articulo_disponibilidad_json, name='articulo_disponibilidad_json'),
     path('stock-formulario-1h/', views.ver_stock_formulario_1h, name='ver_stock_formulario_1h'),
+    path('almacen/articulos/<int:articulo_id>/asignar-division/', views.asignar_articulo_division, name='asignar_articulo_division'),
     
     # Kardex
     path('kardex/<int:articulo_id>/', views.historial_kardex_articulo, name='historial_kardex'),
@@ -137,10 +139,14 @@ urlpatterns = [
 
 
 
-
-
-
-
-
+    path('almacen/divisiones/', views.division_list, name='division_list'),
+    path('almacen/divisiones/crear/', views.division_create, name='division_create'),
+    path('almacen/divisiones/control/', views.division_control, name='division_control'),
+    path('almacen/divisiones/<int:pk>/', views.division_detail, name='division_detail'),
+    path('almacen/divisiones/<int:pk>/editar/', views.division_update, name='division_update'),
+    path('almacen/mis-divisiones/', views.mis_divisiones, name='mis_divisiones'),
+    path('almacen/divisiones/articulo/<int:pk>/autoasignar/', views.autoasignar_division_articulo, name='autoasignar_division_articulo'),
+    path('almacen/mis-articulos-asignados/', views.mis_articulos_asignados, name='mis_articulos_asignados'),
+    path('almacen/divisiones/asignacion/<int:asignacion_id>/desasignar/', views.desasignar_articulo_ubicacion, name='desasignar_articulo_ubicacion'),
 
 ]

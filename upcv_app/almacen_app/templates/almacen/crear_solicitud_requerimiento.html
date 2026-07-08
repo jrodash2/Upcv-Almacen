@@ -84,8 +84,11 @@
                 <table class="display datatables" id="tabla-crear-solicitud-requerimiento">
                   <thead class="table-light">
                     <tr>
-                      <th>Artículo</th>
-                      <th style="width: 140px;">Categoría</th>
+                      <th>Código / Artículo</th>
+                      <th style="width: 140px;">División</th>
+                      <th style="width: 110px;">Asignado</th>
+                      <th style="width: 110px;">Reservado</th>
+                      <th style="width: 110px;">Consumido</th>
                       <th style="width: 120px;">Disponible</th>
                       <th style="width: 160px;">Cantidad</th>
                       <th style="width: 110px;">Acción</th>
@@ -103,12 +106,11 @@
                             <div class="text-danger small">{{ error }}</div>
                           {% endfor %}
                         </td>
-                        <td class="text-center">
-                          <span class="badge badge-light-secondary categoria-articulo">S/C</span>
-                        </td>
-                        <td class="text-center">
-                          <span class="badge badge-light-secondary cantidad-disponible">0</span>
-                        </td>
+                        <td class="text-center"><span class="badge badge-light-info division-articulo">Directo</span></td>
+                        <td class="text-center"><span class="badge badge-light-primary cantidad-asignada">0</span></td>
+                        <td class="text-center"><span class="badge badge-light-warning cantidad-reservada">0</span></td>
+                        <td class="text-center"><span class="badge badge-light-secondary cantidad-consumida">0</span></td>
+                        <td class="text-center"><span class="badge badge-light-success cantidad-disponible">0</span></td>
                         <td>
                           {{ detalle_form.cantidad }}
                           {% for error in detalle_form.cantidad.errors %}
@@ -133,12 +135,11 @@
               <template id="empty-form-template">
                 <tr class="detalle-form-row">
                   <td>{{ formset.empty_form.articulo }}</td>
-                  <td class="text-center">
-                    <span class="badge badge-light-secondary categoria-articulo">S/C</span>
-                  </td>
-                  <td class="text-center">
-                    <span class="badge badge-light-secondary cantidad-disponible">0</span>
-                  </td>
+                  <td class="text-center"><span class="badge badge-light-info division-articulo">Directo</span></td>
+                  <td class="text-center"><span class="badge badge-light-primary cantidad-asignada">0</span></td>
+                  <td class="text-center"><span class="badge badge-light-warning cantidad-reservada">0</span></td>
+                  <td class="text-center"><span class="badge badge-light-secondary cantidad-consumida">0</span></td>
+                  <td class="text-center"><span class="badge badge-light-success cantidad-disponible">0</span></td>
                   <td>{{ formset.empty_form.cantidad }}</td>
                   <td class="text-center">
                     <div class="d-none">{{ formset.empty_form.DELETE }}</div>
@@ -195,16 +196,23 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!row) return;
 
     const disponibleEl = row.querySelector(".cantidad-disponible");
-    const categoriaEl = row.querySelector(".categoria-articulo");
+    const divisionEl = row.querySelector(".division-articulo");
+    const asignadaEl = row.querySelector(".cantidad-asignada");
+    const reservadaEl = row.querySelector(".cantidad-reservada");
+    const consumidaEl = row.querySelector(".cantidad-consumida");
     const cantidadInput = row.querySelector(".cantidad-solicitada");
 
     if (disponibleEl) {
       disponibleEl.textContent = disponible;
     }
 
-    if (categoriaEl) {
-      categoriaEl.textContent = obtenerCategoria(select);
-    }
+    const articulo = articulosDepartamento
+      ? articulosDepartamento.find((item) => String(item.id) === String(articuloId))
+      : null;
+    if (divisionEl) divisionEl.textContent = articulo && articulo.division ? articulo.division : "Directo";
+    if (asignadaEl) asignadaEl.textContent = articulo ? (articulo.cantidad_asignada || disponible) : disponible;
+    if (reservadaEl) reservadaEl.textContent = articulo ? (articulo.cantidad_reservada || 0) : 0;
+    if (consumidaEl) consumidaEl.textContent = articulo ? (articulo.cantidad_consumida || 0) : 0;
 
     if (cantidadInput) {
       cantidadInput.max = disponible > 0 ? disponible : "";
@@ -219,7 +227,9 @@ document.addEventListener("DOMContentLoaded", function () {
     items.forEach((item) => {
       const option = document.createElement("option");
       option.value = item.id;
-      option.textContent = item.codigo + " - " + item.nombre + " — Categoría: " + (item.categoria || "S/C") + " — Renglón: " + (item.renglon_presupuestario || "S/R") + " — Disponible: " + item.cantidad_disponible;
+      option.textContent = item.codigo + " - " + item.nombre + (item.division ? " | División: " + item.division : "") + " | Disponible: " + item.cantidad_disponible;
+      option.dataset.codigo = item.codigo;
+      option.dataset.disponible = item.cantidad_disponible;
       select.appendChild(option);
     });
 
