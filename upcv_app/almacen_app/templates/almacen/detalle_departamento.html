@@ -45,7 +45,8 @@
                 <th>Artículo</th>
                 <th>Categoría</th>
                 <th>Total Asignado</th>
-                <th>Total Despachado</th>
+                <th>Reservado</th>
+                <th>Despachado/Consumido</th>
                 <th>Disponible para Requerimientos</th>
               </tr>
             </thead>
@@ -68,9 +69,21 @@
                     <span class="text-muted">S/C</span>
                   {% endif %}
                 </td>
-                <td>{{ item.asignado }}</td>
-                <td>{{ item.despachado }}</td>
-                <td>{{ item.disponible }}</td>
+                <td>
+                  <span class="badge badge-light-primary">{{ item.asignado }}</span>
+                  <small class="d-block text-muted">Directo: {{ item.asignado_directo }} | Divisiones: {{ item.asignado_division }}</small>
+                </td>
+                <td><span class="badge badge-light-warning">{{ item.reservado }}</span></td>
+                <td><span class="badge badge-light-info">{{ item.despachado }}</span></td>
+                <td>
+                  {% if item.requiere_revision %}
+                    <span class="badge badge-light-danger">Revisar</span>
+                  {% elif item.disponible > 0 %}
+                    <span class="badge badge-light-success">{{ item.disponible }}</span>
+                  {% else %}
+                    <span class="badge badge-light-danger">0</span>
+                  {% endif %}
+                </td>
               </tr>
               {% endfor %}
             </tbody>
@@ -94,8 +107,13 @@
                 <th>Renglón</th>
                 <th>Artículo</th>
                 <th>Categoría</th>
+                <th>Origen</th>
+                <th>División</th>
+                <th>Ubicación/Departamento</th>
                 <th>Cantidad Asignada</th>
-                <th>Descripción</th>
+                <th>Reservado</th>
+                <th>Consumido/Despachado</th>
+                <th>Disponible</th>
                 <th>Fecha</th>
                 <th>Acción</th> <!-- Nueva columna para el botón de transferir -->
               </tr>
@@ -119,23 +137,34 @@
                     <span class="text-muted">S/C</span>
                   {% endif %}
                 </td>
-                <td>{{ a.cantidad_asignada }}</td>
-                <td>{{ a.descripcion }}</td>
-                <td>{{ a.fecha_asignacion|date:"d M Y H:i" }}</td>
+                <td><span class="badge {% if a.origen == 'División' %}badge-light-info{% else %}badge-light-primary{% endif %}">{{ a.origen }}</span></td>
+                <td>{{ a.division|default:"N/A" }}</td>
+                <td>{{ a.departamento.nombre }}</td>
+                <td><span class="badge badge-light-primary">{{ a.cantidad_asignada }}</span></td>
+                <td><span class="badge badge-light-warning">{{ a.reservado }}</span></td>
+                <td><span class="badge badge-light-info">{{ a.consumido }}</span></td>
                 <td>
-                  {% if es_administrador %}
+                  {% if a.disponible > 0 %}
+                    <span class="badge badge-light-success">{{ a.disponible }}</span>
+                  {% else %}
+                    <span class="badge badge-light-danger">0</span>
+                  {% endif %}
+                </td>
+                <td>{{ a.fecha|date:"d M Y H:i" }}</td>
+                <td>
+                  {% if es_administrador and a.transferible %}
                   <!-- Botón para Transferir -->
                   <button class="btn btn-warning gestor-btn" data-bs-toggle="modal" data-bs-target="#transferirModal"
                           data-articulo-id="{{ a.articulo.id }}" data-nombre-articulo="{{ a.articulo.nombre }}"
-                          data-cantidad="{{ a.cantidad_asignada }}">
+                          data-cantidad="{{ a.disponible }}">
                     Transferir
                   </button>
-                   {% endif %}
+                   {% else %}<span class="text-muted">-</span>{% endif %}
                 </td>
               </tr>
               {% empty %}
               <tr>
-                <td colspan="8" class="text-center">Este departamento aún no tiene asignaciones.</td>
+                <td colspan="13" class="text-center">Este departamento aún no tiene asignaciones.</td>
               </tr>
               {% endfor %}
             </tbody>
@@ -331,8 +360,5 @@
   </div>
 </div>
 
-</div> 
-
-
-</div> {% endif %}
+{% endif %}
 {% endblock %}
