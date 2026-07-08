@@ -3,6 +3,22 @@
 {% block content %}
 {% load custom_filters %}
 
+<style>
+  .acciones-stock { min-width: 96px; }
+  .acciones-stock .accion-btn {
+    width: 92px;
+    min-height: 27px;
+    font-size: 11px;
+    line-height: 1.1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    white-space: nowrap;
+  }
+  .acciones-stock .accion-btn svg { width: 13px; height: 13px; }
+</style>
+
 <!-- jQuery y DataTables (igual que en tu ejemplo) -->
 
 <div class="page-body">
@@ -45,7 +61,8 @@
       <th>Categoría</th>
       <th>Ingresado</th>
       <th>Asignado</th>
-      <th>Departamento(s)</th>
+      <th>Reservado</th>
+      <th>Departamento(s) / División(es)</th>
       <th>Disponible</th>
       <th>Acción</th> <!-- Nueva columna -->
     </tr>
@@ -71,31 +88,50 @@
           <span class="text-muted">S/C</span>
         {% endif %}
       </td>
-      <td>{{ item.ingresado }}</td>
-      <td>{{ item.asignado }}</td>
-      <td>{{ item.departamentos }}</td>
+      <td><span class="badge badge-light-primary">{{ item.ingresado }}</span></td>
       <td>
-        {% if item.disponible > 0 %}
+        <span class="badge badge-light-info">{{ item.asignado }}</span>
+        <small class="d-block text-muted">Directo: {{ item.asignado_directo }} | Divisiones: {{ item.asignado_divisiones }}</small>
+        <small class="d-block text-muted">Ubicaciones división: {{ item.asignado_ubicaciones_division }}</small>
+      </td>
+      <td>
+        <span class="badge badge-light-warning">{{ item.reservado_total }}</span>
+        <small class="d-block text-muted">Consumido divisiones: {{ item.consumido_total }}</small>
+      </td>
+      <td>
+        <div><strong>Deptos:</strong> {{ item.departamentos }}</div>
+        <div class="text-muted"><strong>Divisiones:</strong> {{ item.divisiones }}</div>
+      </td>
+      <td>
+        {% if item.requiere_revision %}
+          <span class="badge badge-light-danger">Revisar</span>
+          <small class="d-block text-muted">Disponible calculado: 0</small>
+        {% elif item.disponible > 0 %}
           <span class="badge badge-light-success">{{ item.disponible }}</span>
         {% else %}
           <span class="badge badge-light-danger">0</span>
         {% endif %}
       </td>
      <td>
-    <div class="d-flex gap-2">
-        <a class="btn btn-outline-primary btn-sm"
+    <div class="d-flex flex-column align-items-center gap-1 acciones-stock">
+        <a class="btn btn-outline-primary btn-sm accion-btn"
            href="{% url 'almacen:historial_kardex' item.articulo_id %}">
             <i data-feather="eye"></i> 
         </a>
 
         {% if item.disponible > 0 %}
-        <button class="btn btn-primary btn-sm"
+        <button class="btn btn-primary btn-sm accion-btn"
                 data-bs-toggle="modal"
                 data-bs-target="#asignarModal"
                 data-articulo-id="{{ item.articulo_id }}"
                 data-disponible="{{ item.disponible }}">
-            <i data-feather="check-circle"></i> 
+            <i data-feather="check-circle"></i> Ubicación
         </button>
+        {% endif %}
+        {% if es_administrador %}
+        <a class="btn btn-outline-success btn-sm accion-btn" href="{% url 'almacen:asignar_articulo_division' item.articulo_id %}">
+            <i data-feather="layers"></i> División
+        </a>
         {% endif %}
     </div>
 </td>
@@ -150,7 +186,6 @@
       </div>
     </div>
   </div>
-</div>
 
 <!-- Script para pasar datos al modal -->
 <script>

@@ -550,6 +550,7 @@ class DetalleRequerimientoForm(forms.ModelForm):
 
 from django.forms import BaseModelFormSet
 from collections import defaultdict
+from decimal import Decimal
 
 class BaseDetalleRequerimientoFormSet(BaseModelFormSet):
     def __init__(self, *args, **kwargs):
@@ -646,8 +647,7 @@ class DetalleSolicitudRequerimientoForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if self.departamento:
             articulos = Articulo.objects.filter(
-                id__in=self.stock_disponible.keys(),
-                asignaciondetallefactura__destino=self.departamento
+                id__in=self.stock_disponible.keys()
             )
             if self.tipos_solicitud:
                 categoria_query = Q()
@@ -744,3 +744,61 @@ DetalleSolicitudRequerimientoFormSet = modelformset_factory(
     extra=1,
     can_delete=True
 )
+
+from .models import DivisionAlmacen, DivisionUbicacion, DivisionArticulo, DivisionArticuloUbicacion
+
+def _division_articulo_label(articulo):
+    codigo = articulo.codigo or 'SIN-CODIGO'
+    renglon = articulo.renglon_presupuestario or 'S/R'
+    return f"{codigo} | Renglón: {renglon} | {articulo.nombre}"
+
+
+class DivisionAlmacenForm(forms.ModelForm):
+    class Meta:
+        model = DivisionAlmacen
+        fields = ['nombre', 'descripcion', 'activa']
+        widgets = {
+            'nombre': forms.TextInput(attrs={'class': 'form-control'}),
+            'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+            'activa': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+class DivisionUbicacionForm(forms.ModelForm):
+    class Meta:
+        model = DivisionUbicacion
+        fields = ['ubicacion', 'activa']
+        widgets = {
+            'ubicacion': forms.Select(attrs={'class': 'form-select'}),
+            'activa': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+class DivisionArticuloForm(forms.ModelForm):
+    class Meta:
+        model = DivisionArticulo
+        fields = ['articulo', 'cantidad_asignada', 'observacion', 'activo']
+        widgets = {
+            'articulo': forms.Select(attrs={'class': 'form-select articulo-search-select'}),
+            'cantidad_asignada': forms.NumberInput(attrs={'class': 'form-control', 'min': '0.01', 'step': '0.01'}),
+            'observacion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'activo': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['articulo'].label_from_instance = _division_articulo_label
+
+class DivisionArticuloUbicacionForm(forms.ModelForm):
+    class Meta:
+        model = DivisionArticuloUbicacion
+        fields = ['cantidad_asignada']
+        widgets = {
+            'cantidad_asignada': forms.NumberInput(attrs={'class': 'form-control', 'min': '0.01', 'step': '0.01'}),
+        }
+
+class AutoAsignacionDivisionForm(forms.Form):
+    cantidad = forms.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        min_value=Decimal('0.01'),
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0.01', 'step': '0.01'})
+    )

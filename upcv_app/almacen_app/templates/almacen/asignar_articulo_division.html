@@ -1,0 +1,96 @@
+{% extends 'almacen/base.html' %}
+{% load static %}
+{% block content %}
+<style>
+  .divisiones-module .form-select,
+  .divisiones-module .form-control {
+    width: 100% !important;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+</style>
+<div class="page-body divisiones-module">
+  <div class="container-fluid">
+    <div class="page-title">
+      <div class="row">
+        <div class="col-6"><h4 class="mb-0">Asignar artículo a división</h4></div>
+        <div class="col-6">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'almacen:dahsboard' %}"><i data-feather="home"></i></a></li>
+            <li class="breadcrumb-item">Almacén</li>
+            <li class="breadcrumb-item"><a href="{% url 'almacen:ver_stock_formulario_1h' %}">Stock</a></li>
+            <li class="breadcrumb-item active">Asignar división</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container-fluid">
+    <div class="row justify-content-center">
+      <div class="col-xl-8 col-lg-10 col-md-12">
+        <div class="card">
+          <div class="card-header pb-0 card-no-border">
+            <h4 class="mb-1">{{ articulo.codigo }} - {{ articulo.nombre }}</h4>
+            <span>Seleccione una división activa y la cantidad a asignar.</span>
+          </div>
+          <div class="card-body">
+            <div class="row g-3 mb-4">
+              <div class="col-md-6">
+                <small class="text-muted d-block">Código</small>
+                <span class="badge badge-light-primary">{{ articulo.codigo }}</span>
+              </div>
+              <div class="col-md-6">
+                <small class="text-muted d-block">Renglón</small>
+                {% if articulo.renglon_presupuestario %}<span class="badge badge-light-secondary">{{ articulo.renglon_presupuestario }}</span>{% else %}<span class="text-muted">S/R</span>{% endif %}
+              </div>
+              <div class="col-md-6">
+                <small class="text-muted d-block">Categoría</small>
+                {% if articulo.categoria %}<span class="badge badge-light-secondary">{{ articulo.categoria.nombre }}</span>{% else %}<span class="text-muted">S/C</span>{% endif %}
+              </div>
+              <div class="col-md-6">
+                <small class="text-muted d-block">Artículo</small>
+                <strong>{{ articulo.nombre }}</strong>
+              </div>
+            </div>
+
+            <div class="card mb-4">
+              <div class="card-body">
+                <div class="row g-3 text-center">
+                  <div class="col-md-3"><small class="text-muted">Existencia total</small><h5><span class="badge badge-light-primary">{{ disponibilidad.total_ingresado }}</span></h5></div>
+                  <div class="col-md-3"><small class="text-muted">Asignado directo</small><h5><span class="badge badge-light-info">{{ disponibilidad.asignado_directo }}</span></h5></div>
+                  <div class="col-md-3"><small class="text-muted">Asignado a divisiones</small><h5><span class="badge badge-light-warning">{{ disponibilidad.asignado_divisiones }}</span></h5></div>
+                  <div class="col-md-3"><small class="text-muted">Disponible división</small><h5>{% if disponibilidad.requiere_revision %}<span class="badge badge-light-danger">Revisar</span>{% elif disponibilidad.disponible_para_division > 0 %}<span class="badge badge-light-success">{{ disponibilidad.disponible_para_division }}</span>{% else %}<span class="badge badge-light-danger">0</span>{% endif %}</h5></div>
+                </div>
+              </div>
+            </div>
+
+            <form method="post" class="row g-3">
+              {% csrf_token %}
+              <div class="col-md-12">
+                <label class="form-label" for="id_division">División</label>
+                <select name="division" id="id_division" class="form-select" required>
+                  <option value="">Seleccione una división</option>
+                  {% for division in divisiones %}
+                    <option value="{{ division.id }}">{{ division.nombre }}</option>
+                  {% empty %}
+                    <option value="" disabled>No hay divisiones activas</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-12">
+                <label class="form-label" for="id_cantidad">Cantidad a asignar</label>
+                <input type="number" name="cantidad" id="id_cantidad" class="form-control" min="0.01" step="0.01" max="{{ disponibilidad.disponible_para_division }}" required>
+              </div>
+              <div class="col-12 d-flex justify-content-end gap-2">
+                <a href="{% url 'almacen:ver_stock_formulario_1h' %}" class="btn btn-outline-primary btn-sm">Cancelar</a>
+                <button type="submit" class="btn btn-primary btn-sm" {% if disponibilidad.disponible_para_division <= 0 %}disabled{% endif %}>Guardar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
