@@ -97,7 +97,12 @@
               </a>
               {% if puede_procesar_solicitud %}
                 {% if solicitud.estado == 'pendiente' %}
-                  <a class="btn btn-success gestor-btn" href="{% url 'almacen:convertir_solicitud_en_requerimiento' solicitud_id=solicitud.id %}">Convertir</a>
+                  <form method="post" action="{% url 'almacen:convertir_solicitud_en_requerimiento' solicitud_id=solicitud.id %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success gestor-btn" onclick="return confirm('¿Desea convertir esta solicitud en requerimiento?');">
+                      <i data-feather="check-circle"></i> Convertir
+                    </button>
+                  </form>
                   <a class="btn btn-danger gestor-btn" href="{% url 'almacen:rechazar_solicitud_requerimiento' solicitud_id=solicitud.id %}">Rechazar</a>
                 {% endif %}
               {% endif %}

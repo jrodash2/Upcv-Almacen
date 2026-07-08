@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import (
     Proveedor, Departamento, Categoria, Ubicacion, UnidadDeMedida, 
     Articulo, Kardex, AsignacionDetalleFactura, Movimiento, FraseMotivacional, 
-    Serie, form1h, DetalleFactura, Dependencia, Programa, UsuarioDepartamento, Requerimiento
+    Serie, form1h, DetalleFactura, Dependencia, Programa, UsuarioDepartamento, Requerimiento, DivisionAlmacen, DivisionUbicacion, DivisionArticulo, DivisionArticuloUbicacion
 )
 
 
@@ -150,3 +150,29 @@ class RequerimientoAdmin(admin.ModelAdmin):
 
 admin.site.register(Requerimiento, RequerimientoAdmin)
 
+
+
+class DivisionAlmacenAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'activa', 'creado_por', 'fecha_creacion')
+    search_fields = ('nombre', 'descripcion')
+    list_filter = ('activa', 'fecha_creacion')
+
+class DivisionUbicacionAdmin(admin.ModelAdmin):
+    list_display = ('division', 'ubicacion', 'activa', 'fecha_asignacion')
+    search_fields = ('division__nombre', 'ubicacion__nombre')
+    list_filter = ('activa', 'division')
+
+class DivisionArticuloAdmin(admin.ModelAdmin):
+    list_display = ('division', 'articulo', 'cantidad_asignada', 'activo', 'fecha_asignacion')
+    search_fields = ('division__nombre', 'articulo__codigo', 'articulo__nombre')
+    list_filter = ('activo', 'division', 'fecha_asignacion')
+
+class DivisionArticuloUbicacionAdmin(admin.ModelAdmin):
+    list_display = ('division_articulo', 'ubicacion', 'cantidad_asignada', 'cantidad_reservada', 'cantidad_consumida', 'activo')
+    search_fields = ('division_articulo__division__nombre', 'division_articulo__articulo__codigo', 'ubicacion__nombre')
+    list_filter = ('activo', 'ubicacion')
+
+admin.site.register(DivisionAlmacen, DivisionAlmacenAdmin)
+admin.site.register(DivisionUbicacion, DivisionUbicacionAdmin)
+admin.site.register(DivisionArticulo, DivisionArticuloAdmin)
+admin.site.register(DivisionArticuloUbicacion, DivisionArticuloUbicacionAdmin)
