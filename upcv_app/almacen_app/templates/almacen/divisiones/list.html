@@ -53,9 +53,9 @@
               <tr>
                 <td>{{ d.nombre }}</td>
                 <td>{{ d.descripcion|default:'-' }}</td>
-                <td>{{ d.cantidad_ubicaciones }}</td>
-                <td>{{ d.cantidad_articulos }}</td>
-                <td>{{ d.total_reservado }}</td>
+                <td>{{ d.total_ubicaciones_listado }}</td>
+                <td>{{ d.total_articulos_listado }}</td>
+                <td>{{ d.total_reservado_listado|default:0 }}</td>
                 <td>
                   <span class="badge {% if d.activa %}badge-light-success{% else %}badge-light-danger{% endif %}">
                     {{ d.activa|yesno:'Activa,Inactiva' }}
