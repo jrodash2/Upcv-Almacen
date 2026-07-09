@@ -45,6 +45,16 @@
       <div class="card-body">
         <span class="badge {% if division.activa %}badge-light-success{% else %}badge-light-danger{% endif %}">{{ division.activa|yesno:'Activa,Inactiva' }}</span>
       </div>
+      {% if messages %}
+      <div class="card-body pt-0">
+        {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'warning' %}warning{% elif message.tags == 'success' %}success{% else %}info{% endif %} alert-dismissible fade show" role="alert">
+          {% if message.tags == 'warning' %}<strong>Ubicación duplicada:</strong> {% endif %}{{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
     </div>
 
     <div class="row">
@@ -77,12 +87,28 @@
               <table class="display datatables" id="tabla-division-ubicaciones">
                 <thead><tr><th>Ubicación</th><th>Estado</th><th class="text-center">Acciones</th></tr></thead>
                 <tbody>
-                  {% for u in division.ubicaciones.all %}
+                  {% for u in ubicaciones %}
                   <tr>
                     <td>{{ u.ubicacion }}</td>
-                    <td><span class="badge {% if u.activa %}badge-light-success{% else %}badge-light-danger{% endif %}">{{ u.activa|yesno:'Activa,Inactiva' }}</span></td>
+                    <td><span class="badge {% if u.activa %}badge-light-success{% else %}badge-light-secondary{% endif %}">{{ u.activa|yesno:'Activa,Inactiva' }}</span></td>
                     <td class="text-center">
-                      <form method="post">{% csrf_token %}<input type="hidden" name="accion" value="desactivar_ubicacion"><input type="hidden" name="id" value="{{ u.id }}"><button class="btn btn-danger btn-sm" type="submit"><i data-feather="x-circle"></i> Desactivar</button></form>
+                      <div class="d-flex justify-content-center gap-1 flex-wrap">
+                        {% if u.activa %}
+                        <form method="post" action="{% url 'almacen:division_ubicacion_desactivar' u.id %}">
+                          {% csrf_token %}
+                          <button class="btn btn-warning btn-sm" type="submit"><i data-feather="x-circle"></i> Desactivar</button>
+                        </form>
+                        {% else %}
+                        <form method="post" action="{% url 'almacen:division_ubicacion_activar' u.id %}">
+                          {% csrf_token %}
+                          <button class="btn btn-success btn-sm" type="submit"><i data-feather="check-circle"></i> Activar</button>
+                        </form>
+                        {% endif %}
+                        <form method="post" action="{% url 'almacen:division_ubicacion_eliminar' u.id %}" onsubmit="return confirm('¿Está seguro de eliminar esta ubicación de la división?');">
+                          {% csrf_token %}
+                          <button class="btn btn-danger btn-sm" type="submit"><i data-feather="trash-2"></i> Eliminar</button>
+                        </form>
+                      </div>
                     </td>
                   </tr>
                   {% empty %}<tr><td colspan="3" class="text-center text-muted">Sin ubicaciones agregadas.</td></tr>{% endfor %}

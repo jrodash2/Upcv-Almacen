@@ -32,7 +32,7 @@ from django.contrib.auth.models import Group
 from .utils import grupo_requerido
 from django.views.decorators.http import require_GET
 from django.db.models.functions import Coalesce
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from django.db.models import Sum
 from django.shortcuts import render
 from .models import DetalleFactura, AsignacionDetalleFactura, Articulo
@@ -2993,7 +2993,23 @@ def desasignar_articulo_ubicacion(request, asignacion_id):
 @login_required
 @grupo_requerido('Administrador', 'Almacen')
 def division_list(request):
-    divisiones = DivisionAlmacen.objects.annotate(cantidad_ubicaciones=Count('ubicaciones', filter=Q(ubicaciones__activa=True)), cantidad_articulos=Count('articulos', filter=Q(articulos__activo=True))).order_by('nombre')
+    divisiones = DivisionAlmacen.objects.order_by('nombre')
+    for division in divisiones:
+        division.total_ubicaciones_listado = DivisionUbicacion.objects.filter(
+            division=division,
+            activa=True
+        ).values('ubicacion_id').distinct().count()
+        division.total_articulos_listado = DivisionArticulo.objects.filter(
+            division=division,
+            activo=True
+        ).values('articulo_id').distinct().count()
+        division.total_reservado_listado = DivisionArticuloUbicacion.objects.filter(
+            division_articulo__division=division,
+            division_articulo__activo=True,
+            activo=True
+        ).aggregate(
+            total=Coalesce(Sum('cantidad_reservada'), Decimal('0.00'))
+        )['total']
     return render(request, 'almacen/divisiones/list.html', {'divisiones': divisiones})
 
 @login_required
@@ -3028,7 +3044,22 @@ def division_detail(request, pk):
             if accion == 'agregar_ubicacion':
                 ubicacion_form = DivisionUbicacionForm(request.POST, prefix='ubicacion')
                 if ubicacion_form.is_valid():
-                    obj = ubicacion_form.save(commit=False); obj.division = division; obj.save(); messages.success(request, 'Ubicación agregada.')
+                    ubicacion = ubicacion_form.cleaned_data['ubicacion']
+                    existente = DivisionUbicacion.objects.filter(division=division, ubicacion=ubicacion).first()
+                    if existente and existente.activa:
+                        messages.warning(request, 'Esta ubicación ya está agregada a esta división.')
+                    elif existente:
+                        existente.activa = True
+                        existente.save(update_fields=['activa'])
+                        messages.success(request, 'La ubicación ya existía y fue reactivada correctamente.')
+                    else:
+                        obj = ubicacion_form.save(commit=False)
+                        obj.division = division
+                        try:
+                            obj.save()
+                            messages.success(request, 'Ubicación agregada.')
+                        except IntegrityError:
+                            messages.warning(request, 'Esta ubicación ya está agregada a esta división.')
             elif accion == 'agregar_articulo':
                 articulo_form = DivisionArticuloForm(request.POST, prefix='articulo')
                 if articulo_form.is_valid():
@@ -3042,7 +3073,48 @@ def division_detail(request, pk):
         except ValidationError as e:
             messages.error(request, e.message_dict if hasattr(e, 'message_dict') else e.messages)
         return redirect('almacen:division_detail', pk=division.pk)
-    return render(request, 'almacen/divisiones/detail.html', {'division': division, 'ubicacion_form': ubicacion_form, 'articulo_form': articulo_form})
+    ubicaciones = division.ubicaciones.select_related('ubicacion').order_by('ubicacion__nombre')
+    return render(request, 'almacen/divisiones/detail.html', {'division': division, 'ubicacion_form': ubicacion_form, 'articulo_form': articulo_form, 'ubicaciones': ubicaciones})
+
+@login_required
+@grupo_requerido('Administrador', 'Almacen')
+@require_POST
+def division_ubicacion_desactivar(request, pk):
+    item = get_object_or_404(DivisionUbicacion, pk=pk)
+    item.activa = False
+    item.save(update_fields=['activa'])
+    messages.success(request, 'Ubicación desactivada correctamente.')
+    return redirect('almacen:division_detail', pk=item.division_id)
+
+@login_required
+@grupo_requerido('Administrador', 'Almacen')
+@require_POST
+def division_ubicacion_activar(request, pk):
+    item = get_object_or_404(DivisionUbicacion, pk=pk)
+    item.activa = True
+    item.save(update_fields=['activa'])
+    messages.success(request, 'Ubicación activada correctamente.')
+    return redirect('almacen:division_detail', pk=item.division_id)
+
+@login_required
+@grupo_requerido('Administrador', 'Almacen')
+@require_POST
+def division_ubicacion_eliminar(request, pk):
+    item = get_object_or_404(DivisionUbicacion, pk=pk)
+    division_id = item.division_id
+    tiene_asignaciones = DivisionArticuloUbicacion.objects.filter(
+        division_articulo__division=item.division,
+        ubicacion=item.ubicacion
+    ).exists()
+    if tiene_asignaciones:
+        messages.error(request, 'No se puede eliminar porque tiene movimientos o asignaciones asociadas. Puede desactivarla.')
+    else:
+        try:
+            item.delete()
+            messages.success(request, 'Ubicación eliminada correctamente.')
+        except IntegrityError:
+            messages.error(request, 'No se puede eliminar porque tiene movimientos o asignaciones asociadas. Puede desactivarla.')
+    return redirect('almacen:division_detail', pk=division_id)
 
 @login_required
 @grupo_requerido('Administrador', 'Almacen')
