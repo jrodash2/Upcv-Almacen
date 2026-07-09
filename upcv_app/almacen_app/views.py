@@ -2993,7 +2993,23 @@ def desasignar_articulo_ubicacion(request, asignacion_id):
 @login_required
 @grupo_requerido('Administrador', 'Almacen')
 def division_list(request):
-    divisiones = DivisionAlmacen.objects.annotate(cantidad_ubicaciones=Count('ubicaciones', filter=Q(ubicaciones__activa=True)), cantidad_articulos=Count('articulos', filter=Q(articulos__activo=True))).order_by('nombre')
+    divisiones = DivisionAlmacen.objects.order_by('nombre')
+    for division in divisiones:
+        division.total_ubicaciones_listado = DivisionUbicacion.objects.filter(
+            division=division,
+            activa=True
+        ).values('ubicacion_id').distinct().count()
+        division.total_articulos_listado = DivisionArticulo.objects.filter(
+            division=division,
+            activo=True
+        ).values('articulo_id').distinct().count()
+        division.total_reservado_listado = DivisionArticuloUbicacion.objects.filter(
+            division_articulo__division=division,
+            division_articulo__activo=True,
+            activo=True
+        ).aggregate(
+            total=Coalesce(Sum('cantidad_reservada'), Decimal('0.00'))
+        )['total']
     return render(request, 'almacen/divisiones/list.html', {'divisiones': divisiones})
 
 @login_required
