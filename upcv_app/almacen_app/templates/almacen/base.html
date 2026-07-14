@@ -246,9 +246,14 @@
                 </li>
 {% if user.is_authenticated %}
 
-  <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
-    <a class="sidebar-link sidebar-title" href="#">
-      <i data-feather="book-open"></i><span>Reportes</span>
+ <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
+      <a class="sidebar-link sidebar-title" href="#">
+        <svg class="stroke-icon">
+          <use href="../assets/svg/icon-sprite.svg#stroke-gallery"></use>
+        </svg>
+        <svg class="fill-icon">
+          <use href="../assets/svg/icon-sprite.svg#fill-gallery"></use>
+        </svg><span>Reportes</span>
     </a>
     <ul class="sidebar-submenu">
       <li><a href="{% url 'almacen:libro_mayor' %}">Libro Mayor</a></li>
@@ -297,7 +302,14 @@
 
   {# Mostrar "Configuración" solo a Administradores #}
   {% if es_administrador %}
-    <li class="sidebar-list"><i class="fa fa-thumb-tack"></i><a class="sidebar-link sidebar-title {% if request.resolver_match.url_name in 'division_list division_create division_update division_detail division_control' %}active{% endif %}" href="#"><i data-feather="layers"></i><span>Divisiones de Almacén</span></a><ul class="sidebar-submenu"><li><a class="{% if request.resolver_match.url_name == 'division_list' %}active{% endif %}" href="{% url 'almacen:division_list' %}">Listado</a></li><li><a class="{% if request.resolver_match.url_name == 'division_control' %}active{% endif %}" href="{% url 'almacen:division_control' %}">Control General</a></li></ul></li>
+ <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
+      <a class="sidebar-link sidebar-title" href="#">
+        <svg class="stroke-icon">
+          <use href="../assets/svg/icon-sprite.svg#stroke-gallery"></use>
+        </svg>
+        <svg class="fill-icon">
+          <use href="../assets/svg/icon-sprite.svg#fill-gallery"></use>
+        </svg><span>Divisiones</span></a><ul class="sidebar-submenu"><li><a class="{% if request.resolver_match.url_name == 'division_list' %}active{% endif %}" href="{% url 'almacen:division_list' %}">Listado</a></li><li><a class="{% if request.resolver_match.url_name == 'division_control' %}active{% endif %}" href="{% url 'almacen:division_control' %}">Control General</a></li></ul></li>
     <li class="sidebar-list" ><i class="fa fa-thumb-tack"> </i><a class="sidebar-link " href="{% url 'almacen:dahsboard' %}">
                     <svg >
                       <use href="../assets/svg/icon-sprite.svg#stroke-home"></use>
@@ -335,7 +347,10 @@
                   </svg><span>Requerimientos</span></a>
 
               </li>
-              <li class="sidebar-list"><i class="fa fa-thumb-tack"></i><a class="sidebar-link " href="{% url 'almacen:bandeja_solicitudes_requerimiento' %}"><span>Bandeja de Solicitudes</span></a></li>
+              <li class="sidebar-list"><i class="fa fa-thumb-tack"></i><a class="sidebar-link " href="{% url 'almacen:bandeja_solicitudes_requerimiento' %}">
+                  <svg class="stroke-icon">
+                    <use href="../assets/svg/icon-sprite.svg#stroke-gallery"></use>
+                  </svg><span>Solicitudes</span></a></li>
     <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
       <a class="sidebar-link sidebar-title" href="#">
         <svg class="stroke-icon">
