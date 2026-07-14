@@ -95,24 +95,62 @@
     {{ solicitud.justificacion|default:solicitud.observaciones|default:"" }}
   </div>
 
-  <div class="firmas">
-    <div class="firma-col">
-      <p><strong>Persona que solicita:</strong></p>
-      <p>{{ solicitud.usuario_solicitante.get_full_name|default:solicitud.usuario_solicitante.username }}</p>
-      <p><strong>Cargo:</strong> {{ cargo_solicitante|default:"" }}</p>
-      <div class="firma-linea">Firma</div>
-    </div>
+ 
+<style>
+  .firmas-footer{
+    position: fixed;
+    bottom: 20px;
+    left: 0;
+    width: 100%;
+}
 
-    <div class="firma-col">
-      <p><strong>Persona quien autoriza:</strong></p>
-      <p>&nbsp;</p>
-      <div class="firma-linea">Firma</div>
-      <div class="sello">SELLO<br>(NOMBRE Y CARGO)</div>
-    </div>
-  </div>
+.firma-col{
+    width: 35%;
+    text-align: center;
+}
 
+.firma-col:first-child{
+    float: left;
+    margin-left: 5%;
+}
+
+.firma-col:nth-child(2){
+    float: right;
+    margin-right: 5%;
+}
+
+.firma-centro{
+    clear: both;
+    width: 35%;
+    margin: 90px auto 0;
+    text-align: center;
+}
+
+.firma-linea{
+    border-top: 2px solid #000;
+    width: 100%;
+    margin-bottom: 5px;
+}
+</style>
   <div class="footer-img">
-    <img src="{% static 'assets/images/pie.png' %}" alt="Pie de página institucional">
+    <div class="firmas-footer">
+    <div class="firma-col">.
+        <div class="firma-linea"></div>
+        
+        <strong>ENTREGADO POR</strong>
+          <p>{{ solicitud.usuario_solicitante.get_full_name|default:solicitud.usuario_solicitante.username }}</p>
+    </div>
+
+    <div class="firma-col">
+        <div class="firma-linea"></div>
+        <strong>AUTORIZADO POR</strong>
+    </div>
+
+    <div class="firma-centro">
+        <div class="firma-linea"></div>
+        <strong>RECIBIDO POR</strong>
+    </div>
+</div>
   </div>
 </body>
 </html>
