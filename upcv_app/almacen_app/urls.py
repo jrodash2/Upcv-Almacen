@@ -14,6 +14,12 @@ urlpatterns = [
     path('signin/', views.signin, name='signin'),
     path('logout/', views.signout, name='logout'),
 
+    # Carga inicial (solo Administrador)
+    path('almacen/configuracion/carga-inicial/', views.carga_inicial, name='carga_inicial'),
+    path('almacen/configuracion/carga-inicial/confirmar/', views.confirmar_carga_inicial, name='confirmar_carga_inicial'),
+    path('almacen/configuracion/carga-inicial/historial/', views.carga_inicial_historial, name='carga_inicial_historial'),
+    path('almacen/configuracion/carga-inicial/plantilla/', views.carga_inicial_plantilla, name='carga_inicial_plantilla'),
+
     # Acceso denegado
     path('no-autorizado/', views.acceso_denegado, name='acceso_denegado'),
 
