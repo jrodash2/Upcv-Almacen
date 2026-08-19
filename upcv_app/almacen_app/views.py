@@ -57,9 +57,175 @@ from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Alignment, Font
 import re
+import base64
+import io
+import os
 
 from django.core.mail import BadHeaderError
 from smtplib import SMTPException
+from django.core.files.base import ContentFile
+from django.views.decorators.http import require_http_methods
+from .carga_inicial import analizar_excel, carga_ya_procesada, hash_archivo
+from .models import CargaInicialInventario, CargaInicialInventarioDetalle
+
+
+def _contexto_carga_inicial(**extra):
+    contexto = {
+        'historial': CargaInicialInventario.objects.select_related('usuario').all()[:50],
+    }
+    contexto.update(extra)
+    return contexto
+
+
+@login_required
+@grupo_requerido('Administrador')
+@require_http_methods(['GET', 'POST'])
+def carga_inicial(request):
+    if request.method == 'GET':
+        request.session.pop('carga_inicial_pendiente', None)
+        return render(request, 'almacen/carga_inicial.html', _contexto_carga_inicial())
+
+    archivo = request.FILES.get('archivo')
+    if not archivo or os.path.splitext(archivo.name)[1].lower() != '.xlsx':
+        messages.error(request, 'Debe cargar un archivo Excel en formato .xlsx.')
+        return render(request, 'almacen/carga_inicial.html', _contexto_carga_inicial())
+    contenido = archivo.read()
+    try:
+        if carga_ya_procesada(contenido):
+            messages.error(request, 'Este archivo ya fue procesado. No se duplicará el stock inicial.')
+            return render(request, 'almacen/carga_inicial.html', _contexto_carga_inicial())
+        filas = analizar_excel(contenido)
+    except Exception:
+        messages.error(request, 'No fue posible leer el archivo Excel.')
+        return render(request, 'almacen/carga_inicial.html', _contexto_carga_inicial())
+    if not filas:
+        messages.error(request, 'La carga contiene errores. Corrija el archivo antes de confirmar.')
+        return render(request, 'almacen/carga_inicial.html', _contexto_carga_inicial())
+
+    hay_errores = any(fila['errores'] for fila in filas)
+    hay_existentes = any(fila['estado'] == 'actualizar' for fila in filas)
+    hay_stock_previo = any(fila['tiene_movimientos'] for fila in filas)
+    request.session['carga_inicial_pendiente'] = {
+        'nombre': os.path.basename(archivo.name),
+        'contenido': base64.b64encode(contenido).decode('ascii'),
+        'hash': hash_archivo(contenido),
+    }
+    if hay_errores:
+        messages.error(request, 'La carga contiene errores. Corrija el archivo antes de confirmar.')
+    elif hay_existentes:
+        messages.warning(request, 'Algunos códigos ya existen y serán actualizados.')
+    return render(request, 'almacen/carga_inicial.html', _contexto_carga_inicial(
+        filas=filas, nombre_archivo=archivo.name, hay_errores=hay_errores,
+        hay_stock_previo=hay_stock_previo,
+    ))
+
+
+@login_required
+@grupo_requerido('Administrador')
+@require_POST
+def confirmar_carga_inicial(request):
+    pendiente = request.session.get('carga_inicial_pendiente')
+    if not pendiente:
+        messages.error(request, 'Debe previsualizar un archivo antes de confirmar.')
+        return redirect('almacen:carga_inicial')
+    try:
+        contenido = base64.b64decode(pendiente['contenido'])
+        filas = analizar_excel(contenido)
+    except Exception:
+        messages.error(request, 'No fue posible leer el archivo Excel.')
+        return redirect('almacen:carga_inicial')
+    if hash_archivo(contenido) != pendiente['hash'] or any(fila['errores'] for fila in filas):
+        messages.error(request, 'La carga contiene errores. Corrija el archivo antes de confirmar.')
+        return redirect('almacen:carga_inicial')
+    if carga_ya_procesada(contenido):
+        messages.error(request, 'Este archivo ya fue procesado. No se duplicará el stock inicial.')
+        return redirect('almacen:carga_inicial')
+    if any(fila['tiene_movimientos'] for fila in filas) and request.POST.get('confirmar_stock_existente') != '1':
+        messages.error(request, 'Debe confirmar expresamente la carga sobre artículos con movimientos existentes.')
+        return redirect('almacen:carga_inicial')
+
+    try:
+        with transaction.atomic():
+            carga = CargaInicialInventario.objects.create(
+                archivo=ContentFile(contenido, name=pendiente['nombre']),
+                nombre_archivo=pendiente['nombre'], hash_archivo=pendiente['hash'],
+                usuario=request.user, total_filas=len(filas), filas_validas=len(filas), filas_error=0,
+            )
+            formulario = form1h.objects.create(
+                estado='confirmado', proveedor_nombre='CARGA INICIAL', nit_proveedor='CARGA-INICIAL',
+                numero_factura=f'CARGA-INICIAL-{carga.pk}-{timezone.localdate():%Y%m%d}',
+                fecha_factura=timezone.localdate(),
+            )
+            contador, _ = ContadorDetalleFactura.objects.select_for_update().get_or_create(id=1)
+            for fila in filas:
+                categoria = None
+                if fila['categoria']:
+                    categoria = Categoria.objects.filter(nombre__iexact=fila['categoria']).first()
+                    if not categoria:
+                        categoria = Categoria.objects.create(nombre=fila['categoria'])
+                unidad = UnidadDeMedida.objects.filter(nombre__iexact=fila['unidad']).first()
+                if not unidad:
+                    simbolo = ''.join(palabra[0] for palabra in fila['unidad'].split())[:10] or 'U'
+                    unidad = UnidadDeMedida.objects.create(nombre=fila['unidad'], simbolo=simbolo.upper())
+                articulo = Articulo.objects.filter(codigo__iexact=fila['codigo']).first()
+                if articulo:
+                    articulo.nombre = fila['nombre']
+                    articulo.renglon_presupuestario = fila['renglon'] or None
+                    articulo.categoria = categoria
+                    articulo.unidad_medida = unidad
+                    articulo.save(update_fields=['nombre', 'renglon_presupuestario', 'categoria', 'unidad_medida'])
+                else:
+                    articulo = Articulo.objects.create(
+                        codigo=fila['codigo'], nombre=fila['nombre'],
+                        renglon_presupuestario=fila['renglon'] or None,
+                        categoria=categoria, unidad_medida=unidad,
+                    )
+                renglon_numerico = int(''.join(re.findall(r'\d+', fila['renglon'])) or 0)
+                detalle = DetalleFactura.objects.create(
+                    form1h=formulario, articulo=articulo, cantidad=fila['cantidad'],
+                    precio_unitario=Decimal(fila['costo_unitario']), precio_total=Decimal(fila['total']),
+                    id_linea=contador.contador, renglon=renglon_numerico,
+                )
+                contador.contador += 1
+                CargaInicialInventarioDetalle.objects.create(
+                    carga=carga, codigo=fila['codigo'], articulo=articulo, nombre=fila['nombre'],
+                    renglon=fila['renglon'], categoria=fila['categoria'], unidad=fila['unidad'],
+                    cantidad=fila['cantidad'], costo_unitario=fila['costo_unitario'], total=fila['total'],
+                    estado=fila['estado'], mensaje='; '.join(fila['advertencias']),
+                )
+            contador.save(update_fields=['contador'])
+    except Exception as error:
+        messages.error(request, f'No fue posible procesar la carga inicial: {error}')
+        return redirect('almacen:carga_inicial')
+    request.session.pop('carga_inicial_pendiente', None)
+    messages.success(request, 'Carga inicial procesada correctamente.')
+    return redirect('almacen:carga_inicial')
+
+
+@login_required
+@grupo_requerido('Administrador')
+def carga_inicial_historial(request):
+    return render(request, 'almacen/carga_inicial_historial.html', _contexto_carga_inicial())
+
+
+@login_required
+@grupo_requerido('Administrador')
+def carga_inicial_plantilla(request):
+    libro = Workbook()
+    hoja = libro.active
+    hoja.title = 'Carga Inicial'
+    encabezados = ['Código', 'Renglón', 'Artículo', 'Categoría', 'Unidad de medida', 'Cantidad inicial', 'Costo unitario']
+    hoja.append(encabezados)
+    for celda in hoja[1]:
+        celda.font = Font(bold=True)
+    hoja.freeze_panes = 'A2'
+    salida = io.BytesIO()
+    libro.save(salida)
+    respuesta = HttpResponse(
+        salida.getvalue(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    respuesta['Content-Disposition'] = 'attachment; filename="plantilla_carga_inicial.xlsx"'
+    return respuesta
 
 @login_required
 @grupo_requerido('Administrador', 'Almacen')

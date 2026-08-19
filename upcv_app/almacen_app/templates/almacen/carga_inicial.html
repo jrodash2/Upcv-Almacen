@@ -1,0 +1,60 @@
+{% extends 'almacen/base.html' %}
+{% load static %}
+{% block content %}
+<div class="page-body">
+  <div class="container-fluid">
+    <div class="page-title"><div class="row"><div class="col-6"><h4>Carga Inicial</h4></div><div class="col-6"><ol class="breadcrumb justify-content-end"><li class="breadcrumb-item">Configuración</li><li class="breadcrumb-item active">Carga Inicial</li></ol></div></div></div>
+  </div>
+  <div class="container-fluid">
+    {% for message in messages %}<div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">{{ message }}<button class="btn-close" type="button" data-bs-dismiss="alert"></button></div>{% endfor %}
+    <div class="card">
+      <div class="card-header pb-0 card-no-border">
+        <h4>Carga Inicial de Inventario</h4>
+        <span>Importe artículos y existencias iniciales desde un archivo Excel.</span>
+      </div>
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-end flex-wrap gap-3">
+          <form method="post" enctype="multipart/form-data" class="flex-grow-1">
+            {% csrf_token %}
+            <label class="form-label" for="archivo">Archivo Excel (.xlsx)</label>
+            <div class="input-group"><input class="form-control" id="archivo" name="archivo" type="file" accept=".xlsx" required><button class="btn btn-primary btn-sm" type="submit"><i data-feather="eye"></i> Previsualizar carga</button></div>
+          </form>
+          <a class="btn btn-outline-primary btn-sm" href="{% url 'almacen:carga_inicial_plantilla' %}"><i data-feather="download"></i> Descargar plantilla</a>
+        </div>
+      </div>
+    </div>
+
+    {% if filas %}
+    <div class="card">
+      <div class="card-header pb-0 card-no-border"><h4>Previsualización</h4><span>{{ nombre_archivo }} — no se ha guardado información todavía.</span></div>
+      <div class="card-body">
+        <div class="dt-ext table-responsive custom-scrollbar">
+          <table class="display datatables" id="tabla-carga-inicial">
+            <thead><tr><th>Código</th><th>Renglón</th><th>Artículo</th><th>Categoría</th><th>Unidad</th><th>Cantidad</th><th>Costo unitario</th><th>Total</th><th>Estado</th></tr></thead>
+            <tbody>{% for fila in filas %}<tr>
+              <td>{{ fila.codigo|default:'—' }}</td><td>{{ fila.renglon|default:'S/R' }}</td><td>{{ fila.nombre|default:'—' }}</td><td>{{ fila.categoria|default:'S/C' }}</td><td>{{ fila.unidad }}</td><td>{{ fila.cantidad }}</td><td>Q {{ fila.costo_unitario }}</td><td>Q {{ fila.total }}</td>
+              <td>{% if fila.estado == 'error' %}<span class="badge badge-light-danger">Error</span>{% elif fila.estado == 'actualizar' %}<span class="badge badge-light-info">Ya existe, se actualizará</span>{% else %}<span class="badge badge-light-success">Nuevo artículo</span>{% endif %}
+                {% for error in fila.errores %}<div class="text-danger small">Fila {{ fila.fila }}: {{ error }}.</div>{% endfor %}
+                {% for advertencia in fila.advertencias %}<div class="mt-1"><span class="badge badge-light-warning">Advertencia</span><small> {{ advertencia }}</small></div>{% endfor %}
+              </td>
+            </tr>{% endfor %}</tbody>
+          </table>
+        </div>
+        <div class="d-flex justify-content-end gap-2 mt-3">
+          <a class="btn btn-secondary btn-sm" href="{% url 'almacen:carga_inicial' %}">Cancelar</a>
+          <form method="post" action="{% url 'almacen:confirmar_carga_inicial' %}">{% csrf_token %}
+            {% if hay_stock_previo %}<div class="form-check mb-2"><input class="form-check-input" id="confirmar-stock" name="confirmar_stock_existente" value="1" type="checkbox" required><label class="form-check-label" for="confirmar-stock">Confirmo que deseo agregar la cantidad indicada aun cuando existen movimientos previos.</label></div>{% endif %}
+            <button class="btn btn-primary btn-sm" type="submit" {% if hay_errores %}disabled{% endif %}>Confirmar carga inicial</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="card">
+      <div class="card-header pb-0 card-no-border d-flex justify-content-between"><h4>Últimas cargas</h4><a class="btn btn-outline-primary btn-sm" href="{% url 'almacen:carga_inicial_historial' %}">Ver historial</a></div>
+      <div class="card-body"><div class="table-responsive"><table class="table"><thead><tr><th>Fecha</th><th>Archivo</th><th>Usuario</th><th>Filas</th><th>Estado</th></tr></thead><tbody>{% for carga in historial %}<tr><td>{{ carga.fecha_carga|date:'d/m/Y H:i' }}</td><td><a href="{{ carga.archivo.url }}">{{ carga.nombre_archivo }}</a></td><td>{{ carga.usuario.username }}</td><td>{{ carga.filas_validas }}/{{ carga.total_filas }}</td><td><span class="badge badge-light-success">{{ carga.get_estado_display }}</span></td></tr>{% empty %}<tr><td colspan="5" class="text-center">No hay cargas procesadas.</td></tr>{% endfor %}</tbody></table></div></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

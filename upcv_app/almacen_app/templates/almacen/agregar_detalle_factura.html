@@ -1002,6 +1002,22 @@ function toggleFechaVencimiento() {
 
 <script>
   document.addEventListener('DOMContentLoaded', function () {
+    // Riho aplica overflow:hidden a .page-wrapper. Bootstrap agrega el backdrop
+    // directamente al body, por lo que los modales que permanecían dentro del
+    // wrapper quedaban recortados detrás de él. Reubicar solo los modales de esta
+    // vista conserva sus IDs, triggers y formularios sin alterar otros modales.
+    [
+      'detalleFacturaModal',
+      'crearArticuloModal',
+      'editarDetalleModal',
+      'confirmDeleteModal'
+    ].forEach(function (modalId) {
+      const modal = document.getElementById(modalId);
+      if (modal && modal.parentElement !== document.body) {
+        document.body.appendChild(modal);
+      }
+    });
+
     let deleteUrl = ''; // URL del detalle a eliminar
     const confirmDeleteModal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
     const confirmDeleteButton = document.getElementById('confirmDeleteButton');
