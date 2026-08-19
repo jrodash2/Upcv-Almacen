@@ -448,6 +448,7 @@
         <li><a href="{% url 'almacen:user_create' %}">Usuarios</a></li>
         <li><a href="{% url 'almacen:lista_series' %}">Series 1H</a></li>
         <li><a href="{% url 'almacen:editar_institucion' %}">Institución</a></li>
+        <li><a class="{% if request.resolver_match.url_name == 'carga_inicial' %}active{% endif %}" href="{% url 'almacen:carga_inicial' %}"><i data-feather="upload-cloud"></i> Carga Inicial</a></li>
         <li><a href="#">Manuales</a></li>
       </ul>
     </li>

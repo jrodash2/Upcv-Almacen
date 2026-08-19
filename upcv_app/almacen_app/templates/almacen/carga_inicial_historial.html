@@ -1,0 +1,7 @@
+{% extends 'almacen/base.html' %}
+{% block content %}
+<div class="page-body"><div class="container-fluid"><div class="page-title"><h4>Historial de Cargas Iniciales</h4></div>
+<div class="card"><div class="card-header pb-0 card-no-border"><h4>Cargas procesadas</h4></div><div class="card-body"><div class="dt-ext table-responsive custom-scrollbar"><table class="display datatables"><thead><tr><th>Fecha</th><th>Archivo</th><th>Usuario</th><th>Total</th><th>Válidas</th><th>Errores</th><th>Estado</th><th>Acción</th></tr></thead><tbody>
+{% for carga in historial %}<tr><td>{{ carga.fecha_carga|date:'d/m/Y H:i' }}</td><td>{{ carga.nombre_archivo }}</td><td>{{ carga.usuario.username }}</td><td>{{ carga.total_filas }}</td><td>{{ carga.filas_validas }}</td><td>{{ carga.filas_error }}</td><td><span class="badge badge-light-success">{{ carga.get_estado_display }}</span></td><td><a class="btn btn-outline-primary btn-sm" href="{{ carga.archivo.url }}"><i data-feather="download"></i> Descargar original</a></td></tr>{% empty %}<tr><td colspan="8" class="text-center">No hay cargas procesadas.</td></tr>{% endfor %}
+</tbody></table></div><a class="btn btn-secondary btn-sm mt-3" href="{% url 'almacen:carga_inicial' %}">Volver</a></div></div></div></div>
+{% endblock %}

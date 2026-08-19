@@ -90,6 +90,45 @@ class Articulo(models.Model):
         return f"{self.codigo} - {self.nombre}"
 
 
+class CargaInicialInventario(models.Model):
+    ESTADOS = [('procesada', 'Procesada'), ('error', 'Error')]
+
+    archivo = models.FileField(upload_to='cargas_iniciales/')
+    nombre_archivo = models.CharField(max_length=255)
+    hash_archivo = models.CharField(max_length=64, unique=True)
+    fecha_carga = models.DateTimeField(auto_now_add=True)
+    usuario = models.ForeignKey(User, on_delete=models.PROTECT)
+    estado = models.CharField(max_length=20, choices=ESTADOS, default='procesada')
+    total_filas = models.PositiveIntegerField(default=0)
+    filas_validas = models.PositiveIntegerField(default=0)
+    filas_error = models.PositiveIntegerField(default=0)
+    observacion = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['-fecha_carga']
+
+    def __str__(self):
+        return f'{self.nombre_archivo} - {self.fecha_carga:%d/%m/%Y}'
+
+
+class CargaInicialInventarioDetalle(models.Model):
+    carga = models.ForeignKey(CargaInicialInventario, related_name='detalles', on_delete=models.CASCADE)
+    codigo = models.CharField(max_length=50)
+    articulo = models.ForeignKey(Articulo, on_delete=models.PROTECT)
+    nombre = models.CharField(max_length=1085)
+    renglon = models.CharField(max_length=20, blank=True)
+    categoria = models.CharField(max_length=255, blank=True)
+    unidad = models.CharField(max_length=50, blank=True)
+    cantidad = models.PositiveIntegerField()
+    costo_unitario = models.DecimalField(max_digits=25, decimal_places=2)
+    total = models.DecimalField(max_digits=25, decimal_places=2)
+    estado = models.CharField(max_length=20)
+    mensaje = models.TextField(blank=True)
+
+    def __str__(self):
+        return f'{self.carga_id}: {self.codigo}'
+
+
 # Modelo de Departamento
 class Departamento(models.Model):
     id_departamento = models.CharField(max_length=50, unique=True)  # ID personalizado del departamento
