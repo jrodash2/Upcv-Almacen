@@ -595,6 +595,26 @@ class DivisionArticulo(models.Model):
         return super().save(*args, **kwargs)
 
 
+class DetalleFacturaDivision(models.Model):
+    """Distribución inicial auditable de un detalle de 1H entre divisiones."""
+    detalle_factura = models.ForeignKey(DetalleFactura, on_delete=models.CASCADE, related_name='asignaciones_division')
+    division = models.ForeignKey(DivisionAlmacen, on_delete=models.PROTECT, related_name='detalles_factura')
+    cantidad_asignada = models.DecimalField(max_digits=12, decimal_places=2)
+    creado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['detalle_factura', 'division'],
+                name='unique_detalle_factura_division',
+            )
+        ]
+
+    def __str__(self):
+        return f'{self.detalle_factura} - {self.division}: {self.cantidad_asignada}'
+
+
 class DivisionArticuloUbicacion(models.Model):
     division_articulo = models.ForeignKey(DivisionArticulo, on_delete=models.CASCADE, related_name="asignaciones_ubicacion")
     ubicacion = models.ForeignKey(Departamento, on_delete=models.CASCADE, related_name="articulos_division_asignados")

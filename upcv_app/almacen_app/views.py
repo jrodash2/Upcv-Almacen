@@ -9,7 +9,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from .form import DependenciaForm, DetalleFacturaForm, DetalleRequerimientoForm, DetalleRequerimientoFormSet, Form1hForm, PerfilForm, ProgramaForm, RequerimientoForm, UserCreateForm, UserEditForm, UserCreateForm, UbicacionForm, UnidadDeMedidaForm, CategoriaForm, ProveedorForm, ArticuloForm, DepartamentoForm, SerieForm, AsignacionDetalleFacturaForm, UsuarioDepartamentoForm, InstitucionForm, SolicitudRequerimientoForm, DetalleSolicitudRequerimientoFormSet, DivisionAlmacenForm, DivisionUbicacionForm, DivisionArticuloForm
-from .models import existencia_general_articulo, ContadorDetalleFactura, DetalleFactura, DetalleRequerimiento, HistorialTransferencia, InventarioDetalle, LineaLibre, Perfil, Requerimiento, Ubicacion, UnidadDeMedida, Categoria, Proveedor, Articulo, Departamento, Kardex, AsignacionDetalleFactura, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa, LineaReservada, UsuarioDepartamento, Institucion, SolicitudRequerimiento, DetalleSolicitudRequerimiento, DivisionAlmacen, DivisionUbicacion, DivisionArticulo, DivisionArticuloUbicacion
+from .models import existencia_general_articulo, ContadorDetalleFactura, DetalleFactura, DetalleFacturaDivision, DetalleRequerimiento, HistorialTransferencia, InventarioDetalle, LineaLibre, Perfil, Requerimiento, Ubicacion, UnidadDeMedida, Categoria, Proveedor, Articulo, Departamento, Kardex, AsignacionDetalleFactura, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa, LineaReservada, UsuarioDepartamento, Institucion, SolicitudRequerimiento, DetalleSolicitudRequerimiento, DivisionAlmacen, DivisionUbicacion, DivisionArticulo, DivisionArticuloUbicacion
 from django.views.generic import CreateView
 from django.views.generic import ListView
 from django.urls import reverse_lazy
@@ -22,7 +22,7 @@ from django.views.decorators.http import require_POST
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from .models import Serie
 from django.db import models
-from django.db.models import Sum, F, Value, Count, Q, Case, When, OuterRef, Subquery, IntegerField
+from django.db.models import Sum, Max, F, Value, Count, Q, Case, When, OuterRef, Subquery, IntegerField
 from django.contrib.auth.decorators import login_required, user_passes_test
 from collections import defaultdict
 from django.shortcuts import get_object_or_404, redirect
@@ -51,7 +51,7 @@ import datetime
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils.html import strip_tags
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from datetime import datetime  
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
@@ -1997,17 +1997,79 @@ def serie_form_list(request, pk=None):
 @login_required
 @grupo_requerido('Administrador', 'Almacen')
 @require_POST
+@transaction.atomic
 def confirmar_form1h(request, form1h_id):
-    formulario = get_object_or_404(form1h, id=form1h_id)
+    formulario = get_object_or_404(form1h.objects.select_for_update(), id=form1h_id)
+    if formulario.estado == 'confirmado':
+        messages.info(request, 'Este Formulario 1H ya fue confirmado.')
+        return redirect('almacen:agregar_detalle_factura', form1h_id=form1h_id)
+    if formulario.estado != 'borrador':
+        messages.warning(request, 'Este Formulario 1H no se puede confirmar en su estado actual.')
+        return redirect('almacen:agregar_detalle_factura', form1h_id=form1h_id)
 
-    if formulario.estado == 'borrador':
-        formulario.estado = 'confirmado'
-        formulario.save()
-        messages.success(request, f'El formulario Serie {formulario.serie.serie} {formulario.numero_serie}  ha sido confirmado exitosamente.')
-    elif formulario.estado == 'confirmado':
-        messages.info(request, f'El formulario Serie {formulario.serie.serie} {formulario.numero_serie}  ya está confirmado.')
-    else:
-        messages.warning(request, f'El formulario Serie {formulario.serie.serie} {formulario.numero_serie}  no se puede confirmar en su estado actual.')
+    detalles = list(formulario.detalles.select_related('articulo').select_for_update())
+    if not detalles:
+        messages.error(request, 'No puede confirmar un Formulario 1H sin detalles.')
+        return redirect('almacen:agregar_detalle_factura', form1h_id=form1h_id)
+    divisiones = {str(d.pk): d for d in DivisionAlmacen.objects.filter(activa=True)}
+    if not divisiones:
+        messages.error(request, 'No existen divisiones activas para asignar los artículos del Formulario 1H.')
+        return redirect('almacen:agregar_detalle_factura', form1h_id=form1h_id)
+
+    distribucion = defaultdict(lambda: defaultdict(Decimal))
+    for detalle_id, division_id, cantidad_texto in zip(
+        request.POST.getlist('detalle_id'),
+        request.POST.getlist('division_id'),
+        request.POST.getlist('cantidad_asignada'),
+    ):
+        try:
+            cantidad = Decimal(cantidad_texto)
+        except (TypeError, InvalidOperation):
+            cantidad = Decimal('0')
+        if cantidad <= 0 or division_id not in divisiones:
+            messages.error(request, 'Debe asignar todos los artículos del Formulario 1H a divisiones antes de confirmar.')
+            transaction.set_rollback(True)
+            return redirect('almacen:agregar_detalle_factura', form1h_id=form1h_id)
+        distribucion[detalle_id][division_id] += cantidad
+
+    for detalle in detalles:
+        asignaciones = distribucion.get(str(detalle.pk), {})
+        if not asignaciones:
+            messages.error(request, 'Debe asignar todos los artículos del Formulario 1H a divisiones antes de confirmar.')
+            transaction.set_rollback(True)
+            return redirect('almacen:agregar_detalle_factura', form1h_id=form1h_id)
+        if sum(asignaciones.values(), Decimal('0')) != Decimal(detalle.cantidad):
+            messages.error(
+                request,
+                f'La cantidad asignada a divisiones para {detalle.articulo.codigo} debe ser igual a la cantidad ingresada en el Formulario 1H.',
+            )
+            transaction.set_rollback(True)
+            return redirect('almacen:agregar_detalle_factura', form1h_id=form1h_id)
+
+    # Confirmar primero hace que la validación de existencia de DivisionArticulo
+    # incluya este ingreso, sin exponer un estado parcial gracias a atomic().
+    formulario.estado = 'confirmado'
+    formulario.save(update_fields=['estado', 'fecha_actualizacion'])
+    for detalle in detalles:
+        for division_id, cantidad in distribucion[str(detalle.pk)].items():
+            DetalleFacturaDivision.objects.create(
+                detalle_factura=detalle,
+                division=divisiones[division_id],
+                cantidad_asignada=cantidad,
+                creado_por=request.user,
+            )
+            asignacion, creada = DivisionArticulo.objects.select_for_update().get_or_create(
+                division=divisiones[division_id],
+                articulo=detalle.articulo,
+                defaults={'cantidad_asignada': cantidad, 'asignado_por': request.user, 'activo': True},
+            )
+            if not creada:
+                asignacion.cantidad_asignada += cantidad
+                asignacion.activo = True
+                asignacion.asignado_por = request.user
+                asignacion.save()
+
+    messages.success(request, 'Formulario 1H confirmado y artículos asignados a divisiones correctamente.')
 
     return redirect('almacen:agregar_detalle_factura', form1h_id=form1h_id)
 
@@ -2103,32 +2165,8 @@ def crear_form1h(request):
     if request.method == "POST":
         if form.is_valid():
             try:
-                cantidad = form.cleaned_data.get('cantidad_detalles')
                 nuevo_formulario = form.save()
-
-                # Obtener o crear el contador global
-                contador, _ = ContadorDetalleFactura.objects.get_or_create(id=1)
-
-                for _ in range(cantidad):
-                    if LineaLibre.objects.exists():
-                        libre = LineaLibre.objects.first()
-                        numero_linea = libre.id_linea
-                        libre.delete()
-                    else:
-                        numero_linea = contador.contador
-                        contador.contador += 1
-
-                    # Asegúrate de que no esté duplicado
-                    if not LineaReservada.objects.filter(numero_linea=numero_linea).exists():
-                        LineaReservada.objects.create(
-                            form1h=nuevo_formulario,
-                            numero_linea=numero_linea,
-                            disponible=True
-                        )
-
-                contador.save()
-
-                messages.success(request, f"Formulario creado y se reservaron {cantidad} líneas.")
+                messages.success(request, 'Formulario 1H creado correctamente. Agregue los artículos del detalle.')
                 return redirect('almacen:agregar_detalle_factura', form1h_id=nuevo_formulario.id)
             except ValidationError as e:
                 messages.error(request, e.message)
@@ -2140,8 +2178,9 @@ def crear_form1h(request):
 
 @login_required
 @grupo_requerido('Administrador', 'Almacen')
+@transaction.atomic
 def agregar_detalle_factura(request, form1h_id):
-    form1h_instance = get_object_or_404(form1h, id=form1h_id)
+    form1h_instance = get_object_or_404(form1h.objects.select_for_update(), id=form1h_id)
     detalles_factura = DetalleFactura.objects.filter(form1h=form1h_instance)
 
     total_factura = form1h_instance.calcular_total_factura()
@@ -2150,42 +2189,22 @@ def agregar_detalle_factura(request, form1h_id):
     ubicaciones = Ubicacion.objects.all()
     unidades = UnidadDeMedida.objects.all()
 
-    # Filtrar líneas disponibles para este form1h
-    lineas_reservadas = LineaReservada.objects.filter(
-        form1h=form1h_instance,
-        disponible=True
-    ).order_by('numero_linea')
-
-    print("======= LÍNEAS RESERVADAS =======")
-    for linea in lineas_reservadas:
-        print(f"Línea: {linea.numero_linea} | Disponible: {linea.disponible} | Formulario ID: {linea.form1h_id}")
-
     if request.method == "POST":
-        numero_linea = request.POST.get('detalle_numero_linea')
-        renglon = request.POST.get('renglon')
-
         # Obtener listas de folio y nomenclatura
         folios = request.POST.getlist('folio_inventario[]')
         nomenclaturas = request.POST.getlist('nomenclatura[]')
 
-        # Clonar POST y añadir el id_linea que necesita el form
-        post_data = request.POST.copy()
-        post_data['id_linea'] = numero_linea  # Esto se inyecta en el form
-
-        form = DetalleFacturaForm(post_data, form1h_instance=form1h_instance)
+        form = DetalleFacturaForm(request.POST, form1h_instance=form1h_instance)
 
         if form.is_valid():
             detalle = form.save(commit=False)
             detalle.form1h = form1h_instance
-            detalle.renglon = renglon  # Puedes usar directamente: detalle.renglon = numero_linea
-
+            detalle.id_linea = (detalles_factura.aggregate(Max('id_linea'))['id_linea__max'] or 0) + 1
             try:
-                linea_reservada = LineaReservada.objects.get(
-                    numero_linea=numero_linea,
-                    form1h=form1h_instance,
-                    disponible=True
-                )
-
+                detalle.renglon = int(detalle.articulo.renglon_presupuestario or 0)
+            except (TypeError, ValueError):
+                detalle.renglon = 0
+            try:
                 detalle.save()
 
                 # Guardar InventarioDetalle solo si folios o nomenclaturas existen
@@ -2197,15 +2216,10 @@ def agregar_detalle_factura(request, form1h_id):
                             nomenclatura=nomen.strip()
                         )
 
-                # Marcar la línea como no disponible
-                linea_reservada.disponible = False
-                linea_reservada.save()
-
-                messages.success(request, f"Detalle agregado usando línea #{numero_linea}.")
+                messages.success(request, 'Detalle agregado correctamente.')
                 return redirect('almacen:agregar_detalle_factura', form1h_id=form1h_id)
-
-            except LineaReservada.DoesNotExist:
-                messages.error(request, "La línea seleccionada no está disponible o ya fue utilizada.")
+            except (ValidationError, IntegrityError) as error:
+                messages.error(request, f'Error al guardar el detalle: {error}')
         else:
             print("Errores del formulario:", form.errors)
             messages.error(request, "Error al guardar el detalle. Verifica los campos.")
@@ -2221,7 +2235,7 @@ def agregar_detalle_factura(request, form1h_id):
         'categorias': categorias,
         'ubicaciones': ubicaciones,
         'unidades': unidades,
-        'lineas_reservadas': lineas_reservadas,
+        'divisiones_activas': DivisionAlmacen.objects.filter(activa=True).order_by('nombre'),
     })
 
 
@@ -2491,7 +2505,10 @@ def editar_detalle_factura(request):
         detalle.articulo_id = articulo_id
         detalle.cantidad = int(request.POST.get("cantidad"))  # Convertir a entero
         detalle.precio_unitario = float(request.POST.get("precio_unitario"))  # Convertir a flotante
-        detalle.renglon = request.POST.get("renglon")
+        try:
+            detalle.renglon = int(articulo.renglon_presupuestario or 0)
+        except (TypeError, ValueError):
+            detalle.renglon = 0
         detalle.precio_total = detalle.cantidad * detalle.precio_unitario  # Multiplicación correcta
         
         # Si se requiere fecha de vencimiento y está presente, guardarla

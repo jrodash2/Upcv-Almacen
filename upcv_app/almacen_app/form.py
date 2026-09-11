@@ -172,15 +172,13 @@ class AsignacionDetalleFacturaForm(forms.ModelForm):
 class DetalleFacturaForm(forms.ModelForm):
     class Meta:
         model = DetalleFactura
-        fields = ['articulo', 'cantidad', 'precio_unitario', 'renglon', 'id_linea', 'fecha_vencimiento', 'folio_inventario', 'nomenclatura']
+        fields = ['articulo', 'cantidad', 'precio_unitario', 'fecha_vencimiento', 'folio_inventario', 'nomenclatura']
         widgets = {
             'articulo': forms.Select(attrs={'class': 'form-control'}),
             'cantidad': forms.NumberInput(attrs={'class': 'form-control'}),
             'precio_unitario': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-            'renglon': forms.NumberInput(attrs={'class': 'form-control'}),
             'folio_inventario': forms.TextInput(attrs={'placeholder': 'Folio Inventario', 'class': 'form-control'}),
             'nomenclatura': forms.TextInput(attrs={'placeholder': 'Nomenclatura de Cuentas', 'class': 'form-control'}),
-            'id_linea': forms.HiddenInput(),
             'fecha_vencimiento': forms.DateInput(attrs={
                 'class': 'form-control',
                 'type': 'date'  # input tipo fecha en HTML5
@@ -230,22 +228,12 @@ class SerieForm(forms.ModelForm):
                 field.widget.attrs['class'] = field.widget.attrs.get('class', '') + ' form-control'
 
 class Form1hForm(forms.ModelForm):
-    cantidad_detalles = forms.IntegerField(
-        min_value=1,
-        required=True,
-        label="Cantidad de Detalles",
-        widget=forms.NumberInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Ej. 5'
-        })
-    )
-
     class Meta:
         model = form1h
         fields = [
             'proveedor', 'nit_proveedor', 'proveedor_nombre', 'telefono_proveedor',
             'direccion_proveedor', 'numero_factura', 'dependencia', 'programa',
-            'orden_compra', 'patente', 'fecha_factura', 'cantidad_detalles'  # ✅ AÑADIDO AQUÍ
+            'orden_compra', 'patente', 'fecha_factura'
         ]
         widgets = {
             'proveedor': forms.Select(attrs={'class': 'form-control'}),
