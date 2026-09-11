@@ -99,12 +99,9 @@ table.order-details th {
     
 {# Botón Confirmar #}
 {% if form1h_instance.estado == 'borrador' %}
-    <form method="post" action="{% url 'almacen:confirmar_form1h' form1h_instance.id %}" style="display: inline;">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-outline-warning btn-lg" title="Confirmar">
-            <i class="fa fa-check-circle"></i> Confirmar
-        </button>
-    </form>
+    <button type="button" class="btn btn-outline-warning btn-lg" data-bs-toggle="modal" data-bs-target="#asignarDivisionesModal" title="Confirmar 1H">
+        <i class="fa fa-check-circle"></i> Confirmar 1H
+    </button>
 {% else %}
     <a class="btn btn-outline-secondary btn-lg disabled" title="Formulario confirmado o anulado">
         <i class="fa fa-check-circle"></i> Confirmar
@@ -401,6 +398,54 @@ table.order-details th {
     </div>
   </div>
 
+<!-- Modal de distribución requerido antes de confirmar el 1H -->
+<div class="modal fade" id="asignarDivisionesModal" tabindex="-1" aria-labelledby="asignarDivisionesModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <form method="post" action="{% url 'almacen:confirmar_form1h' form1h_instance.id %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="asignarDivisionesModalLabel">Asignar artículos del Formulario 1H a divisiones</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body table-responsive">
+          <table class="table table-bordered align-middle">
+            <thead>
+              <tr><th>Código</th><th>Artículo</th><th>Renglón</th><th>Cantidad ingresada</th><th>Costo unitario</th><th>División</th><th>Cantidad a asignar</th><th>Acción</th></tr>
+            </thead>
+            <tbody>
+              {% for detalle in detalles_factura %}
+              <tr class="asignacion-row" data-detalle="{{ detalle.id }}">
+                <td>{{ detalle.articulo.codigo }}</td>
+                <td>{{ detalle.articulo.nombre }}</td>
+                <td>{{ detalle.renglon|default:"S/R" }}</td>
+                <td>{{ detalle.cantidad }}</td>
+                <td>{{ detalle.precio_unitario }}</td>
+                <td>
+                  <input type="hidden" name="detalle_id" value="{{ detalle.id }}">
+                  <select name="division_id" class="form-control" required>
+                    <option value="">Seleccione</option>
+                    {% for division in divisiones_activas %}<option value="{{ division.id }}">{{ division.nombre }}</option>{% endfor %}
+                  </select>
+                </td>
+                <td><input type="number" name="cantidad_asignada" class="form-control" min="0.01" step="0.01" value="{{ detalle.cantidad }}" required></td>
+                <td><button type="button" class="btn btn-sm btn-primary agregar-asignacion">+</button></td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="8" class="text-center">No hay detalles para asignar.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-warning">Confirmar 1H</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <!-- Modal para seleccionar artículo con imagen de fondo -->
 <div class="modal fade" id="detalleFacturaModal" tabindex="-1" aria-labelledby="detalleFacturaModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg">
@@ -440,12 +485,27 @@ table.order-details th {
                   {% for articulo in articulos %}
                     <option 
                       value="{{ articulo.id }}"
+                      data-codigo="{{ articulo.codigo }}"
+                      data-nombre="{{ articulo.nombre }}"
+                      data-renglon="{{ articulo.renglon_presupuestario|default:'S/R' }}"
+                      data-categoria="{{ articulo.categoria.nombre|default:'S/C' }}"
+                      data-unidad="{{ articulo.unidad_medida|default:'S/U' }}"
                       data-requiere-vencimiento="{{ articulo.requiere_vencimiento|yesno:'true,false' }}"
                       data-requiere-inventario="{{ articulo.requiere_inventario_individual|yesno:'true,false' }}">
                       {{ articulo.codigo }} - {{ articulo.nombre }} — Categoría: {{ articulo.categoria.nombre|default:"S/C" }} — Renglón: {{ articulo.renglon_presupuestario|default:"S/R" }}
                     </option>
                   {% endfor %}
                 </select>
+              </div>
+
+              <div class="col-md-12 mb-3">
+                <div class="alert alert-light border mb-0" id="articuloInfo">
+                  <strong id="articulo-codigo">—</strong> |
+                  <span id="articulo-nombre">Seleccione un artículo</span> |
+                  Renglón del artículo: <span id="renglon-articulo" class="badge badge-light-primary">S/R</span> |
+                  Categoría: <span id="categoria-articulo">S/C</span> |
+                  Unidad: <span id="unidad-articulo">S/U</span>
+                </div>
               </div>
 
               <!-- Campo para ingresar la cantidad -->
@@ -468,25 +528,6 @@ table.order-details th {
                 </div>
                 <button type="button" id="addInventarioRow" class="btn btn-sm btn-primary mt-2">+ Agregar fila</button>
               </div>
-
-              <!-- Línea reservada -->
-              <div class="col-md-6 mb-3">
-                <label for="detalle_numero_linea" class="form-label">Número de Línea</label>
-                <select name="detalle_numero_linea" class="form-control" required>
-                  {% for linea in lineas_reservadas %}
-                    <option value="{{ linea.numero_linea }}">{{ linea.numero_linea }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-
-              <!-- Renglón -->
-              <div class="col-md-6 mb-3">
-                <label for="renglon" class="form-label">Renglón</label>
-                <input type="number" id="renglon" class="form-control" name="renglon" value="{{ renglon_value }}" required />
-              </div>
-
-              <!-- Campo oculto para 'id_linea' -->
-              <input type="hidden" name="id_linea" value="{{ id_linea_value }}">
 
               <!-- Fecha de vencimiento -->
               <div class="col-md-6 mb-3" id="fechaVencimientoContainer" style="display:none;">
@@ -573,6 +614,12 @@ table.order-details th {
       const selected = selectArticulo.options[selectArticulo.selectedIndex];
       const requiereInventario = selected.getAttribute('data-requiere-inventario') === 'true';
       const requiereVencimiento = selected.getAttribute('data-requiere-vencimiento') === 'true';
+
+      document.getElementById('articulo-codigo').textContent = selected.dataset.codigo || '—';
+      document.getElementById('articulo-nombre').textContent = selected.dataset.nombre || 'Seleccione un artículo';
+      document.getElementById('renglon-articulo').textContent = selected.dataset.renglon || 'S/R';
+      document.getElementById('categoria-articulo').textContent = selected.dataset.categoria || 'S/C';
+      document.getElementById('unidad-articulo').textContent = selected.dataset.unidad || 'S/U';
 
       inventarioFields.style.display = requiereInventario ? 'block' : 'none';
       fechaVencContainer.style.display = requiereVencimiento ? 'block' : 'none';
@@ -833,10 +880,10 @@ document.querySelectorAll('.seleccionar-articulo').forEach(button => {
 
             </div>
 
-            <!-- Campo Renglón -->
+            <!-- Renglón definido por el artículo (no editable) -->
             <div class="mb-3">
-              <label for="editarRenglon" class="form-label">Renglón</label>
-              <input type="number" class="form-control" id="editarRenglon" name="renglon" required>
+              <label class="form-label">Renglón del artículo</label>
+              <span class="badge badge-light-primary" id="editarRenglon">S/R</span>
             </div>
 
 <div class="mb-3" id="fechaVencimientoContainer" style="visibility: hidden; height: 70px;">
@@ -902,7 +949,7 @@ function toggleFechaVencimiento() {
             selectArticulo.value = data.articulo.toString();
             document.getElementById('editarCantidad').value = data.cantidad;
             document.getElementById('editarPrecio').value = data.precio_unitario;
-            document.getElementById('editarRenglon').value = data.renglon;
+            document.getElementById('editarRenglon').textContent = data.renglon || 'S/R';
 
             toggleFechaVencimiento();
 
@@ -1007,6 +1054,7 @@ function toggleFechaVencimiento() {
     // wrapper quedaban recortados detrás de él. Reubicar solo los modales de esta
     // vista conserva sus IDs, triggers y formularios sin alterar otros modales.
     [
+      'asignarDivisionesModal',
       'detalleFacturaModal',
       'crearArticuloModal',
       'editarDetalleModal',
@@ -1016,6 +1064,23 @@ function toggleFechaVencimiento() {
       if (modal && modal.parentElement !== document.body) {
         document.body.appendChild(modal);
       }
+    });
+
+    document.querySelectorAll('.agregar-asignacion').forEach((button) => {
+      button.addEventListener('click', function () {
+        const original = this.closest('.asignacion-row');
+        const nueva = original.cloneNode(true);
+        nueva.querySelectorAll('td').forEach((celda, indice) => {
+          if (indice < 5) celda.textContent = '';
+        });
+        nueva.querySelector('select').value = '';
+        nueva.querySelector('input[name="cantidad_asignada"]').value = '';
+        const accion = nueva.querySelector('.agregar-asignacion');
+        accion.textContent = '−';
+        accion.classList.replace('btn-primary', 'btn-danger');
+        accion.addEventListener('click', () => nueva.remove());
+        original.parentNode.insertBefore(nueva, original.nextSibling);
+      });
     });
 
     let deleteUrl = ''; // URL del detalle a eliminar
