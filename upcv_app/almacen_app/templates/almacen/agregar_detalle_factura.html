@@ -1,4 +1,5 @@
 {% extends 'almacen/base.html' %} {% load static %} {% block content %}
+{% load moneda_filters %}
 
 
 <style>
@@ -161,7 +162,7 @@ table.order-details th {
                     </td>
                     <td style="width: 40%">
                       <span style="opacity: 0.8">Fecha de Factura</span>
-                      <h6>{{ form1h_instance.fecha_factura|date:"d/m/Y" }}</h6>
+                      <h6>{{ form1h_instance.fecha_factura|fecha_corta }}</h6>
                     </td>
                     <td>
                       <span style="opacity: 0.8">Número de Factura</span>
@@ -189,7 +190,7 @@ table.order-details th {
                     </td>
                     <td style="width: 36%">
                       <span style="opacity: 0.8">Fecha de Ingreso</span>
-                      <h6>{{ form1h_instance.fecha_ingreso|date:"d/m/Y" }}</h6>
+                      <h6>{{ form1h_instance.fecha_ingreso|fecha_corta }}</h6>
                     </td>
                     <td>
                       <span style="opacity: 0.8">Programa</span>
@@ -303,13 +304,13 @@ table.order-details th {
                       {% endif %}
                     </td>
                     <td style="padding: 18px 15px">
-                      <span>Q{{ detalle.precio_unitario }}</span>
+                      <span>{{ detalle.precio_unitario|quetzales }}</span>
                     </td>
                     <td style="padding: 18px 15px">
                       <span>{{ detalle.cantidad }}</span>
                     </td>
                     <td style="padding: 18px 15px; text-align: right">
-                      <span>Q{{ detalle.precio_total }}</span>
+                      <span>{{ detalle.precio_total|quetzales }}</span>
                     </td>
 <td style="text-align: center; vertical-align: middle;">
   {% if form1h_instance.estado != 'confirmado' and form1h_instance.estado != 'anulado' %}
@@ -344,7 +345,7 @@ table.order-details th {
                       Total:
                     </td>
                     <td style="text-align: right; font-weight: bold">
-                      Q{{ total_factura }}
+                      {{ total_factura|quetzales }}
                     </td>
                   </tr>
                 </tbody>
@@ -420,7 +421,7 @@ table.order-details th {
                 <td>{{ detalle.articulo.nombre }}</td>
                 <td>{{ detalle.renglon|default:"S/R" }}</td>
                 <td>{{ detalle.cantidad }}</td>
-                <td>{{ detalle.precio_unitario }}</td>
+                <td>{{ detalle.precio_unitario|quetzales }}</td>
                 <td>
                   <input type="hidden" name="detalle_id" value="{{ detalle.id }}">
                   <select name="division_id" class="form-control" required>

@@ -1,3 +1,4 @@
+{% load moneda_filters %}
 <!-- detalle_factura.html -->
 <h1>Detalle de la Factura</h1>
 
@@ -9,6 +10,6 @@
 <p><strong>Teléfono del Proveedor:</strong> {{ factura.telefono_proveedor }}</p>
 <p><strong>Dirección del Proveedor:</strong> {{ factura.direccion_proveedor }}</p>
 <p><strong>Patente:</strong> {{ factura.patente }}</p>
-<p><strong>Fecha de la Factura:</strong> {{ factura.fecha_factura }}</p>
-<p><strong>Fecha de Ingreso:</strong> {{ factura.fecha_ingreso }}</p>
+<p><strong>Fecha de la Factura:</strong> {{ factura.fecha_factura|fecha_corta }}</p>
+<p><strong>Fecha de Ingreso:</strong> {{ factura.fecha_ingreso|fecha_corta }}</p>
 <p><strong>Serie:</strong> {{ factura.numero_serie_completo }}</p>

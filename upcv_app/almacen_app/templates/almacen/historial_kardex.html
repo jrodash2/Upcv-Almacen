@@ -1,4 +1,5 @@
 {% extends 'almacen/base.html' %}
+{% load moneda_filters %}
 {% load static %}
 {% load custom_filters %}
 {% block content %}
@@ -51,7 +52,7 @@
             <tbody>
               {% for m in movimientos %}
               <tr>
-                <td>{{ m.fecha|date:"Y-m-d H:i" }}</td>
+                <td>{{ m.fecha|fecha_corta }}</td>
                 <td>{{ m.get_tipo_movimiento_display }}</td>
                 <td>{{ m.cantidad }}</td>
                 <td>{{ m.saldo_anterior }}</td>

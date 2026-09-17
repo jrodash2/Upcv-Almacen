@@ -1,3 +1,4 @@
+{% load moneda_filters %}
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
@@ -47,7 +48,7 @@
   <div class="row"><strong>A:</strong> Sección de Almacén e Inventarios</div>
 
   <div class="row">
-    <strong>FECHA:</strong> {{ solicitud.creado_en|date:"d/m/Y" }}
+    <strong>FECHA:</strong> {{ solicitud.creado_en|fecha_corta }}
     <span class="checkbox">{% if solicitud.es_bienes %}X{% endif %}</span> BIENES
     <span class="checkbox">{% if solicitud.es_suministros %}X{% endif %}</span> SUMINISTROS
     <span class="checkbox">{% if solicitud.es_insumos %}X{% endif %}</span> INSUMOS

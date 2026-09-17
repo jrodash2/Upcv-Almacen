@@ -1,4 +1,5 @@
 {% extends 'almacen/base.html' %}
+{% load moneda_filters %}
 {% block title %}Historial de Transferencias{% endblock %}
 {% block content %}
 <div class="page-body">
@@ -31,7 +32,7 @@
                 <td>{{ transferencia.cantidad }}</td>
                 <td>{{ transferencia.departamento_origen.nombre }}</td>
                 <td>{{ transferencia.departamento_destino.nombre }}</td>
-                <td>{{ transferencia.fecha_transferencia }}</td>
+                <td>{{ transferencia.fecha_transferencia|fecha_corta }}</td>
                 <td>{{ transferencia.usuario.username }}</td>
               </tr>
               {% endfor %}
