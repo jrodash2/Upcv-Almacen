@@ -1,3 +1,4 @@
+{% load moneda_filters %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -138,8 +139,8 @@
                     <td></td><td></td><td><strong>VIENEN</strong></td>
                     <td colspan="6"></td>
                     <td>{{ fila.saldo_unidades }}</td>
-                    <td>{{ fila.saldo_costo_unitario|floatformat:5 }}</td>
-                    <td>{{ fila.saldo_costo_total|floatformat:2 }}</td>
+                    <td>{{ fila.saldo_costo_unitario|quetzales }}</td>
+                    <td>{{ fila.saldo_costo_total|quetzales }}</td>
                     <td></td>
                 </tr>
                 {% elif fila.tipo == 'VAN' %}
@@ -147,30 +148,30 @@
                     <td></td><td></td><td><strong>VAN</strong></td>
                     <td colspan="6"></td>
                     <td>{{ fila.saldo_unidades }}</td>
-                    <td>{{ fila.saldo_costo_unitario|floatformat:5 }}</td>
-                    <td>{{ fila.saldo_costo_total|floatformat:2 }}</td>
+                    <td>{{ fila.saldo_costo_unitario|quetzales }}</td>
+                    <td>{{ fila.saldo_costo_total|quetzales }}</td>
                     <td></td>
                 </tr>
                 {% else %}
                 <tr>
                     <td>{{ fila.nro }}</td>
-                    <td>{{ fila.movimiento.fecha|date:"d/m/Y" }}</td>
+                    <td>{{ fila.movimiento.fecha|fecha_corta }}</td>
                     <td>{{ fila.movimiento.get_tipo_movimiento_display }}</td>
 
                     <!-- Entradas -->
                     <td>{% if fila.movimiento.tipo_movimiento == 'INGRESO' %}{{ fila.movimiento.cantidad }}{% else %} 0 {% endif %}</td>
-                    <td>{% if fila.movimiento.tipo_movimiento == 'INGRESO' %}{{ fila.movimiento.precio_unitario|floatformat:2 }}{% else %} 0.00 {% endif %}</td>
-                    <td>{% if fila.movimiento.tipo_movimiento == 'INGRESO' %}{{ fila.movimiento.precio_total|floatformat:2 }}{% else %} 0.00 {% endif %}</td>
+                    <td>{% if fila.movimiento.tipo_movimiento == 'INGRESO' %}{{ fila.movimiento.precio_unitario|quetzales }}{% else %} Q0.00 {% endif %}</td>
+                    <td>{% if fila.movimiento.tipo_movimiento == 'INGRESO' %}{{ fila.movimiento.precio_total|quetzales }}{% else %} Q0.00 {% endif %}</td>
 
                     <!-- Salidas -->
                     <td>{% if fila.movimiento.tipo_movimiento == 'SALIDA' %}{{ fila.movimiento.cantidad }}{% else %} 0 {% endif %}</td>
-                    <td>{% if fila.movimiento.tipo_movimiento == 'SALIDA' %}{{ fila.movimiento.precio_unitario|floatformat:2 }}{% else %} 0.00 {% endif %}</td>
-                    <td>{% if fila.movimiento.tipo_movimiento == 'SALIDA' %}{{ fila.movimiento.precio_total|floatformat:2 }}{% else %} 0.00 {% endif %}</td>
+                    <td>{% if fila.movimiento.tipo_movimiento == 'SALIDA' %}{{ fila.movimiento.precio_unitario|quetzales }}{% else %} Q0.00 {% endif %}</td>
+                    <td>{% if fila.movimiento.tipo_movimiento == 'SALIDA' %}{{ fila.movimiento.precio_total|quetzales }}{% else %} Q0.00 {% endif %}</td>
 
                     <!-- Saldo -->
                     <td>{{ fila.movimiento.saldo_actual }}</td>
-                    <td>{{ fila.movimiento.precio_unitario_saldo|floatformat:5 }}</td>
-                    <td>{{ fila.movimiento.saldo_costo_total|floatformat:2 }}</td>
+                    <td>{{ fila.movimiento.precio_unitario_saldo|quetzales }}</td>
+                    <td>{{ fila.movimiento.saldo_costo_total|quetzales }}</td>
                     <td>{{ fila.movimiento.observacion }}</td>
                 </tr>
                 {% endif %}
@@ -190,13 +191,13 @@
         <td colspan="3" style="text-align: left; font-weight: bold; width: 120px; height: 30px;">Totales</td>
         <td style="font-weight: bold; text-align: center; width: 40px;">{{ totales.total_ingresos }}</td>
         <td style="width: 40px;"></td>
-        <td style="font-weight: bold; text-align: center; width: 40px;">{{ totales.total_costo_ingresos|floatformat:2 }}</td>
+        <td style="font-weight: bold; text-align: center; width: 40px;">{{ totales.total_costo_ingresos|quetzales }}</td>
         <td style="font-weight: bold; text-align: center; width: 40px;">{{ totales.total_salidas }}</td>
         <td style="width: 40px;"></td>
-        <td style="font-weight: bold; text-align: left; width: 40px;">{{ totales.total_costo_salidas|floatformat:2 }}</td>
+        <td style="font-weight: bold; text-align: left; width: 40px;">{{ totales.total_costo_salidas|quetzales }}</td>
         <td style="font-weight: bold; text-align: left; width: 40px;">{{ totales.saldo_final_unidades }}</td>
         <td style="width: 40px;"></td>
-        <td style="font-weight: bold; text-align: left; width: 40px;">{{ totales.saldo_final_costo|floatformat:2 }}</td>
+        <td style="font-weight: bold; text-align: left; width: 40px;">{{ totales.saldo_final_costo|quetzales }}</td>
         <td style="width: 350px;"></td>
     </tr>
 </table>

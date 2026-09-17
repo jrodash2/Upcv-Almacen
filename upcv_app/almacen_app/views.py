@@ -247,7 +247,8 @@ def exportar_detalle_factura_excel(request, form1h_id):
     ws["A2"] = "Programa:"
     ws["B2"] = str(form1h_instance.programa)
     ws["D2"] = "Fecha:"
-    ws["E2"] = form1h_instance.fecha_factura.strftime("%d/%m/%Y")
+    ws["E2"] = form1h_instance.fecha_factura
+    ws["E2"].number_format = "DD/MM/YYYY"
 
     ws["A3"] = "Proveedor:"
     ws["B3"] = str(form1h_instance.proveedor)
@@ -273,8 +274,8 @@ def exportar_detalle_factura_excel(request, form1h_id):
                         d.articulo.nombre,
                         d.renglon,
                         getattr(d, 'numero_linea', ''),
-                        f"Q{d.precio_unitario}",
-                        f"Q{d.precio_total}",
+                        d.precio_unitario,
+                        d.precio_total,
                         inv.folio_inventario,
                         inv.nomenclatura
                     ])
@@ -290,10 +291,14 @@ def exportar_detalle_factura_excel(request, form1h_id):
                 d.articulo.nombre,
                 d.renglon,
                 getattr(d, 'numero_linea', ''),
-                f"Q{d.precio_unitario}",
-                f"Q{d.precio_total}",
+                d.precio_unitario,
+                d.precio_total,
                 "-", "-"
             ])
+
+    for row in ws.iter_rows(min_row=5, min_col=5, max_col=6):
+        for cell in row:
+            cell.number_format = '"Q"#,##0.00'
 
     # Alinear texto en celdas
     for row in ws.iter_rows():

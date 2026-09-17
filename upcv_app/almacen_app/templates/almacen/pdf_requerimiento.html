@@ -1,3 +1,4 @@
+{% load moneda_filters %}
 {% load static %}
 {% load custom_filters %}
 <!DOCTYPE html>
@@ -263,7 +264,7 @@
       <td class="text-bold" style="width: 24%;">DEPARTAMENTO O SECCIÓN SOLICITANTE</td>
       <td style="width: 40%;">{{ departamento_solicitante }}</td>
       <td class="text-bold text-center" style="width: 12%;">FECHA</td>
-      <td class="text-center" style="width: 24%;">{{ fecha }}</td>
+      <td class="text-center" style="width: 24%;">{{ fecha|fecha_corta }}</td>
     </tr>
     <tr>
       <td class="text-bold">ELABORADO POR</td>

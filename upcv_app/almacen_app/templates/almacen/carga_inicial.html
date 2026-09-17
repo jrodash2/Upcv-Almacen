@@ -1,4 +1,5 @@
 {% extends 'almacen/base.html' %}
+{% load moneda_filters %}
 {% load static %}
 {% block content %}
 <div class="page-body">
@@ -32,7 +33,7 @@
           <table class="display datatables" id="tabla-carga-inicial">
             <thead><tr><th>Código</th><th>Renglón</th><th>Artículo</th><th>Categoría</th><th>Unidad</th><th>Cantidad</th><th>Costo unitario</th><th>Total</th><th>Estado</th></tr></thead>
             <tbody>{% for fila in filas %}<tr>
-              <td>{{ fila.codigo|default:'—' }}</td><td>{{ fila.renglon|default:'S/R' }}</td><td>{{ fila.nombre|default:'—' }}</td><td>{{ fila.categoria|default:'S/C' }}</td><td>{{ fila.unidad }}</td><td>{{ fila.cantidad }}</td><td>Q {{ fila.costo_unitario }}</td><td>Q {{ fila.total }}</td>
+              <td>{{ fila.codigo|default:'—' }}</td><td>{{ fila.renglon|default:'S/R' }}</td><td>{{ fila.nombre|default:'—' }}</td><td>{{ fila.categoria|default:'S/C' }}</td><td>{{ fila.unidad }}</td><td>{{ fila.cantidad }}</td><td>{{ fila.costo_unitario|quetzales }}</td><td>{{ fila.total|quetzales }}</td>
               <td>{% if fila.estado == 'error' %}<span class="badge badge-light-danger">Error</span>{% elif fila.estado == 'actualizar' %}<span class="badge badge-light-info">Ya existe, se actualizará</span>{% else %}<span class="badge badge-light-success">Nuevo artículo</span>{% endif %}
                 {% for error in fila.errores %}<div class="text-danger small">Fila {{ fila.fila }}: {{ error }}.</div>{% endfor %}
                 {% for advertencia in fila.advertencias %}<div class="mt-1"><span class="badge badge-light-warning">Advertencia</span><small> {{ advertencia }}</small></div>{% endfor %}
@@ -53,7 +54,7 @@
 
     <div class="card">
       <div class="card-header pb-0 card-no-border d-flex justify-content-between"><h4>Últimas cargas</h4><a class="btn btn-outline-primary btn-sm" href="{% url 'almacen:carga_inicial_historial' %}">Ver historial</a></div>
-      <div class="card-body"><div class="table-responsive"><table class="table"><thead><tr><th>Fecha</th><th>Archivo</th><th>Usuario</th><th>Filas</th><th>Estado</th></tr></thead><tbody>{% for carga in historial %}<tr><td>{{ carga.fecha_carga|date:'d/m/Y H:i' }}</td><td><a href="{{ carga.archivo.url }}">{{ carga.nombre_archivo }}</a></td><td>{{ carga.usuario.username }}</td><td>{{ carga.filas_validas }}/{{ carga.total_filas }}</td><td><span class="badge badge-light-success">{{ carga.get_estado_display }}</span></td></tr>{% empty %}<tr><td colspan="5" class="text-center">No hay cargas procesadas.</td></tr>{% endfor %}</tbody></table></div></div>
+      <div class="card-body"><div class="table-responsive"><table class="table"><thead><tr><th>Fecha</th><th>Archivo</th><th>Usuario</th><th>Filas</th><th>Estado</th></tr></thead><tbody>{% for carga in historial %}<tr><td>{{ carga.fecha_carga|fecha_corta }}</td><td><a href="{{ carga.archivo.url }}">{{ carga.nombre_archivo }}</a></td><td>{{ carga.usuario.username }}</td><td>{{ carga.filas_validas }}/{{ carga.total_filas }}</td><td><span class="badge badge-light-success">{{ carga.get_estado_display }}</span></td></tr>{% empty %}<tr><td colspan="5" class="text-center">No hay cargas procesadas.</td></tr>{% endfor %}</tbody></table></div></div>
     </div>
   </div>
 </div>

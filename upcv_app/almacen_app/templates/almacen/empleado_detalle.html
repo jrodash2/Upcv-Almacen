@@ -1,4 +1,5 @@
 {% extends 'empleados/base.html' %}
+{% load moneda_filters %}
 
 {% load static %}
 
@@ -184,7 +185,7 @@
                 <div>
                   <svg width="600" height="1004">
                     <text x="50%" y="900" class="t" font-size="30" font-weight="bold" fill="#182b55" text-anchor="middle">
-                      Válido hasta el {{ empleado.fecha_vencimiento|date:"d F Y" }}
+                      Válido hasta el {{ empleado.fecha_vencimiento|fecha_corta }}
                     </text>
                   </svg>
                 </div>

@@ -1,4 +1,5 @@
 {% extends 'almacen/base.html' %}
+{% load moneda_filters %}
 {% load static %}
 
 {% block content %}
@@ -79,8 +80,8 @@
         <span class="badge badge-light-danger">0</span>
       {% endif %}
     </td>
-    <td>Q{{ detalle.precio_unitario }}</td>
-    <td>{{ detalle.fecha_vencimiento }}</td>
+    <td>{{ detalle.precio_unitario|quetzales }}</td>
+    <td>{{ detalle.fecha_vencimiento|fecha_corta }}</td>
     <td>{{ detalle.form1h.numero_factura }}</td>
   </tr>
   {% endfor %}
@@ -145,8 +146,8 @@
         <span class="badge badge-light-danger">0</span>
       {% endif %}
     </td>
-    <td>Q{{ detalle.precio_unitario }}</td>
-    <td>{{ detalle.fecha_vencimiento }}</td>
+    <td>{{ detalle.precio_unitario|quetzales }}</td>
+    <td>{{ detalle.fecha_vencimiento|fecha_corta }}</td>
     <td>{{ detalle.form1h.numero_factura }}</td>
   </tr>
   {% endfor %}
