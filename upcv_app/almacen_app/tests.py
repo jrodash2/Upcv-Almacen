@@ -1,9 +1,61 @@
 from datetime import date, datetime, timezone as datetime_timezone
 from decimal import Decimal
 
-from django.test import SimpleTestCase
+from django.test import SimpleTestCase, TestCase
 
+from .form import Form1hForm
+from .models import Dependencia, Programa
 from .templatetags.moneda_filters import fecha_corta, quetzales
+
+
+class Form1hFormTests(TestCase):
+    def test_preselecciona_primera_dependencia_y_programa_activos(self):
+        primera_dependencia = Dependencia.objects.create(nombre="Primera")
+        Dependencia.objects.create(nombre="Segunda")
+        primera_programa = Programa.objects.create(nombre="Primero")
+        Programa.objects.create(nombre="Segundo")
+
+        formulario = Form1hForm()
+
+        self.assertEqual(
+            formulario.fields["dependencia"].initial, primera_dependencia
+        )
+        self.assertEqual(formulario.fields["programa"].initial, primera_programa)
+
+    def test_excluye_opciones_inactivas(self):
+        Dependencia.objects.create(nombre="Inactiva", activo=False)
+        dependencia_activa = Dependencia.objects.create(nombre="Activa")
+        Programa.objects.create(nombre="Inactivo", activo=False)
+        programa_activo = Programa.objects.create(nombre="Activo")
+
+        formulario = Form1hForm()
+
+        self.assertEqual(
+            list(formulario.fields["dependencia"].queryset), [dependencia_activa]
+        )
+        self.assertEqual(
+            list(formulario.fields["programa"].queryset), [programa_activo]
+        )
+
+    def test_respeta_valores_iniciales_existentes(self):
+        primera_dependencia = Dependencia.objects.create(nombre="Primera")
+        dependencia_inicial = Dependencia.objects.create(nombre="Inicial")
+        primer_programa = Programa.objects.create(nombre="Primero")
+        programa_inicial = Programa.objects.create(nombre="Inicial")
+
+        formulario = Form1hForm(
+            initial={
+                "dependencia": dependencia_inicial,
+                "programa": programa_inicial,
+            }
+        )
+
+        self.assertEqual(formulario.initial["dependencia"], dependencia_inicial)
+        self.assertEqual(formulario.initial["programa"], programa_inicial)
+        self.assertNotEqual(
+            formulario.initial["dependencia"], primera_dependencia
+        )
+        self.assertNotEqual(formulario.initial["programa"], primer_programa)
 
 
 class FormatoVisualTests(SimpleTestCase):

@@ -253,6 +253,21 @@ class Form1hForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(Form1hForm, self).__init__(*args, **kwargs)
+
+        self.fields['dependencia'].queryset = Dependencia.objects.filter(activo=True)
+        self.fields['programa'].queryset = Programa.objects.filter(activo=True)
+
+        if not self.is_bound and not self.instance.pk:
+            if not self.initial.get('dependencia'):
+                self.fields['dependencia'].initial = (
+                    self.fields['dependencia'].queryset.order_by('id').first()
+                )
+
+            if not self.initial.get('programa'):
+                self.fields['programa'].initial = (
+                    self.fields['programa'].queryset.order_by('id').first()
+                )
+
         for field in self.fields.values():
             field.widget.attrs['class'] = field.widget.attrs.get('class', '') + ' form-control'
 
