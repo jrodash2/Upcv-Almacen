@@ -254,8 +254,8 @@ class Form1hForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(Form1hForm, self).__init__(*args, **kwargs)
 
-        self.fields['dependencia'].queryset = Dependencia.objects.filter(activo=True)
-        self.fields['programa'].queryset = Programa.objects.filter(activo=True)
+        self.fields['dependencia'].queryset = Dependencia.objects.order_by('id')
+        self.fields['programa'].queryset = Programa.objects.order_by('id')
 
         if not self.is_bound and not self.instance.pk:
             if not self.initial.get('dependencia'):

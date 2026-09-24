@@ -9,10 +9,12 @@ from .templatetags.moneda_filters import fecha_corta, quetzales
 
 
 class Form1hFormTests(TestCase):
-    def test_preselecciona_primera_dependencia_y_programa_activos(self):
-        primera_dependencia = Dependencia.objects.create(nombre="Primera")
+    def test_preselecciona_primera_dependencia_y_programa_disponibles(self):
+        primera_dependencia = Dependencia.objects.create(
+            nombre="Primera", activo=False
+        )
         Dependencia.objects.create(nombre="Segunda")
-        primera_programa = Programa.objects.create(nombre="Primero")
+        primera_programa = Programa.objects.create(nombre="Primero", activo=False)
         Programa.objects.create(nombre="Segundo")
 
         formulario = Form1hForm()
@@ -22,19 +24,23 @@ class Form1hFormTests(TestCase):
         )
         self.assertEqual(formulario.fields["programa"].initial, primera_programa)
 
-    def test_excluye_opciones_inactivas(self):
-        Dependencia.objects.create(nombre="Inactiva", activo=False)
+    def test_muestra_todas_las_opciones_disponibles(self):
+        dependencia_inactiva = Dependencia.objects.create(
+            nombre="Inactiva", activo=False
+        )
         dependencia_activa = Dependencia.objects.create(nombre="Activa")
-        Programa.objects.create(nombre="Inactivo", activo=False)
+        programa_inactivo = Programa.objects.create(nombre="Inactivo", activo=False)
         programa_activo = Programa.objects.create(nombre="Activo")
 
         formulario = Form1hForm()
 
         self.assertEqual(
-            list(formulario.fields["dependencia"].queryset), [dependencia_activa]
+            list(formulario.fields["dependencia"].queryset),
+            [dependencia_inactiva, dependencia_activa],
         )
         self.assertEqual(
-            list(formulario.fields["programa"].queryset), [programa_activo]
+            list(formulario.fields["programa"].queryset),
+            [programa_inactivo, programa_activo],
         )
 
     def test_respeta_valores_iniciales_existentes(self):
