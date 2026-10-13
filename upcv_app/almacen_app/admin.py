@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import (
     Proveedor, Departamento, Categoria, Ubicacion, UnidadDeMedida, 
     Articulo, Kardex, AsignacionDetalleFactura, Movimiento, FraseMotivacional, 
-    Serie, form1h, DetalleFactura, Dependencia, Programa, UsuarioDepartamento, Requerimiento, DivisionAlmacen, DivisionUbicacion, DivisionArticulo, DivisionArticuloUbicacion
+    Serie, form1h, DetalleFactura, Dependencia, Programa, ReversionMovimiento, UsuarioDepartamento, Requerimiento, DivisionAlmacen, DivisionUbicacion, DivisionArticulo, DivisionArticuloUbicacion
 )
 
 
@@ -97,11 +97,36 @@ admin.site.register(Serie, SerieAdmin)
 
 # Registrar Kardex
 class KardexAdmin(admin.ModelAdmin):
-    list_display = ('articulo', 'tipo_movimiento', 'cantidad', 'fecha', 'observacion')
+    list_display = ('articulo', 'tipo_movimiento', 'cantidad', 'fecha', 'estado', 'observacion')
     search_fields = ('articulo__codigo', 'articulo__nombre')
-    list_filter = ('tipo_movimiento', 'fecha')
+    list_filter = ('tipo_movimiento', 'estado', 'fecha')
  
 admin.site.register(Kardex, KardexAdmin)
+
+
+@admin.register(ReversionMovimiento)
+class ReversionMovimientoAdmin(admin.ModelAdmin):
+    list_display = (
+        'fecha_reversion', 'realizado_por', 'articulo', 'cantidad',
+        'tipo_reversion', 'movimiento_original', 'movimiento_reversion',
+    )
+    list_filter = ('tipo_reversion', 'fecha_reversion', 'realizado_por')
+    search_fields = (
+        'articulo__codigo', 'articulo__nombre',
+        'movimiento_original__numero_kardex',
+        'movimiento_reversion__numero_kardex', 'justificacion',
+    )
+    readonly_fields = (
+        'movimiento_original', 'movimiento_reversion', 'tipo_reversion',
+        'articulo', 'cantidad', 'justificacion', 'realizado_por',
+        'fecha_reversion', 'documento_referencia', 'observacion_sistema',
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 # Registrar AsignacionDetalleFactura
 class AsignacionDetalleFacturaAdmin(admin.ModelAdmin):

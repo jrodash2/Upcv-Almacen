@@ -1,10 +1,12 @@
 from datetime import date, datetime, timezone as datetime_timezone
 from decimal import Decimal
 
+from django.contrib.auth.models import Group, User
 from django.test import SimpleTestCase, TestCase
+from django.urls import reverse
 
-from .form import Form1hForm
-from .models import Dependencia, Programa
+from .form import Form1hForm, ReversionMovimientoForm
+from .models import Articulo, Dependencia, Kardex, Programa, ReversionMovimiento
 from .templatetags.moneda_filters import fecha_corta, quetzales
 
 
@@ -91,3 +93,107 @@ class FormatoVisualTests(SimpleTestCase):
     def test_fecha_corta_conserva_valor_no_interpretable(self):
         self.assertEqual(fecha_corta(None), "")
         self.assertEqual(fecha_corta("sin fecha"), "sin fecha")
+
+
+class ReversionMovimientoFormTests(SimpleTestCase):
+    def test_justificacion_es_obligatoria_y_requiere_diez_caracteres(self):
+        formulario_vacio = ReversionMovimientoForm(data={"justificacion": ""})
+        formulario_corto = ReversionMovimientoForm(data={"justificacion": "corto"})
+
+        self.assertFalse(formulario_vacio.is_valid())
+        self.assertIn(
+            "Debe ingresar una justificación para realizar la reversión.",
+            formulario_vacio.errors["justificacion"],
+        )
+        self.assertFalse(formulario_corto.is_valid())
+        self.assertIn(
+            "La justificación debe tener al menos 10 caracteres.",
+            formulario_corto.errors["justificacion"],
+        )
+
+
+class ReversionesViewsTests(TestCase):
+    def setUp(self):
+        administradores = Group.objects.create(name="Administrador")
+        self.administrador = User.objects.create_user(
+            username="admin_reversion", password="secreto"
+        )
+        self.administrador.groups.add(administradores)
+        self.gestor = User.objects.create_user(username="gestor", password="secreto")
+        self.gestor.groups.add(Group.objects.create(name="Gestor"))
+        self.articulo = Articulo.objects.create(codigo="REV-001", nombre="Prueba")
+
+    def test_administrador_revierte_ingreso_y_no_puede_repetirlo(self):
+        original = Kardex.objects.create(
+            articulo=self.articulo, tipo_movimiento="INGRESO", cantidad=10
+        )
+        self.client.force_login(self.administrador)
+
+        respuesta = self.client.post(
+            reverse("almacen:crear_reversion", args=[original.id]),
+            {"justificacion": "Corrección administrativa"},
+        )
+
+        reversion = ReversionMovimiento.objects.get(movimiento_original=original)
+        original.refresh_from_db()
+        self.assertRedirects(
+            respuesta, reverse("almacen:detalle_reversion", args=[reversion.id])
+        )
+        self.assertEqual(original.estado, "revertido")
+        self.assertEqual(reversion.movimiento_reversion.tipo_movimiento, "SALIDA")
+        self.assertEqual(reversion.movimiento_reversion.estado, "reversion")
+        self.assertEqual(reversion.movimiento_reversion.saldo_actual, 0)
+
+        respuesta_repetida = self.client.post(
+            reverse("almacen:crear_reversion", args=[original.id]),
+            {"justificacion": "Segundo intento inválido"},
+        )
+        self.assertContains(respuesta_repetida, "Este movimiento ya fue revertido.")
+        self.assertEqual(ReversionMovimiento.objects.count(), 1)
+
+    def test_reversion_de_salida_genera_ingreso(self):
+        Kardex.objects.create(
+            articulo=self.articulo, tipo_movimiento="INGRESO", cantidad=10
+        )
+        salida = Kardex.objects.create(
+            articulo=self.articulo, tipo_movimiento="SALIDA", cantidad=4
+        )
+        self.client.force_login(self.administrador)
+
+        self.client.post(
+            reverse("almacen:crear_reversion", args=[salida.id]),
+            {"justificacion": "Salida registrada por error"},
+        )
+
+        reversion = ReversionMovimiento.objects.get(movimiento_original=salida)
+        self.assertEqual(reversion.movimiento_reversion.tipo_movimiento, "INGRESO")
+        self.assertEqual(reversion.movimiento_reversion.saldo_actual, 10)
+
+    def test_no_revierte_ingreso_sin_existencia_suficiente(self):
+        ingreso = Kardex.objects.create(
+            articulo=self.articulo, tipo_movimiento="INGRESO", cantidad=10
+        )
+        Kardex.objects.create(
+            articulo=self.articulo, tipo_movimiento="SALIDA", cantidad=6
+        )
+        self.client.force_login(self.administrador)
+
+        respuesta = self.client.post(
+            reverse("almacen:crear_reversion", args=[ingreso.id]),
+            {"justificacion": "Intento sin existencia suficiente"},
+        )
+
+        self.assertContains(
+            respuesta,
+            "No se puede revertir este ingreso porque la existencia actual del artículo no es suficiente.",
+        )
+        self.assertFalse(ReversionMovimiento.objects.exists())
+        ingreso.refresh_from_db()
+        self.assertEqual(ingreso.estado, "activo")
+
+    def test_gestor_no_accede_a_reversiones(self):
+        self.client.force_login(self.gestor)
+
+        respuesta = self.client.get(reverse("almacen:reversiones_historial"))
+
+        self.assertRedirects(respuesta, reverse("almacen:acceso_denegado"))
