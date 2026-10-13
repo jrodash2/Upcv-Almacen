@@ -413,6 +413,11 @@ class Kardex(models.Model):
         ('INGRESO', 'Ingreso'),
         ('SALIDA', 'Salida'),
     ]
+    ESTADO_CHOICES = [
+        ('activo', 'Activo'),
+        ('revertido', 'Revertido'),
+        ('reversion', 'Reversión'),
+    ]
 
     numero_kardex = models.CharField(max_length=20, unique=True, editable=False, blank=True)  # Nuevo campo
 
@@ -429,6 +434,15 @@ class Kardex(models.Model):
     fuente_despacho = models.ForeignKey('DetalleRequerimiento', null=True, blank=True, on_delete=models.SET_NULL, unique=True)
     
     observacion = models.TextField(null=True, blank=True)
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='activo')
+    movimiento_revertido = models.ForeignKey(
+        'self',
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name='movimientos_reversion',
+    )
+    motivo_reversion = models.TextField(null=True, blank=True)
 
     class Meta:
         ordering = ['fecha', 'id']  # Orden cronológico
@@ -459,6 +473,48 @@ class Kardex(models.Model):
             self.numero_kardex = f'KDX-{nuevo_numero:06d}'
 
         super().save(*args, **kwargs)
+
+
+class ReversionMovimiento(models.Model):
+    TIPO_REVERSION_CHOICES = [
+        ('INGRESO', 'Reversión de ingreso'),
+        ('SALIDA', 'Reversión de salida'),
+    ]
+
+    movimiento_original = models.OneToOneField(
+        Kardex,
+        on_delete=models.PROTECT,
+        related_name='reversion_realizada',
+    )
+    movimiento_reversion = models.OneToOneField(
+        Kardex,
+        on_delete=models.PROTECT,
+        related_name='reversion_generada',
+        null=True,
+        blank=True,
+    )
+    tipo_reversion = models.CharField(max_length=20, choices=TIPO_REVERSION_CHOICES)
+    articulo = models.ForeignKey(
+        Articulo,
+        on_delete=models.PROTECT,
+        related_name='reversiones',
+    )
+    cantidad = models.DecimalField(max_digits=12, decimal_places=2)
+    justificacion = models.TextField()
+    realizado_por = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name='reversiones_realizadas',
+    )
+    fecha_reversion = models.DateTimeField(auto_now_add=True)
+    documento_referencia = models.CharField(max_length=150, null=True, blank=True)
+    observacion_sistema = models.TextField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-fecha_reversion']
+
+    def __str__(self):
+        return f'Reversión de {self.movimiento_original} por {self.realizado_por}'
 
 
 # Modelo de Movimiento (Registra los movimientos internos, transferencias, etc.)

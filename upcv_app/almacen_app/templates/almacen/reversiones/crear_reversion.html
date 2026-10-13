@@ -1,0 +1,15 @@
+{% extends 'almacen/base.html' %}
+{% block title %}Confirmar reversión{% endblock %}
+{% block content %}
+<div class="page-body"><div class="container-fluid">
+  <div class="page-title"><div class="row"><div class="col-6"><h4>Confirmar reversión</h4></div><div class="col-6"><ol class="breadcrumb"><li class="breadcrumb-item">Almacén</li><li class="breadcrumb-item"><a href="{% url 'almacen:reversiones_movimientos' %}">Reversiones</a></li><li class="breadcrumb-item active">Confirmar</li></ol></div></div></div>
+  <div class="card"><div class="card-header pb-0 card-no-border"><h4>Movimiento original</h4><span>El movimiento original se conservará sin modificar sus cantidades históricas.</span></div><div class="card-body">
+    <div class="row g-3 mb-4"><div class="col-md-3"><strong>Número Kardex</strong><div>{{ movimiento.numero_kardex }}</div></div><div class="col-md-3"><strong>Fecha</strong><div>{{ movimiento.fecha|date:'d/m/Y H:i' }}</div></div><div class="col-md-3"><strong>Código</strong><div>{{ movimiento.articulo.codigo }}</div></div><div class="col-md-3"><strong>Artículo</strong><div>{{ movimiento.articulo.nombre }}</div></div><div class="col-md-3"><strong>Tipo</strong><div>{{ movimiento.get_tipo_movimiento_display }}</div></div><div class="col-md-3"><strong>Cantidad</strong><div>{{ movimiento.cantidad }}</div></div><div class="col-md-3"><strong>Existencia actual</strong><div>{{ movimiento.saldo_disponible }}</div></div><div class="col-md-3"><strong>Documento origen</strong><div>{{ movimiento.documento_origen }}</div></div></div>
+    <form method="post" novalidate>{% csrf_token %}
+      {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+      <div class="mb-3"><label class="form-label" for="{{ form.justificacion.id_for_label }}">Justificación de reversión</label>{{ form.justificacion }}{% for error in form.justificacion.errors %}<div class="text-danger mt-1">{{ error }}</div>{% endfor %}<small class="text-muted">Obligatoria, mínimo 10 caracteres.</small></div>
+      <div class="text-end"><a class="btn btn-outline-primary" href="{% url 'almacen:reversiones_movimientos' %}">Cancelar</a><button class="btn btn-danger" type="submit">Confirmar reversión</button></div>
+    </form>
+  </div></div>
+</div></div>
+{% endblock %}
