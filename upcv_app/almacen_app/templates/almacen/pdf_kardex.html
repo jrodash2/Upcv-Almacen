@@ -159,20 +159,20 @@
                     <td>{{ fila.movimiento.get_tipo_movimiento_display }}</td>
 
                     <!-- Entradas -->
-                    <td>{% if fila.movimiento.tipo_movimiento == 'INGRESO' %}{{ fila.movimiento.cantidad }}{% else %} 0 {% endif %}</td>
-                    <td>{% if fila.movimiento.tipo_movimiento == 'INGRESO' %}{{ fila.movimiento.precio_unitario|quetzales }}{% else %} Q0.00 {% endif %}</td>
-                    <td>{% if fila.movimiento.tipo_movimiento == 'INGRESO' %}{{ fila.movimiento.precio_total|quetzales }}{% else %} Q0.00 {% endif %}</td>
+                    <td>{{ fila.movimiento.entrada_cantidad }}</td>
+                    <td>{% if fila.movimiento.es_entrada %}{{ fila.movimiento.precio_unitario|quetzales }}{% else %}{{ 0|quetzales }}{% endif %}</td>
+                    <td>{{ fila.movimiento.entrada_costo_total|quetzales }}</td>
 
                     <!-- Salidas -->
-                    <td>{% if fila.movimiento.tipo_movimiento == 'SALIDA' %}{{ fila.movimiento.cantidad }}{% else %} 0 {% endif %}</td>
-                    <td>{% if fila.movimiento.tipo_movimiento == 'SALIDA' %}{{ fila.movimiento.precio_unitario|quetzales }}{% else %} Q0.00 {% endif %}</td>
-                    <td>{% if fila.movimiento.tipo_movimiento == 'SALIDA' %}{{ fila.movimiento.precio_total|quetzales }}{% else %} Q0.00 {% endif %}</td>
+                    <td>{{ fila.movimiento.salida_cantidad }}</td>
+                    <td>{% if fila.movimiento.es_salida %}{{ fila.movimiento.precio_unitario|quetzales }}{% else %}{{ 0|quetzales }}{% endif %}</td>
+                    <td>{{ fila.movimiento.salida_costo_total|quetzales }}</td>
 
                     <!-- Saldo -->
-                    <td>{{ fila.movimiento.saldo_actual }}</td>
+                    <td>{{ fila.movimiento.saldo_calculado }}</td>
                     <td>{{ fila.movimiento.precio_unitario_saldo|quetzales }}</td>
                     <td>{{ fila.movimiento.saldo_costo_total|quetzales }}</td>
-                    <td>{{ fila.movimiento.observacion }}</td>
+                    <td>{{ fila.movimiento.observacion }}{% if fila.movimiento.esta_revertido %}<br><strong>Revertido</strong>{% elif fila.movimiento.es_reversion %}<br><strong>Reversión</strong>{% endif %}{% if fila.movimiento.sin_costo %}<br><strong>Revisar costo</strong>{% endif %}</td>
                 </tr>
                 {% endif %}
             {% endfor %}

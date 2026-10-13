@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.models import User, Group
 from django.forms import CheckboxInput, DateInput, inlineformset_factory, modelformset_factory
 from django.core.exceptions import ValidationError
-from .models import DetalleFactura, Ubicacion, Perfil, UnidadDeMedida, Proveedor, Departamento, Categoria, Articulo, Departamento, Kardex, AsignacionDetalleFactura, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa, UsuarioDepartamento
+from .models import DetalleFactura, Ubicacion, Perfil, UnidadDeMedida, Proveedor, Departamento, Categoria, Articulo, Departamento, Kardex, AsignacionDetalleFactura, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa, ReversionMovimiento, UsuarioDepartamento
 
 from django.db.models import Sum, F, Value, Q
 from django.db.models.functions import Coalesce
@@ -253,8 +253,52 @@ class Form1hForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(Form1hForm, self).__init__(*args, **kwargs)
+
+        self.fields['dependencia'].queryset = Dependencia.objects.order_by('id')
+        self.fields['programa'].queryset = Programa.objects.order_by('id')
+
+        if not self.is_bound and not self.instance.pk:
+            if not self.initial.get('dependencia'):
+                self.fields['dependencia'].initial = (
+                    self.fields['dependencia'].queryset.order_by('id').first()
+                )
+
+            if not self.initial.get('programa'):
+                self.fields['programa'].initial = (
+                    self.fields['programa'].queryset.order_by('id').first()
+                )
+
         for field in self.fields.values():
             field.widget.attrs['class'] = field.widget.attrs.get('class', '') + ' form-control'
+
+
+class ReversionMovimientoForm(forms.ModelForm):
+    class Meta:
+        model = ReversionMovimiento
+        fields = ['justificacion']
+        error_messages = {
+            'justificacion': {
+                'required': 'Debe ingresar una justificación para realizar la reversión.',
+            },
+        }
+        widgets = {
+            'justificacion': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 5,
+                'minlength': 10,
+                'placeholder': 'Explique el motivo de la reversión',
+            }),
+        }
+
+    def clean_justificacion(self):
+        justificacion = (self.cleaned_data.get('justificacion') or '').strip()
+        if not justificacion:
+            raise ValidationError(
+                'Debe ingresar una justificación para realizar la reversión.'
+            )
+        if len(justificacion) < 10:
+            raise ValidationError('La justificación debe tener al menos 10 caracteres.')
+        return justificacion
 
 class DepartamentoForm(forms.ModelForm):
     class Meta:
