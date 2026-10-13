@@ -8,8 +8,8 @@ from django.contrib.auth.models import Group, User
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
-from .form import DependenciaForm, DetalleFacturaForm, DetalleRequerimientoForm, DetalleRequerimientoFormSet, Form1hForm, PerfilForm, ProgramaForm, RequerimientoForm, UserCreateForm, UserEditForm, UserCreateForm, UbicacionForm, UnidadDeMedidaForm, CategoriaForm, ProveedorForm, ArticuloForm, DepartamentoForm, SerieForm, AsignacionDetalleFacturaForm, UsuarioDepartamentoForm, InstitucionForm, SolicitudRequerimientoForm, DetalleSolicitudRequerimientoFormSet, DivisionAlmacenForm, DivisionUbicacionForm, DivisionArticuloForm
-from .models import existencia_general_articulo, ContadorDetalleFactura, DetalleFactura, DetalleFacturaDivision, DetalleRequerimiento, HistorialTransferencia, InventarioDetalle, LineaLibre, Perfil, Requerimiento, Ubicacion, UnidadDeMedida, Categoria, Proveedor, Articulo, Departamento, Kardex, AsignacionDetalleFactura, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa, LineaReservada, UsuarioDepartamento, Institucion, SolicitudRequerimiento, DetalleSolicitudRequerimiento, DivisionAlmacen, DivisionUbicacion, DivisionArticulo, DivisionArticuloUbicacion
+from .form import DependenciaForm, DetalleFacturaForm, DetalleRequerimientoForm, DetalleRequerimientoFormSet, Form1hForm, PerfilForm, ProgramaForm, RequerimientoForm, ReversionMovimientoForm, UserCreateForm, UserEditForm, UserCreateForm, UbicacionForm, UnidadDeMedidaForm, CategoriaForm, ProveedorForm, ArticuloForm, DepartamentoForm, SerieForm, AsignacionDetalleFacturaForm, UsuarioDepartamentoForm, InstitucionForm, SolicitudRequerimientoForm, DetalleSolicitudRequerimientoFormSet, DivisionAlmacenForm, DivisionUbicacionForm, DivisionArticuloForm
+from .models import existencia_general_articulo, ContadorDetalleFactura, DetalleFactura, DetalleFacturaDivision, DetalleRequerimiento, HistorialTransferencia, InventarioDetalle, LineaLibre, Perfil, Requerimiento, ReversionMovimiento, Ubicacion, UnidadDeMedida, Categoria, Proveedor, Articulo, Departamento, Kardex, AsignacionDetalleFactura, Movimiento, FraseMotivacional, Serie, form1h, Dependencia, Programa, LineaReservada, UsuarioDepartamento, Institucion, SolicitudRequerimiento, DetalleSolicitudRequerimiento, DivisionAlmacen, DivisionUbicacion, DivisionArticulo, DivisionArticuloUbicacion
 from django.views.generic import CreateView
 from django.views.generic import ListView
 from django.urls import reverse_lazy
@@ -3347,3 +3347,195 @@ def mis_articulos_asignados(request):
     deptos = UsuarioDepartamento.objects.filter(usuario=request.user).values_list('departamento_id', flat=True)
     asignaciones = DivisionArticuloUbicacion.objects.filter(ubicacion_id__in=deptos, activo=True).select_related('division_articulo__division','division_articulo__articulo')
     return render(request, 'almacen/divisiones/mis_articulos_asignados.html', {'asignaciones': asignaciones})
+
+
+def obtener_referencia_movimiento(movimiento):
+    if movimiento.fuente_factura_id:
+        formulario = movimiento.fuente_factura.form1h
+        return f'Formulario 1H {formulario.numero_serie_completo}'
+    if movimiento.fuente_despacho_id:
+        return f'Requerimiento REQ-{movimiento.fuente_despacho.requerimiento_id:06d}'
+    if movimiento.fuente_asignacion_id:
+        return f'Asignación directa #{movimiento.fuente_asignacion_id}'
+    return f'Kardex {movimiento.numero_kardex}'
+
+
+def _es_administrador(user):
+    return user.is_superuser or user.groups.filter(name='Administrador').exists()
+
+
+def _validar_acceso_reversion(request):
+    if _es_administrador(request.user):
+        return None
+    messages.error(request, 'No tiene permiso para realizar reversiones.')
+    return redirect('almacen:acceso_denegado')
+
+
+def _saldo_actual_articulo(articulo_id):
+    ultimo = Kardex.objects.filter(articulo_id=articulo_id).order_by('-fecha', '-id').first()
+    return ultimo.saldo_actual if ultimo else 0
+
+
+@login_required
+@grupo_requerido('Administrador')
+def reversiones_movimientos(request):
+    acceso_denegado = _validar_acceso_reversion(request)
+    if acceso_denegado:
+        return acceso_denegado
+
+    movimientos = list(Kardex.objects.select_related(
+        'articulo', 'fuente_factura__form1h', 'fuente_asignacion',
+        'fuente_despacho__requerimiento',
+    ).order_by('-fecha', '-id'))
+    saldos = {}
+    for movimiento in movimientos:
+        movimiento.documento_origen = obtener_referencia_movimiento(movimiento)
+        if movimiento.articulo_id not in saldos:
+            saldos[movimiento.articulo_id] = _saldo_actual_articulo(movimiento.articulo_id)
+        movimiento.puede_revertir = movimiento.estado == 'activo'
+        if (movimiento.puede_revertir
+                and movimiento.tipo_movimiento == 'INGRESO'
+                and saldos[movimiento.articulo_id] < movimiento.cantidad):
+            movimiento.puede_revertir = False
+            movimiento.motivo_no_reversible = 'Existencia insuficiente'
+
+    return render(request, 'almacen/reversiones/movimientos.html', {
+        'movimientos': movimientos,
+    })
+
+
+@login_required
+@grupo_requerido('Administrador')
+def reversiones_historial(request):
+    acceso_denegado = _validar_acceso_reversion(request)
+    if acceso_denegado:
+        return acceso_denegado
+
+    reversiones = ReversionMovimiento.objects.select_related(
+        'realizado_por', 'articulo', 'movimiento_original', 'movimiento_reversion',
+    )
+    fecha_inicio = request.GET.get('fecha_inicio')
+    fecha_fin = request.GET.get('fecha_fin')
+    articulo = request.GET.get('articulo')
+    tipo_reversion = request.GET.get('tipo_reversion')
+    usuario = request.GET.get('usuario')
+    if fecha_inicio:
+        reversiones = reversiones.filter(fecha_reversion__date__gte=fecha_inicio)
+    if fecha_fin:
+        reversiones = reversiones.filter(fecha_reversion__date__lte=fecha_fin)
+    if articulo:
+        reversiones = reversiones.filter(articulo_id=articulo)
+    if tipo_reversion:
+        reversiones = reversiones.filter(tipo_reversion=tipo_reversion)
+    if usuario:
+        reversiones = reversiones.filter(realizado_por_id=usuario)
+
+    return render(request, 'almacen/reversiones/historial.html', {
+        'reversiones': reversiones,
+        'articulos': Articulo.objects.order_by('codigo', 'nombre'),
+        'administradores': User.objects.filter(
+            Q(is_superuser=True) | Q(groups__name='Administrador')
+        ).distinct().order_by('username'),
+        'filtros': request.GET,
+        'tipos_reversion': ReversionMovimiento.TIPO_REVERSION_CHOICES,
+    })
+
+
+@login_required
+@grupo_requerido('Administrador')
+def detalle_reversion(request, pk):
+    acceso_denegado = _validar_acceso_reversion(request)
+    if acceso_denegado:
+        return acceso_denegado
+    reversion = get_object_or_404(
+        ReversionMovimiento.objects.select_related(
+            'realizado_por', 'articulo', 'movimiento_original', 'movimiento_reversion',
+        ), pk=pk,
+    )
+    return render(request, 'almacen/reversiones/detalle.html', {
+        'reversion': reversion,
+    })
+
+
+@login_required
+@grupo_requerido('Administrador')
+def crear_reversion(request, kardex_id):
+    acceso_denegado = _validar_acceso_reversion(request)
+    if acceso_denegado:
+        return acceso_denegado
+
+    movimiento = get_object_or_404(Kardex.objects.select_related(
+        'articulo', 'fuente_factura__form1h', 'fuente_asignacion',
+        'fuente_despacho__requerimiento',
+    ), pk=kardex_id)
+    form = ReversionMovimientoForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        try:
+            with transaction.atomic():
+                # Serializa movimientos nuevos y reversiones del mismo artículo.
+                Articulo.objects.select_for_update().get(pk=movimiento.articulo_id)
+                movimiento = Kardex.objects.select_for_update().select_related(
+                    'articulo', 'fuente_factura__form1h', 'fuente_asignacion',
+                    'fuente_despacho__requerimiento',
+                ).get(pk=kardex_id)
+
+                if movimiento.estado == 'reversion':
+                    raise ValidationError('No se puede revertir un movimiento de reversión.')
+                if (movimiento.estado == 'revertido'
+                        or ReversionMovimiento.objects.filter(
+                            movimiento_original=movimiento
+                        ).exists()):
+                    raise ValidationError('Este movimiento ya fue revertido.')
+
+                saldo_actual = _saldo_actual_articulo(movimiento.articulo_id)
+                if (movimiento.tipo_movimiento == 'INGRESO'
+                        and saldo_actual < movimiento.cantidad):
+                    raise ValidationError(
+                        'No se puede revertir este ingreso porque la existencia '
+                        'actual del artículo no es suficiente.'
+                    )
+
+                justificacion = form.cleaned_data['justificacion']
+                tipo_inverso = 'SALIDA' if movimiento.tipo_movimiento == 'INGRESO' else 'INGRESO'
+                movimiento_inverso = Kardex.objects.create(
+                    articulo=movimiento.articulo,
+                    tipo_movimiento=tipo_inverso,
+                    cantidad=movimiento.cantidad,
+                    estado='reversion',
+                    movimiento_revertido=movimiento,
+                    motivo_reversion=justificacion,
+                    observacion=(
+                        f'Reversión del movimiento {movimiento.numero_kardex}. '
+                        f'Justificación: {justificacion}'
+                    ),
+                )
+                reversion = ReversionMovimiento.objects.create(
+                    movimiento_original=movimiento,
+                    movimiento_reversion=movimiento_inverso,
+                    tipo_reversion=movimiento.tipo_movimiento,
+                    articulo=movimiento.articulo,
+                    cantidad=movimiento.cantidad,
+                    justificacion=justificacion,
+                    realizado_por=request.user,
+                    documento_referencia=obtener_referencia_movimiento(movimiento),
+                    observacion_sistema=(
+                        f'Se generó {movimiento_inverso.numero_kardex} como movimiento inverso.'
+                    ),
+                )
+                Kardex.objects.filter(pk=movimiento.pk).update(
+                    estado='revertido', motivo_reversion=justificacion,
+                )
+        except ValidationError as error:
+            form.add_error(None, error.message)
+        except IntegrityError:
+            form.add_error(None, 'Este movimiento ya fue revertido.')
+        else:
+            messages.success(request, 'Reversión realizada correctamente.')
+            return redirect('almacen:detalle_reversion', pk=reversion.pk)
+
+    movimiento.documento_origen = obtener_referencia_movimiento(movimiento)
+    movimiento.saldo_disponible = _saldo_actual_articulo(movimiento.articulo_id)
+    return render(request, 'almacen/reversiones/crear_reversion.html', {
+        'form': form,
+        'movimiento': movimiento,
+    })
