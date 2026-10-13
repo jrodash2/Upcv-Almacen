@@ -43,9 +43,14 @@
               <tr>
                 <th>Fecha</th>
                 <th>Tipo</th>
-                <th>Cantidad</th>
-                <th>Saldo anterior</th>
-                <th>Saldo actual</th>
+                <th>Entrada</th>
+                <th>Costo U.</th>
+                <th>Costo entrada</th>
+                <th>Salida</th>
+                <th>Costo salida</th>
+                <th>Saldo</th>
+                <th>Costo saldo</th>
+                <th>Estado</th>
                 <th>Observación</th>
               </tr>
             </thead>
@@ -54,19 +59,31 @@
               <tr>
                 <td>{{ m.fecha|fecha_corta }}</td>
                 <td>{{ m.get_tipo_movimiento_display }}</td>
-                <td>{{ m.cantidad }}</td>
-                <td>{{ m.saldo_anterior }}</td>
-                <td>{{ m.saldo_actual }}</td>
+                <td>{{ m.entrada_cantidad }}</td>
+                <td>{{ m.precio_unitario|quetzales }}</td>
+                <td>{{ m.entrada_costo_total|quetzales }}</td>
+                <td>{{ m.salida_cantidad }}</td>
+                <td>{{ m.salida_costo_total|quetzales }}</td>
+                <td>{{ m.saldo_calculado }}</td>
+                <td>{{ m.saldo_costo_total|quetzales }}</td>
+                <td>{% if m.esta_revertido %}<span class="badge badge-light-warning">Revertido</span>{% elif m.es_reversion %}<span class="badge badge-light-info">Reversión</span>{% elif m.sin_costo %}<span class="badge badge-light-secondary">Revisar costo</span>{% else %}<span class="badge badge-light-success">Activo</span>{% endif %}</td>
                 <td>{{ m.observacion }}</td>
               </tr>
               {% empty %}
               <tr>
-                <td colspan="6" class="text-center">No hay movimientos para este artículo.</td>
+                <td colspan="11" class="text-center">No hay movimientos para este artículo.</td>
               </tr>
               {% endfor %}
             </tbody>
           </table>
         </div>
+        {% if totales %}
+        <div class="mt-3 text-end">
+          <strong>Entradas:</strong> {{ totales.total_ingresos }} / {{ totales.total_costo_ingresos|quetzales }} &nbsp;
+          <strong>Salidas:</strong> {{ totales.total_salidas }} / {{ totales.total_costo_salidas|quetzales }} &nbsp;
+          <strong>Saldo final:</strong> {{ totales.saldo_final_unidades }} / {{ totales.saldo_final_costo|quetzales }}
+        </div>
+        {% endif %}
         
       </div>
     </div>

@@ -1165,6 +1165,95 @@ from django.template.loader import render_to_string
 from weasyprint import HTML
 
 
+def es_movimiento_entrada(tipo):
+    return str(tipo).upper() in ['INGRESO', 'ENTRADA']
+
+
+def es_movimiento_salida(tipo):
+    return str(tipo).upper() == 'SALIDA'
+
+
+def _procesar_movimientos_kardex(articulo):
+    movimientos = list(
+        Kardex.objects.filter(articulo=articulo)
+        .select_related('fuente_factura')
+        .order_by('fecha', 'id')
+    )
+    reversiones = ReversionMovimiento.objects.filter(
+        movimiento_reversion_id__in=[movimiento.id for movimiento in movimientos]
+    ).values_list('movimiento_reversion_id', 'movimiento_original_id')
+    originales_por_reversion = dict(reversiones)
+    costos_por_movimiento = {}
+
+    saldo_unidades = 0
+    saldo_costo = Decimal('0.00')
+    totales = {
+        'total_ingresos': 0,
+        'total_costo_ingresos': Decimal('0.00'),
+        'total_salidas': 0,
+        'total_costo_salidas': Decimal('0.00'),
+    }
+
+    for movimiento in movimientos:
+        cantidad = movimiento.cantidad or 0
+        cantidad_decimal = Decimal(cantidad)
+        es_entrada = es_movimiento_entrada(movimiento.tipo_movimiento)
+        es_salida = es_movimiento_salida(movimiento.tipo_movimiento)
+        original_id = originales_por_reversion.get(movimiento.id)
+        es_reversion = original_id is not None
+
+        if es_reversion:
+            costo_unitario = costos_por_movimiento.get(original_id, Decimal('0.00'))
+        elif movimiento.fuente_factura_id:
+            costo_unitario = Decimal(
+                movimiento.fuente_factura.precio_unitario or 0
+            )
+        elif es_salida and saldo_unidades > 0:
+            costo_unitario = saldo_costo / Decimal(saldo_unidades)
+        else:
+            costo_unitario = Decimal('0.00')
+
+        costo_unitario = costo_unitario.quantize(Decimal('0.01'))
+        costo_total = (cantidad_decimal * costo_unitario).quantize(Decimal('0.01'))
+        costos_por_movimiento[movimiento.id] = costo_unitario
+
+        movimiento.es_entrada = es_entrada
+        movimiento.es_salida = es_salida
+        movimiento.es_reversion = es_reversion or movimiento.estado == 'reversion'
+        movimiento.esta_revertido = movimiento.estado == 'revertido'
+        movimiento.precio_unitario = costo_unitario
+        movimiento.precio_total = costo_total
+        movimiento.sin_costo = costo_unitario == 0 and cantidad > 0
+        movimiento.entrada_cantidad = cantidad if es_entrada else 0
+        movimiento.entrada_costo_total = costo_total if es_entrada else Decimal('0.00')
+        movimiento.salida_cantidad = cantidad if es_salida else 0
+        movimiento.salida_costo_total = costo_total if es_salida else Decimal('0.00')
+
+        if es_entrada:
+            saldo_unidades += cantidad
+            saldo_costo += costo_total
+            totales['total_ingresos'] += cantidad
+            totales['total_costo_ingresos'] += costo_total
+        elif es_salida:
+            saldo_unidades -= cantidad
+            saldo_costo -= costo_total
+            totales['total_salidas'] += cantidad
+            totales['total_costo_salidas'] += costo_total
+
+        saldo_costo = saldo_costo.quantize(Decimal('0.01'))
+        movimiento.saldo_calculado = saldo_unidades
+        movimiento.saldo_costo_total = saldo_costo
+        movimiento.precio_unitario_saldo = (
+            (saldo_costo / Decimal(saldo_unidades)).quantize(Decimal('0.01'))
+            if saldo_unidades > 0
+            else Decimal('0.00')
+        )
+
+    totales['saldo_final_unidades'] = saldo_unidades
+    totales['saldo_final_costo'] = saldo_costo
+    return movimientos, totales
+
+
 def exportar_kardex_pdf(request, articulo_id):
     from decimal import Decimal
     from django.shortcuts import get_object_or_404, render
@@ -1172,51 +1261,7 @@ def exportar_kardex_pdf(request, articulo_id):
     from weasyprint import HTML
 
     articulo = get_object_or_404(Articulo, id=articulo_id)
-    movimientos = Kardex.objects.filter(articulo=articulo).order_by('fecha', 'id')
-
-    movimientos_con_precios = []
-    total_ingresos = 0
-    total_costo_ingresos = Decimal('0.00')
-    total_salidas = 0
-    total_costo_salidas = Decimal('0.00')
-
-    saldo_costo_acumulado = Decimal('0.00')
-    saldo_unidades = 0
-
-    for m in movimientos:
-        m.precio_unitario = Decimal('0.00')
-        m.precio_total = Decimal('0.00')
-
-        if m.tipo_movimiento == 'INGRESO' and m.fuente_factura:
-            m.precio_unitario = m.fuente_factura.precio_unitario
-            m.precio_total = m.fuente_factura.precio_total
-            total_ingresos += m.cantidad
-            total_costo_ingresos += m.precio_total
-
-        elif m.tipo_movimiento == 'SALIDA':
-            ultimo_ingreso_kardex = Kardex.objects.filter(
-                articulo=articulo,
-                tipo_movimiento='INGRESO',
-                fecha__lt=m.fecha
-            ).order_by('-fecha', '-id').first()
-
-            if ultimo_ingreso_kardex and ultimo_ingreso_kardex.fuente_factura:
-                precio_unitario = ultimo_ingreso_kardex.fuente_factura.precio_unitario
-                m.precio_unitario = precio_unitario
-                m.precio_total = m.cantidad * precio_unitario
-
-            total_salidas += m.cantidad
-            total_costo_salidas += m.precio_total
-
-        if m.tipo_movimiento == 'INGRESO':
-            saldo_costo_acumulado += m.precio_total
-        else:
-            saldo_costo_acumulado -= m.precio_total
-
-        m.saldo_costo_total = saldo_costo_acumulado
-        m.precio_unitario_saldo = m.saldo_actual and (m.saldo_costo_total / m.saldo_actual) or Decimal('0.00')
-
-        movimientos_con_precios.append(m)
+    movimientos_con_precios, totales = _procesar_movimientos_kardex(articulo)
 
     MAX_MOVS_POR_HOJA = 7
     hojas = []
@@ -1242,7 +1287,7 @@ def exportar_kardex_pdf(request, articulo_id):
             'movimiento': m
         })
 
-        saldo_unidades = m.saldo_actual
+        saldo_unidades = m.saldo_calculado
         saldo_costo = m.saldo_costo_total
         linea_global += 1
 
@@ -1263,15 +1308,6 @@ def exportar_kardex_pdf(request, articulo_id):
             'referencia_anterior': referencia_anterior,
             'lineas': hoja_actual,
         })
-
-    totales = {
-        'total_ingresos': total_ingresos,
-        'total_costo_ingresos': total_costo_ingresos,
-        'total_salidas': total_salidas,
-        'total_costo_salidas': total_costo_salidas,
-        'saldo_final_unidades': total_ingresos - total_salidas,
-        'saldo_final_costo': total_costo_ingresos - total_costo_salidas
-    }
 
     html_string = render(request, 'almacen/pdf_kardex.html', {
         'articulo': articulo,
@@ -1346,10 +1382,11 @@ def exportar_requerimiento_pdf(request, requerimiento_id):
 @grupo_requerido('Administrador', 'Almacen')
 def historial_kardex_articulo(request, articulo_id):
     articulo = get_object_or_404(Articulo, id=articulo_id)
-    movimientos = Kardex.objects.filter(articulo=articulo).order_by('fecha', 'id')
+    movimientos, totales = _procesar_movimientos_kardex(articulo)
     return render(request, 'almacen/historial_kardex.html', {
         'articulo': articulo,
-        'movimientos': movimientos
+        'movimientos': movimientos,
+        'totales': totales,
     })
 
 
@@ -3473,13 +3510,11 @@ def crear_reversion(request, kardex_id):
         try:
             with transaction.atomic():
                 # Serializa movimientos nuevos y reversiones del mismo artículo.
-                articulo_bloqueado = Articulo.objects.select_for_update().get(
-                    pk=movimiento.articulo_id
-                )
-                # No combinar FOR UPDATE con select_related sobre las fuentes
-                # anulables: PostgreSQL no permite bloquear el lado anulable de
-                # un OUTER JOIN. Las relaciones se consultan de forma diferida.
-                movimiento = Kardex.objects.select_for_update().get(pk=kardex_id)
+                Articulo.objects.select_for_update().get(pk=movimiento.articulo_id)
+                movimiento = Kardex.objects.select_for_update().select_related(
+                    'articulo', 'fuente_factura__form1h', 'fuente_asignacion',
+                    'fuente_despacho__requerimiento',
+                ).get(pk=kardex_id)
 
                 if movimiento.estado == 'reversion':
                     raise ValidationError('No se puede revertir un movimiento de reversión.')
@@ -3500,7 +3535,7 @@ def crear_reversion(request, kardex_id):
                 justificacion = form.cleaned_data['justificacion']
                 tipo_inverso = 'SALIDA' if movimiento.tipo_movimiento == 'INGRESO' else 'INGRESO'
                 movimiento_inverso = Kardex.objects.create(
-                    articulo=articulo_bloqueado,
+                    articulo=movimiento.articulo,
                     tipo_movimiento=tipo_inverso,
                     cantidad=movimiento.cantidad,
                     estado='reversion',
@@ -3515,7 +3550,7 @@ def crear_reversion(request, kardex_id):
                     movimiento_original=movimiento,
                     movimiento_reversion=movimiento_inverso,
                     tipo_reversion=movimiento.tipo_movimiento,
-                    articulo=articulo_bloqueado,
+                    articulo=movimiento.articulo,
                     cantidad=movimiento.cantidad,
                     justificacion=justificacion,
                     realizado_por=request.user,
