@@ -3526,12 +3526,12 @@ def crear_reversion(request, kardex_id):
     if request.method == 'POST' and form.is_valid():
         try:
             with transaction.atomic():
-                # Serializa movimientos nuevos y reversiones del mismo artículo.
-                Articulo.objects.select_for_update().get(pk=movimiento.articulo_id)
-                movimiento = Kardex.objects.select_for_update().select_related(
-                    'articulo', 'fuente_factura__form1h', 'fuente_asignacion',
-                    'fuente_despacho__requerimiento',
-                ).get(pk=kardex_id)
+                # Bloquea solo el Kardex, sin joins sobre sus relaciones opcionales.
+                movimiento = Kardex.objects.select_for_update().get(pk=kardex_id)
+                # Serializa también movimientos nuevos del mismo artículo.
+                articulo_bloqueado = Articulo.objects.select_for_update().get(
+                    pk=movimiento.articulo_id
+                )
 
                 if movimiento.estado == 'reversion':
                     raise ValidationError('No se puede revertir un movimiento de reversión.')
@@ -3552,7 +3552,7 @@ def crear_reversion(request, kardex_id):
                 justificacion = form.cleaned_data['justificacion']
                 tipo_inverso = 'SALIDA' if movimiento.tipo_movimiento == 'INGRESO' else 'INGRESO'
                 movimiento_inverso = Kardex.objects.create(
-                    articulo=movimiento.articulo,
+                    articulo=articulo_bloqueado,
                     tipo_movimiento=tipo_inverso,
                     cantidad=movimiento.cantidad,
                     estado='reversion',
@@ -3567,7 +3567,7 @@ def crear_reversion(request, kardex_id):
                     movimiento_original=movimiento,
                     movimiento_reversion=movimiento_inverso,
                     tipo_reversion=movimiento.tipo_movimiento,
-                    articulo=movimiento.articulo,
+                    articulo=articulo_bloqueado,
                     cantidad=movimiento.cantidad,
                     justificacion=justificacion,
                     realizado_por=request.user,
