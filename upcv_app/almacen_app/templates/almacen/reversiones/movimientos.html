@@ -1,0 +1,26 @@
+{% extends 'almacen/base.html' %}
+{% load moneda_filters %}
+{% block title %}Movimientos reversibles{% endblock %}
+{% block content %}
+<div class="page-body">
+  <div class="container-fluid">
+    <div class="page-title"><div class="row"><div class="col-6"><h4>Reversiones</h4></div><div class="col-6"><ol class="breadcrumb"><li class="breadcrumb-item">Almacén</li><li class="breadcrumb-item">Reversiones</li><li class="breadcrumb-item active">Movimientos</li></ol></div></div></div>
+  </div>
+  <div class="container-fluid">
+    <div class="card">
+      <div class="card-header pb-0 card-no-border"><div class="d-flex justify-content-between align-items-center"><div><h4>Movimientos de Kardex</h4><span>Seleccione un movimiento activo para generar su movimiento inverso.</span></div><a class="btn btn-outline-primary btn-sm" href="{% url 'almacen:reversiones_historial' %}">Historial</a></div></div>
+      <div class="card-body"><div class="dt-ext table-responsive custom-scrollbar">
+        <table class="display datatables" id="tabla-movimientos-reversion">
+          <thead><tr><th>Fecha</th><th>Número Kardex</th><th>Código</th><th>Artículo</th><th>Tipo</th><th>Cantidad</th><th>Saldo anterior</th><th>Saldo actual</th><th>Documento origen</th><th>Estado</th><th>Revertido por</th><th>Acción</th></tr></thead>
+          <tbody>{% for movimiento in movimientos %}<tr>
+            <td>{{ movimiento.fecha|date:'d/m/Y H:i' }}</td><td>{{ movimiento.numero_kardex }}</td><td>{{ movimiento.articulo.codigo }}</td><td>{{ movimiento.articulo.nombre }}</td><td>{{ movimiento.get_tipo_movimiento_display }}</td><td>{{ movimiento.cantidad }}</td><td>{{ movimiento.saldo_anterior }}</td><td>{{ movimiento.saldo_actual }}</td><td>{{ movimiento.documento_origen }}</td>
+            <td>{% if movimiento.estado == 'activo' %}<span class="badge badge-light-success">Activo</span>{% elif movimiento.estado == 'revertido' %}<span class="badge badge-light-warning">Revertido</span>{% else %}<span class="badge badge-light-info">Reversión</span>{% endif %}</td>
+            <td>{{ movimiento.revertido_por }}</td>
+            <td>{% if movimiento.puede_revertir %}<a class="btn btn-danger btn-sm" href="{% url 'almacen:crear_reversion' movimiento.id %}">Revertir</a>{% else %}<span class="badge badge-light-secondary">{% if movimiento.motivo_no_reversible %}{{ movimiento.motivo_no_reversible }}{% else %}No reversible{% endif %}</span>{% endif %}</td>
+          </tr>{% endfor %}</tbody>
+        </table>
+      </div></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
