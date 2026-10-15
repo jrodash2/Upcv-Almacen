@@ -76,62 +76,6 @@ class Form1hFormTests(TestCase):
         self.assertNotEqual(formulario.initial["programa"], primer_programa)
 
 
-class Form1hFormTests(TestCase):
-    def test_preselecciona_primera_dependencia_y_programa_disponibles(self):
-        primera_dependencia = Dependencia.objects.create(
-            nombre="Primera", activo=False
-        )
-        Dependencia.objects.create(nombre="Segunda")
-        primera_programa = Programa.objects.create(nombre="Primero", activo=False)
-        Programa.objects.create(nombre="Segundo")
-
-        formulario = Form1hForm()
-
-        self.assertEqual(
-            formulario.fields["dependencia"].initial, primera_dependencia
-        )
-        self.assertEqual(formulario.fields["programa"].initial, primera_programa)
-
-    def test_muestra_todas_las_opciones_disponibles(self):
-        dependencia_inactiva = Dependencia.objects.create(
-            nombre="Inactiva", activo=False
-        )
-        dependencia_activa = Dependencia.objects.create(nombre="Activa")
-        programa_inactivo = Programa.objects.create(nombre="Inactivo", activo=False)
-        programa_activo = Programa.objects.create(nombre="Activo")
-
-        formulario = Form1hForm()
-
-        self.assertEqual(
-            list(formulario.fields["dependencia"].queryset),
-            [dependencia_inactiva, dependencia_activa],
-        )
-        self.assertEqual(
-            list(formulario.fields["programa"].queryset),
-            [programa_inactivo, programa_activo],
-        )
-
-    def test_respeta_valores_iniciales_existentes(self):
-        primera_dependencia = Dependencia.objects.create(nombre="Primera")
-        dependencia_inicial = Dependencia.objects.create(nombre="Inicial")
-        primer_programa = Programa.objects.create(nombre="Primero")
-        programa_inicial = Programa.objects.create(nombre="Inicial")
-
-        formulario = Form1hForm(
-            initial={
-                "dependencia": dependencia_inicial,
-                "programa": programa_inicial,
-            }
-        )
-
-        self.assertEqual(formulario.initial["dependencia"], dependencia_inicial)
-        self.assertEqual(formulario.initial["programa"], programa_inicial)
-        self.assertNotEqual(
-            formulario.initial["dependencia"], primera_dependencia
-        )
-        self.assertNotEqual(formulario.initial["programa"], primer_programa)
-
-
 class FormatoVisualTests(SimpleTestCase):
     def test_quetzales_usa_punto_decimal_y_coma_de_miles(self):
         casos = (
@@ -263,6 +207,69 @@ class ReversionesViewsTests(TestCase):
         respuesta = self.client.get(reverse("almacen:reversiones_historial"))
 
         self.assertRedirects(respuesta, reverse("almacen:acceso_denegado"))
+
+    def test_movimientos_muestra_administrador_en_original_e_inverso(self):
+        self.administrador.first_name = "Julio Rene"
+        self.administrador.last_name = "Rodas Hernandez"
+        self.administrador.save(update_fields=["first_name", "last_name"])
+        Kardex.objects.create(
+            articulo=self.articulo, tipo_movimiento="INGRESO", cantidad=10
+        )
+        salida = Kardex.objects.create(
+            articulo=self.articulo, tipo_movimiento="SALIDA", cantidad=2
+        )
+        self.client.force_login(self.administrador)
+        self.client.post(
+            reverse("almacen:crear_reversion", args=[salida.id]),
+            {"justificacion": "Salida registrada por error"},
+        )
+
+        respuesta = self.client.get(reverse("almacen:reversiones_movimientos"))
+        movimientos = {
+            movimiento.id: movimiento for movimiento in respuesta.context["movimientos"]
+        }
+        reversion = ReversionMovimiento.objects.get(movimiento_original=salida)
+
+        self.assertEqual(
+            movimientos[salida.id].revertido_por,
+            "Julio Rene Rodas Hernandez",
+        )
+        self.assertEqual(
+            movimientos[reversion.movimiento_reversion_id].revertido_por,
+            "Julio Rene Rodas Hernandez",
+        )
+        movimiento_normal = Kardex.objects.exclude(
+            id__in=[salida.id, reversion.movimiento_reversion_id]
+        ).get()
+        self.assertEqual(movimientos[movimiento_normal.id].revertido_por, "—")
+        self.assertContains(respuesta, "Julio Rene Rodas Hernandez")
+
+    def test_movimientos_usa_username_si_administrador_no_tiene_nombre(self):
+        Kardex.objects.create(
+            articulo=self.articulo, tipo_movimiento="INGRESO", cantidad=2
+        )
+        salida = Kardex.objects.create(
+            articulo=self.articulo, tipo_movimiento="SALIDA", cantidad=1
+        )
+        self.client.force_login(self.administrador)
+        self.client.post(
+            reverse("almacen:crear_reversion", args=[salida.id]),
+            {"justificacion": "Salida registrada por error"},
+        )
+
+        respuesta = self.client.get(reverse("almacen:reversiones_movimientos"))
+
+        reversion = ReversionMovimiento.objects.get(movimiento_original=salida)
+        movimientos = {
+            movimiento.id: movimiento for movimiento in respuesta.context["movimientos"]
+        }
+        self.assertEqual(
+            movimientos[salida.id].revertido_por, self.administrador.username
+        )
+        self.assertEqual(
+            movimientos[reversion.movimiento_reversion_id].revertido_por,
+            self.administrador.username,
+        )
 
 
 class CalculoKardexConReversionesTests(TestCase):

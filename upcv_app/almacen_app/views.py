@@ -3424,9 +3424,26 @@ def reversiones_movimientos(request):
         'articulo', 'fuente_factura__form1h', 'fuente_asignacion',
         'fuente_despacho__requerimiento',
     ).order_by('-fecha', '-id'))
+    reversiones_por_movimiento = {}
+    if movimientos:
+        movimiento_ids = [movimiento.id for movimiento in movimientos]
+        reversiones = ReversionMovimiento.objects.filter(
+            Q(movimiento_original_id__in=movimiento_ids)
+            | Q(movimiento_reversion_id__in=movimiento_ids)
+        ).select_related('realizado_por')
+        for reversion in reversiones:
+            nombre_usuario = (
+                reversion.realizado_por.get_full_name().strip()
+                or reversion.realizado_por.username
+            )
+            reversiones_por_movimiento[reversion.movimiento_original_id] = nombre_usuario
+            if reversion.movimiento_reversion_id:
+                reversiones_por_movimiento[reversion.movimiento_reversion_id] = nombre_usuario
+
     saldos = {}
     for movimiento in movimientos:
         movimiento.documento_origen = obtener_referencia_movimiento(movimiento)
+        movimiento.revertido_por = reversiones_por_movimiento.get(movimiento.id, '—')
         if movimiento.articulo_id not in saldos:
             saldos[movimiento.articulo_id] = _saldo_actual_articulo(movimiento.articulo_id)
         movimiento.puede_revertir = movimiento.estado == 'activo'
