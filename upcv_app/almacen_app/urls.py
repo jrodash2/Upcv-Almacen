@@ -90,6 +90,12 @@ urlpatterns = [
     # Kardex
     path('kardex/<int:articulo_id>/', views.historial_kardex_articulo, name='historial_kardex'),
     path('kardex/<int:articulo_id>/exportar/', views.exportar_kardex_pdf, name='exportar_kardex_pdf'),
+
+    # Reversiones (solo Administrador)
+    path('almacen/reversiones/', views.reversiones_historial, name='reversiones_historial'),
+    path('almacen/reversiones/movimientos/', views.reversiones_movimientos, name='reversiones_movimientos'),
+    path('almacen/reversiones/<int:pk>/', views.detalle_reversion, name='detalle_reversion'),
+    path('almacen/reversiones/movimiento/<int:kardex_id>/revertir/', views.crear_reversion, name='crear_reversion'),
     
     # Cambiar contraseña
     path('cambiar-contraseña/', auth_views.PasswordChangeView.as_view(

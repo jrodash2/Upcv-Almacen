@@ -353,6 +353,15 @@
                   </svg><span>Solicitudes</span></a></li>
     <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
       <a class="sidebar-link sidebar-title" href="#">
+        <i data-feather="rotate-ccw"></i><span>Reversiones</span>
+      </a>
+      <ul class="sidebar-submenu">
+        <li><a class="{% if request.resolver_match.url_name == 'reversiones_movimientos' or request.resolver_match.url_name == 'crear_reversion' %}active{% endif %}" href="{% url 'almacen:reversiones_movimientos' %}">Movimientos</a></li>
+        <li><a class="{% if request.resolver_match.url_name == 'reversiones_historial' or request.resolver_match.url_name == 'detalle_reversion' %}active{% endif %}" href="{% url 'almacen:reversiones_historial' %}">Historial de reversiones</a></li>
+      </ul>
+    </li>
+    <li class="sidebar-list"><i class="fa fa-thumb-tack"></i>
+      <a class="sidebar-link sidebar-title" href="#">
         <svg class="stroke-icon">
           <use href="../assets/svg/icon-sprite.svg#stroke-gallery"></use>
         </svg>
