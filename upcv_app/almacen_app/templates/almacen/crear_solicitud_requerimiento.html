@@ -48,7 +48,7 @@
                   {% if form.departamento.errors %}<div class="text-danger small">{{ form.departamento.errors|striptags }}</div>{% endif %}
                 </div>
                 <div class="col-md-6 mb-3">
-                  <label class="form-label fw-semibold d-block">{{ form.tipos_solicitud.label }}</label>
+                  <label class="form-label fw-semibold d-block">{{ form.tipos_solicitud.label }} <span class="almacen-required" aria-hidden="true">*</span></label>
                   <div class="d-flex flex-wrap gap-3">
                     <div class="form-check checkbox checkbox-primary mb-0">
                       <input class="form-check-input tipo-solicitud-checkbox" type="checkbox" name="tipos_solicitud" id="tipo_bienes" value="bienes" {% if 'bienes' in selected_tipos %}checked{% endif %}>

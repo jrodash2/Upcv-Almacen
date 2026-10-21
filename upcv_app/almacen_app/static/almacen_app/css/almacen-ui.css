@@ -1,0 +1,267 @@
+/* Identidad UPCV sobre Riho/Bootstrap. Solo presentación en pantalla.
+   Mantener .almacen-ui en el layout: no afecta PDFs ni otras aplicaciones. */
+@media screen {
+  .almacen-ui {
+    --almacen-primary: #087fb9;
+    --almacen-primary-dark: #075b85;
+    --almacen-primary-light: #eaf6fc;
+    --almacen-secondary: #66758c;
+    --almacen-success: #198754;
+    --almacen-warning: #9b6900;
+    --almacen-danger: #dc3545;
+    --almacen-info: #08748b;
+    --almacen-background: #f5f7fa;
+    --almacen-surface: #fff;
+    --almacen-text: #253247;
+    --almacen-text-muted: #66758c;
+    --almacen-border: #e2e8f0;
+    --almacen-radius: 12px;
+    --almacen-radius-lg: 16px;
+    --almacen-shadow: 0 4px 18px rgb(20 45 75 / 7%);
+    --almacen-transition: 180ms ease-in-out;
+    --almacen-space: 1.25rem;
+    --theme-default: var(--almacen-primary);
+    --theme-deafult: var(--almacen-primary); /* Nombre original de la variable Riho. */
+    --theme-secondary: var(--almacen-secondary);
+    --bs-primary: var(--almacen-primary);
+    --bs-primary-rgb: 8, 127, 185;
+    color: var(--almacen-text);
+    background: var(--almacen-background);
+    font-family: Montserrat, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    font-size: .875rem;
+    line-height: 1.55;
+  }
+  .almacen-ui.dark-only {
+    --almacen-primary: #65c5f3;
+    --almacen-primary-dark: #9bdcfa;
+    --almacen-primary-light: #16354b;
+    --almacen-background: #16202e;
+    --almacen-surface: #202c3d;
+    --almacen-text: #edf3fa;
+    --almacen-text-muted: #adbbcd;
+    --almacen-border: #3b4b60;
+    --almacen-shadow: 0 4px 18px rgb(0 0 0 / 18%);
+  }
+  .almacen-ui .page-body { background: var(--almacen-background); color: var(--almacen-text); min-width: 0; }
+  .almacen-ui .page-body > .container-fluid { padding-inline: clamp(1rem, 2.5vw, 2rem); }
+  .almacen-ui .page-body .page-body { margin: 0; padding: 0; min-height: 0; }
+  .almacen-ui .page-title { padding-block: 1.5rem; }
+  .almacen-ui .page-title h4, .almacen-ui .gestor-title { font-size: clamp(1.2rem, 2vw, 1.55rem); font-weight: 700; letter-spacing: -.025em; color: var(--almacen-text); }
+  .almacen-ui .breadcrumb { font-size: .78rem; flex-wrap: wrap; gap: .15rem; margin-bottom: 0; }
+  .almacen-ui .breadcrumb a { color: var(--almacen-primary-dark); }
+  .almacen-ui .gestor-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+  .almacen-ui .gestor-eyebrow { display: block; color: var(--almacen-primary-dark); font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; margin-bottom: .4rem; }
+  .almacen-ui .gestor-subtitle, .almacen-ui .form-text { color: var(--almacen-text-muted); font-size: .82rem; }
+
+  /* Cards: solo se elevan las que tienen un enlace o clase interactiva. */
+  .almacen-ui .page-body .card {
+    background: var(--almacen-surface); color: var(--almacen-text);
+    border: 1px solid var(--almacen-border); border-radius: var(--almacen-radius-lg);
+    box-shadow: var(--almacen-shadow); margin-bottom: 1.5rem;
+  }
+  .almacen-ui .page-body .card > .card-header {
+    background: transparent; border-bottom: 1px solid var(--almacen-border);
+    padding: var(--almacen-space); border-radius: var(--almacen-radius-lg) var(--almacen-radius-lg) 0 0;
+  }
+  .almacen-ui .card-header :is(h4, h5, h6), .almacen-ui .gestor-card-title { font-size: 1rem; font-weight: 650; color: var(--almacen-text); }
+  .almacen-ui .card-header > span { color: var(--almacen-text-muted); font-size: .82rem; }
+  .almacen-ui .page-body .card > .card-body, .almacen-ui .page-body .card > .card-footer { padding: var(--almacen-space); }
+  .almacen-ui .card-footer { background: transparent; border-color: var(--almacen-border); }
+  .almacen-ui :is(.gestor-card, .stat-card):hover { transform: none; box-shadow: var(--almacen-shadow); }
+  .almacen-ui a > .card, .almacen-ui .card.almacen-card-interactive { transition: box-shadow var(--almacen-transition), border-color var(--almacen-transition), transform var(--almacen-transition); }
+  .almacen-ui a:hover > .card, .almacen-ui a:focus-visible > .card, .almacen-ui .almacen-card-interactive:hover { border-color: var(--almacen-primary); box-shadow: 0 8px 24px rgb(8 127 185 / 12%); transform: translateY(-2px); }
+
+  /* Botones: clases de intención opcionales; no cambian tipo, valor ni eventos. */
+  .almacen-ui .btn, .almacen-ui .swal2-styled {
+    border-radius: 9px; font: inherit; font-weight: 600; line-height: 1.4;
+    padding: .6rem 1rem; vertical-align: middle;
+    transition: color var(--almacen-transition), background-color var(--almacen-transition), border-color var(--almacen-transition), box-shadow var(--almacen-transition), transform var(--almacen-transition);
+  }
+  .almacen-ui .btn-sm, .almacen-ui td .btn, .almacen-ui td .gestor-btn { font-size: .75rem; padding: .36rem .6rem; border-radius: 7px; }
+  .almacen-ui .btn-lg { padding: .75rem 1.25rem; }
+  .almacen-ui .btn :is(i, svg) { vertical-align: -.15em; flex-shrink: 0; }
+  .almacen-ui .btn svg { width: 1em; height: 1em; }
+  .almacen-ui :is(.almacen-download-pdf, .almacen-download-excel)::before { font-family: FontAwesome; margin-right: .45em; }
+  .almacen-ui .almacen-download-pdf::before { content: '\f1c1'; }
+  .almacen-ui .almacen-download-excel::before { content: '\f1c3'; }
+  .almacen-ui .btn:not(:disabled):not(.disabled):not([aria-disabled='true']):hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgb(20 45 75 / 12%); }
+  .almacen-ui .btn:not(:disabled):active { transform: translateY(0); box-shadow: none; }
+  .almacen-ui .btn:is(:disabled, .disabled, [aria-disabled='true']) { opacity: .55; cursor: not-allowed; transform: none; box-shadow: none; }
+  .almacen-ui :is(.btn, .btn-close, a, input, select, textarea):focus-visible { outline: 3px solid var(--almacen-primary); outline-offset: 3px; }
+  /* Riho fija background/border/color con !important. Se limita la excepción
+     a botones semánticos propios; las variables mantienen un solo contrato. */
+  .almacen-ui .btn:is(.btn-primary, .btn-secondary, .btn-light, .btn-success, .btn-danger, .btn-warning, .btn-info, .btn-outline-primary, .btn-outline-danger, [class*="almacen-action-"]) {
+    background-color: var(--almacen-btn-bg) !important;
+    border-color: var(--almacen-btn-border) !important;
+    color: var(--almacen-btn-text) !important;
+  }
+  .almacen-ui .btn-primary, .almacen-ui .btn.almacen-action-save {
+    --almacen-btn-bg: #087fb9; --almacen-btn-border: #087fb9; --almacen-btn-text: #fff;
+  }
+  .almacen-ui .btn-primary:hover, .almacen-ui .btn.almacen-action-save:hover { --almacen-btn-bg: #075b85; --almacen-btn-border: #075b85; }
+  .almacen-ui .btn-outline-primary, .almacen-ui .btn.almacen-action-edit {
+    --almacen-btn-bg: transparent; --almacen-btn-border: var(--almacen-primary); --almacen-btn-text: var(--almacen-primary-dark);
+  }
+  .almacen-ui .btn-outline-primary:hover, .almacen-ui .btn.almacen-action-edit:hover { --almacen-btn-bg: var(--almacen-primary-light); }
+  .almacen-ui :is(.btn-secondary, .btn-light), .almacen-ui .btn.almacen-action-cancel {
+    --almacen-btn-bg: var(--almacen-surface); --almacen-btn-border: var(--almacen-border); --almacen-btn-text: var(--almacen-text-muted);
+  }
+  .almacen-ui :is(.btn-secondary, .btn-light):hover, .almacen-ui .btn.almacen-action-cancel:hover { --almacen-btn-bg: var(--almacen-background); --almacen-btn-border: var(--almacen-text-muted); --almacen-btn-text: var(--almacen-text); }
+  .almacen-ui .btn-danger, .almacen-ui .btn.almacen-action-delete {
+    --almacen-btn-bg: #dc3545; --almacen-btn-border: #dc3545; --almacen-btn-text: #fff;
+  }
+  .almacen-ui .btn-outline-danger { --almacen-btn-bg: transparent; --almacen-btn-border: #dc3545; --almacen-btn-text: #b52836; }
+  .almacen-ui :is(.btn-danger, .btn-outline-danger):hover, .almacen-ui .btn.almacen-action-delete:hover { --almacen-btn-bg: #b52836; --almacen-btn-border: #b52836; --almacen-btn-text: #fff; }
+  .almacen-ui .btn-success, .almacen-ui .btn.almacen-action-activate { --almacen-btn-bg: #198754; --almacen-btn-border: #198754; --almacen-btn-text: #fff; }
+  .almacen-ui .btn-warning, .almacen-ui .btn.almacen-action-warning { --almacen-btn-bg: #fff3cd; --almacen-btn-border: #e5a000; --almacen-btn-text: #775100; }
+  .almacen-ui .btn-info, .almacen-ui .btn.almacen-action-view { --almacen-btn-bg: var(--almacen-primary-light); --almacen-btn-border: var(--almacen-border); --almacen-btn-text: var(--almacen-primary-dark); }
+  .almacen-ui .swal2-confirm { background-color: #087fb9; color: #fff; }
+  .almacen-ui .swal2-cancel { background-color: var(--almacen-background); color: var(--almacen-text); }
+  .almacen-ui .btn[aria-busy='true'], .almacen-ui .btn.is-loading { cursor: progress; }
+  .almacen-ui .btn[aria-busy='true']::after, .almacen-ui .btn.is-loading::after { content: ''; display: inline-block; width: .8em; height: .8em; margin-left: .5rem; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: almacen-spin .8s linear infinite; }
+  .almacen-ui .action-buttons, .almacen-ui .riho-actions { display: inline-flex; align-items: center; flex-wrap: wrap; gap: .4rem; }
+
+  /* Formularios: :required solo añade un indicador; la validación sigue intacta. */
+  .almacen-ui :is(.page-body, .modal) :is(.form-control, .form-select, select:not([class]), textarea:not([class])) {
+    background-color: var(--almacen-surface); color: var(--almacen-text); border: 1px solid var(--almacen-border);
+    border-radius: 9px; min-height: 2.6rem; font-size: .85rem; padding: .55rem .75rem;
+    transition: border-color var(--almacen-transition), box-shadow var(--almacen-transition);
+  }
+  .almacen-ui :is(.page-body, .modal) :is(.form-control-sm, .form-select-sm) { min-height: 2.1rem; padding: .3rem .5rem; font-size: .78rem; }
+  .almacen-ui :is(.page-body, .modal) textarea.form-control { min-height: 6rem; }
+  .almacen-ui :is(.form-control, .form-select):focus { border-color: var(--almacen-primary); box-shadow: 0 0 0 .2rem rgb(8 127 185 / 15%); }
+  .almacen-ui :is(.form-control, .form-select):disabled, .almacen-ui .form-control[readonly] { background-color: var(--almacen-background); color: var(--almacen-text-muted); }
+  .almacen-ui :is(.form-label, .form-group > label) { font-size: .8rem; font-weight: 600; margin-bottom: .45rem; color: var(--almacen-text); }
+  .almacen-ui .form-group { margin-bottom: 1rem; }
+  .almacen-ui :is(.form-check-input, input[type='checkbox'], input[type='radio']) { accent-color: var(--almacen-primary); }
+  .almacen-ui .form-check-input:checked { background-color: var(--almacen-primary); border-color: var(--almacen-primary); }
+  .almacen-ui .almacen-required { color: var(--almacen-danger); margin-left: .2em; }
+  .almacen-ui :is(.invalid-feedback, .errorlist) { color: #b52836; font-size: .78rem; margin-top: .4rem; }
+  .almacen-ui .errorlist { list-style: none; padding-left: 0; }
+  .almacen-ui :is(.is-invalid, [aria-invalid='true']) { border-color: var(--almacen-danger); }
+  .almacen-ui .select2-container .select2-selection { min-height: 2.6rem; border-color: var(--almacen-border); border-radius: 9px; background: var(--almacen-surface); }
+  .almacen-ui .select2-container--default .select2-selection--single .select2-selection__rendered { line-height: 2.5rem; color: var(--almacen-text); }
+  .almacen-ui .select2-container--default .select2-selection--single .select2-selection__arrow { height: 2.5rem; }
+  .almacen-ui .select2-dropdown { border-color: var(--almacen-border); background: var(--almacen-surface); color: var(--almacen-text); }
+
+  /* Modales: se conservan la transición, el foco y el backdrop de Bootstrap. */
+  .almacen-ui .modal-content { border: 1px solid var(--almacen-border); border-radius: var(--almacen-radius-lg); background: var(--almacen-surface); color: var(--almacen-text); box-shadow: 0 18px 60px rgb(20 45 75 / 20%); }
+  .almacen-ui .modal-header { background: var(--almacen-primary-light); border-bottom: 1px solid var(--almacen-border); padding: var(--almacen-space); border-radius: var(--almacen-radius-lg) var(--almacen-radius-lg) 0 0; gap: .75rem; }
+  .almacen-ui .modal-title, .almacen-ui .modal-heading h5 { font-size: 1.05rem; font-weight: 650; color: var(--almacen-text); }
+  .almacen-ui .almacen-modal-icon::before { font-family: FontAwesome; margin-right: .5em; font-weight: normal; }
+  .almacen-ui .almacen-icon-trash::before { content: '\f1f8'; }
+  .almacen-ui .almacen-icon-history::before { content: '\f1da'; }
+  .almacen-ui .almacen-icon-exchange::before { content: '\f0ec'; }
+  .almacen-ui .almacen-icon-edit::before { content: '\f044'; }
+  .almacen-ui .almacen-icon-plus::before { content: '\f055'; }
+  .almacen-ui .almacen-icon-file::before { content: '\f0f6'; }
+  .almacen-ui .modal-header .btn-close { flex-shrink: 0; margin-left: auto; }
+  .almacen-ui .modal-body { padding: var(--almacen-space); }
+  .almacen-ui .modal-footer { padding: 1rem var(--almacen-space); border-top: 1px solid var(--almacen-border); gap: .5rem; }
+  .almacen-ui .modal-footer > * { margin: 0; }
+  .almacen-ui .modal-dialog { max-height: calc(100% - var(--bs-modal-margin, .5rem) * 2); }
+  .almacen-ui .modal-dialog .modal-content { max-height: calc(100dvh - 3.5rem); }
+  .almacen-ui .modal-content > form { display: flex; flex-direction: column; min-height: 0; max-height: inherit; }
+  .almacen-ui .modal-body { overflow-y: auto; min-height: 0; }
+  .almacen-ui .modal.fade .modal-dialog { transition: transform .2s ease-out; transform: translateY(-12px); }
+  .almacen-ui .modal.show .modal-dialog { transform: none; }
+  .almacen-ui .modal-backdrop.show { opacity: .4; }
+  .almacen-ui .modal .social-profile { text-align: start; }
+  .almacen-ui .modal .social-profile .dot-group { display: none; }
+  .almacen-ui .modal .social-profile .overflow-hidden > img { width: auto; max-width: 140px; max-height: 65px; object-fit: contain; }
+  .almacen-ui .modal .title-wrapper { text-align: start; }
+  .almacen-ui .modal .title-wrapper p { font-size: .82rem; color: var(--almacen-text-muted); }
+  .almacen-ui .swal2-popup { background: var(--almacen-surface); color: var(--almacen-text); border-radius: var(--almacen-radius-lg); font-family: inherit; box-shadow: var(--almacen-shadow); }
+
+  /* Tablas/DataTables: no inicialización ni cambios en las celdas/orden. */
+  .almacen-ui :is(.table-responsive, .dataTables_wrapper, .dt-container) { max-width: 100%; }
+  .almacen-ui .dataTables_wrapper { overflow-x: auto; padding-bottom: .25rem; }
+  .almacen-ui :is(table.table, table.datatables, #tabla-modal-articulos) { color: var(--almacen-text); border-color: var(--almacen-border); width: 100%; font-size: .8rem; }
+  .almacen-ui :is(table.table, table.datatables, #tabla-modal-articulos) > thead > tr > th { background: var(--almacen-background); color: var(--almacen-text-muted); font-size: .72rem; font-weight: 650; letter-spacing: .025em; padding: .85rem .75rem; border-bottom: 1px solid var(--almacen-border); vertical-align: middle; }
+  .almacen-ui :is(table.table, table.datatables, #tabla-modal-articulos) > tbody > tr > td { padding: .8rem .75rem; border-color: var(--almacen-border); vertical-align: middle; background-color: transparent; }
+  .almacen-ui table.datatables > tbody > tr:nth-child(even) { background-color: color-mix(in srgb, var(--almacen-background) 55%, var(--almacen-surface)); }
+  .almacen-ui :is(table.table, table.datatables) > tbody > tr:hover { background-color: var(--almacen-primary-light); }
+  .almacen-ui :is(td.text-end, td.text-center, input[type='number'], .cantidad-asignada, .cantidad-reservada, .cantidad-consumida, .cantidad-disponible) { font-variant-numeric: tabular-nums; }
+  .almacen-ui .dataTables_wrapper :is(.dataTables_filter, .dataTables_length, .dataTables_info) { color: var(--almacen-text-muted); font-size: .78rem; padding-block: .65rem; }
+  .almacen-ui .dataTables_wrapper :is(.dataTables_filter input, .dataTables_length select) { border: 1px solid var(--almacen-border); background: var(--almacen-surface); color: var(--almacen-text); border-radius: 8px; padding: .4rem .6rem; }
+  .almacen-ui .dataTables_wrapper .dataTables_paginate .paginate_button { border: 1px solid transparent; border-radius: 7px; margin: .15rem; padding: .35rem .65rem; color: var(--almacen-text); }
+  .almacen-ui .dataTables_wrapper .dataTables_paginate .paginate_button.current { background: var(--almacen-primary-light); border-color: var(--almacen-primary); }
+  .almacen-ui .dataTables_wrapper .dataTables_paginate .paginate_button:hover { background: var(--almacen-primary-light); border-color: var(--almacen-border); }
+  .almacen-ui .dataTables_empty { padding: 2rem 1rem; color: var(--almacen-text-muted); }
+  .almacen-ui .page-link { color: var(--almacen-primary-dark); background: var(--almacen-surface); border-color: var(--almacen-border); }
+  .almacen-ui .page-item.active .page-link { background: #087fb9; border-color: #087fb9; color: #fff; }
+  .almacen-ui .badge, .almacen-ui .estado-badge, .almacen-ui .gestor-badge { display: inline-block; border-radius: 6px; padding: .35rem .55rem; font-size: .7rem; font-weight: 600; line-height: 1.35; vertical-align: middle; }
+  .almacen-ui :is(.badge-light-primary, .gestor-badge-info, .estado-en-proceso) { background: var(--almacen-primary-light); color: var(--almacen-primary-dark); }
+  .almacen-ui :is(.badge-light-info, .estado-proceso) { background: #e2f5fa; color: #08657a; }
+  .almacen-ui :is(.badge-light-success, .gestor-badge-success, .estado-aprobado, .estado-convertida, .estado-convertido, .estado-despachado, .estado-finalizado, .estado-entregado) { background: #e7f5ed; color: #11643d; }
+  .almacen-ui :is(.badge-light-warning, .gestor-badge-warning, .estado-pendiente) { background: #fff3cd; color: #775100; }
+  .almacen-ui :is(.badge-light-danger, .gestor-badge-danger, .estado-rechazado, .estado-anulado, .estado-cancelado) { background: #fce9ec; color: #aa2533; }
+  .almacen-ui :is(.badge-light-secondary, .gestor-badge-secondary, .estado-borrador, .estado-default) { background: var(--almacen-background); color: var(--almacen-text-muted); }
+  .almacen-ui .alert { border: 1px solid var(--almacen-border); border-left-width: 4px; border-radius: var(--almacen-radius); padding: 1rem; font-size: .85rem; }
+  .almacen-ui .alert-success { background: #e7f5ed; border-color: #a7d6bd; color: #11643d; }
+  .almacen-ui .alert-danger, .almacen-ui .alert-error { background: #fce9ec; border-color: #e9b0b8; color: #aa2533; }
+  .almacen-ui .alert-warning { background: #fff7df; border-color: #e8cf8f; color: #775100; }
+  .almacen-ui .alert-info { background: var(--almacen-primary-light); border-color: #a7d9ef; color: var(--almacen-primary-dark); }
+  .almacen-ui .alert-dismissible { padding-right: 3rem; }
+  .almacen-ui .message { padding: .7rem 1rem; margin-bottom: .5rem; border-left: 3px solid var(--almacen-primary); background: var(--almacen-primary-light); border-radius: 8px; }
+
+  /* Navegación: respeta la geometría y el plegado originales de Riho. */
+  .almacen-ui .page-header { background: var(--almacen-surface); box-shadow: 0 2px 12px rgb(20 45 75 / 5%); border-bottom: 1px solid var(--almacen-border); }
+  .almacen-ui .page-header .header-wrapper { padding-block: 1rem; }
+  .almacen-ui .page-header h4 { font-size: 1rem; color: var(--almacen-text); }
+  .almacen-ui .sidebar-wrapper { background: var(--almacen-surface); border-right: 1px solid var(--almacen-border); }
+  .almacen-ui .sidebar-wrapper .logo-wrapper img { max-width: 160px; max-height: 58px; object-fit: contain; }
+  .almacen-ui .sidebar-wrapper :is(.sidebar-link, .sidebar-submenu a) { border-radius: 9px; transition: background-color var(--almacen-transition), color var(--almacen-transition); }
+  .almacen-ui .sidebar-wrapper .sidebar-link { padding-block: .75rem; color: var(--almacen-text); }
+  .almacen-ui .sidebar-wrapper :is(.sidebar-link:hover, .sidebar-submenu a:hover, a[aria-current='page']) { background: var(--almacen-primary-light); color: var(--almacen-primary-dark); }
+  .almacen-ui .sidebar-wrapper a[aria-current='page'] { box-shadow: inset 3px 0 var(--almacen-primary); font-weight: 650; }
+  .almacen-ui .sidebar-main-title h6 { color: var(--almacen-text-muted); font-size: .7rem; letter-spacing: .06em; }
+  .almacen-ui .sidebar-submenu a { font-size: .8rem; }
+  .almacen-ui .dropdown-wide { min-width: 220px; padding: .65rem; text-align: center; }
+  .almacen-ui .profile-dropdown li a { display: block; padding: .5rem .75rem; margin: .2rem auto; white-space: nowrap; }
+  .almacen-ui footer { flex-shrink: 0; background: var(--almacen-surface); border-top: 1px solid var(--almacen-border); color: var(--almacen-text-muted); font-size: .75rem; }
+
+  /* Ajustes acotados: factura 1H, divisiones y selección de artículos. */
+  .almacen-ui .almacen-factura-page :is(table.bill-content, table.order-details) { width: 100%; max-width: 100%; table-layout: auto; }
+  .almacen-ui .almacen-factura-card .table-wrapper { width: 100%; }
+  .almacen-ui .almacen-factura-page :is(table.bill-content, table.order-details) :is(td, th) { padding: .75rem; overflow-wrap: anywhere; }
+  .almacen-ui .almacen-factura-page .card-container { max-width: 100%; margin-block: 1rem; }
+  .almacen-ui .almacen-factura-page .card img { display: block; max-width: 100%; height: auto; }
+  .almacen-ui .divisiones-module :is(.form-select, .form-control, textarea, .select2-container) { max-width: 100%; }
+  .almacen-ui .acciones-stock .accion-btn { min-height: 30px; }
+  .almacen-ui #tabla-modal-articulos td:first-child { min-width: 175px; font-weight: 600; }
+  .almacen-ui #tabla-modal-articulos :is(th, td):nth-child(n+4):nth-child(-n+7) { text-align: right; font-variant-numeric: tabular-nums; }
+  .almacen-ui .requerimiento-stats .stat-card-primary::before { background: var(--almacen-primary); }
+  .almacen-ui .requerimiento-stats .stat-card-primary .stat-icon { color: var(--almacen-primary-dark); background: var(--almacen-primary-light); }
+  .almacen-ui .requerimiento-stats .stat-card-info::before { background: var(--almacen-info); }
+  .almacen-ui .requerimiento-stats .stat-card-info .stat-icon { color: var(--almacen-info); background: #e2f5fa; }
+  .almacen-ui .requerimiento-stats .stat-card-success::before { background: var(--almacen-success); }
+  .almacen-ui .requerimiento-stats .stat-card-success .stat-icon { color: #11643d; background: #e7f5ed; }
+  .almacen-ui .requerimiento-stats .stat-card-warning::before { background: var(--almacen-warning); }
+  .almacen-ui .requerimiento-stats .stat-card-warning .stat-icon { color: #775100; background: #fff3cd; }
+  .almacen-ui .requerimiento-stats .stat-card-danger::before { background: var(--almacen-danger); }
+  .almacen-ui .requerimiento-stats .stat-card-danger .stat-icon { color: #aa2533; background: #fce9ec; }
+  .almacen-ui .requerimiento-stats .stat-value { font-size: 1.75rem; font-variant-numeric: tabular-nums; }
+  @keyframes almacen-spin { to { transform: rotate(360deg); } }
+  @media (max-width: 991.98px) {
+    /* Riho reserva 100px al plegar en escritorio; en móvil el menú es overlay. */
+    .almacen-ui .page-wrapper.compact-wrapper .page-body-wrapper div.sidebar-wrapper ~ div.page-body { margin-left: 0; margin-right: 0; padding-inline: 0; }
+    .almacen-ui footer.footer { margin-left: 0; width: 100%; }
+  }
+  @media (max-width: 767.98px) {
+    .almacen-ui { --almacen-space: 1rem; }
+    .almacen-ui .page-title .row > [class*='col-'] { width: 100%; }
+    .almacen-ui .page-title .breadcrumb { justify-content: flex-start; margin-top: .6rem; }
+    .almacen-ui .gestor-header { align-items: flex-start; flex-direction: column; }
+    .almacen-ui .modal-dialog { margin: .5rem; }
+    .almacen-ui .modal-dialog .modal-content { max-height: calc(100dvh - 1rem); }
+    .almacen-ui .modal-footer { flex-wrap: wrap; }
+    .almacen-ui .dataTables_wrapper :is(.dataTables_filter, .dataTables_length) { float: none; text-align: left; }
+    .almacen-ui .dataTables_filter input { max-width: 65vw; }
+    .almacen-ui .card-header .d-flex { flex-wrap: wrap; gap: .75rem; }
+    .almacen-ui .page-body :is(.d-flex.justify-content-between, .d-flex.justify-content-end) { flex-wrap: wrap; gap: .5rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .almacen-ui *, .almacen-ui *::before, .almacen-ui *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+  }
+}
