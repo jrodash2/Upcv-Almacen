@@ -840,12 +840,28 @@ class SolicitudRequerimiento(models.Model):
 
 
 class DetalleSolicitudRequerimiento(models.Model):
+    asignacion_directa = models.ForeignKey(
+        AsignacionDetalleFactura, on_delete=models.PROTECT, null=True, blank=True,
+        related_name='detalles_solicitud',
+    )
+    detalle_requerimiento = models.OneToOneField(
+        DetalleRequerimiento, on_delete=models.PROTECT, null=True, blank=True,
+        related_name='detalle_solicitud_origen',
+    )
     solicitud = models.ForeignKey(SolicitudRequerimiento, on_delete=models.CASCADE, related_name='detalles')
     articulo = models.ForeignKey(Articulo, on_delete=models.CASCADE)
     division_articulo_ubicacion = models.ForeignKey(DivisionArticuloUbicacion, on_delete=models.SET_NULL, null=True, blank=True, related_name="detalles_solicitud")
     cantidad = models.PositiveIntegerField()
     observacion = models.TextField(blank=True, null=True)
 
+    class Meta:
+        constraints = [models.CheckConstraint(
+            condition=~models.Q(asignacion_directa__isnull=False, division_articulo_ubicacion__isnull=False),
+            name='solicitud_una_fuente',
+        )]
 
-        
-        
+    @property
+    def origen_label(self):
+        if self.division_articulo_ubicacion_id:
+            return f"División {self.division_articulo_ubicacion.division_articulo.division.nombre} · Asignación {self.division_articulo_ubicacion_id}"
+        return f'Directo · Asignación {self.asignacion_directa_id}' if self.asignacion_directa_id else 'Directo histórico (sin asignación identificada)'

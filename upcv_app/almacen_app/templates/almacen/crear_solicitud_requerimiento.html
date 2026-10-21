@@ -87,7 +87,7 @@
                   <thead class="table-light">
                     <tr>
                       <th>Código / Artículo</th>
-                      <th style="width: 140px;">División</th>
+                      <th style="width: 220px;">Origen / asignación</th>
                       <th style="width: 110px;">Asignado</th>
                       <th style="width: 110px;">Reservado</th>
                       <th style="width: 110px;">Consumido</th>
@@ -109,7 +109,7 @@
                             <div class="text-danger small">{{ error }}</div>
                           {% endfor %}
                         </td>
-                        <td class="text-center"><span class="badge badge-light-info division-articulo">Directo</span></td>
+                        <td>{{ detalle_form.origen }}{% for error in detalle_form.origen.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}</td>
                         <td class="text-center"><span class="badge badge-light-primary cantidad-asignada">0</span></td>
                         <td class="text-center"><span class="badge badge-light-warning cantidad-reservada">0</span></td>
                         <td class="text-center"><span class="badge badge-light-secondary cantidad-consumida">0</span></td>
@@ -139,7 +139,7 @@
               <template id="empty-form-template">
                 <tr class="detalle-form-row">
                   <td>{{ formset.empty_form.articulo }}</td>
-                  <td class="text-center"><span class="badge badge-light-info division-articulo">Directo</span></td>
+                  <td>{{ formset.empty_form.origen }}</td>
                   <td class="text-center"><span class="badge badge-light-primary cantidad-asignada">0</span></td>
                   <td class="text-center"><span class="badge badge-light-warning cantidad-reservada">0</span></td>
                   <td class="text-center"><span class="badge badge-light-secondary cantidad-consumida">0</span></td>
@@ -161,6 +161,7 @@
               </div>
             </form>
             {{ stock_dict|json_script:"stock-articulos-data" }}
+            {{ fuentes_data|json_script:"fuentes-articulos-data" }}
           </div>
         </div>
       </div>
@@ -171,6 +172,7 @@
 document.addEventListener("DOMContentLoaded", function () {
   let stockData = JSON.parse(document.getElementById("stock-articulos-data").textContent || "{}");
   let articulosDepartamento = null;
+  let fuentesData = JSON.parse(document.getElementById("fuentes-articulos-data").textContent || "[]");
   const endpointBase = "{% url 'almacen:articulos_asignados' 0 %}".replace(/0\/$/, "");
   const addButton = document.getElementById("agregar-item");
   const formsetBody = document.getElementById("detalle-formset-body");
@@ -253,6 +255,7 @@ document.addEventListener("DOMContentLoaded", function () {
       filas.forEach((row, index) => {
         const articulo = row.querySelector(".select-articulo");
         const cantidad = row.querySelector(".cantidad-solicitada");
+        if (!row.querySelector(".select-origen").value) errores.push(`Fila ${index + 1}: seleccione el origen o asignación.`);
         if (!articulo.value) errores.push(`Fila ${index + 1}: seleccione un artículo.`);
         if (!cantidad.value || !cantidad.checkValidity() || Number(cantidad.value) <= 0) {
           errores.push(`Fila ${index + 1}: ingrese una cantidad mayor a cero dentro del disponible.`);
@@ -310,36 +313,29 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  function actualizarDisponible(select) {
-    const articuloId = select.value;
-    const disponible = Number(stockData[articuloId] || 0);
+  function actualizarDisponible(select, cambiarOpciones = true) {
     const row = select.closest(".detalle-form-row");
-
     if (!row) return;
-
-    const disponibleEl = row.querySelector(".cantidad-disponible");
-    const divisionEl = row.querySelector(".division-articulo");
-    const asignadaEl = row.querySelector(".cantidad-asignada");
-    const reservadaEl = row.querySelector(".cantidad-reservada");
-    const consumidaEl = row.querySelector(".cantidad-consumida");
-    const cantidadInput = row.querySelector(".cantidad-solicitada");
-
-    if (disponibleEl) {
-      disponibleEl.textContent = disponible;
+    const origen = row.querySelector(".select-origen");
+    if (cambiarOpciones) {
+      const previo = origen.value;
+      const fuentes = fuentesData.filter((f) => String(f.articulo_id) === select.value);
+      origen.replaceChildren(new Option("Seleccione origen", ""));
+      fuentes.forEach((f) => origen.add(new Option(
+        `${f.origen}${f.division ? ' ' + f.division : ''} · Asignación ${f.asignacion_id} · Disponible ${f.cantidad_disponible}`,
+        f.key)));
+      if (fuentes.some((f) => f.key === previo)) origen.value = previo;
+      else if (fuentes.length === 1) origen.value = fuentes[0].key;
     }
-
-    const articulo = articulosDepartamento
-      ? articulosDepartamento.find((item) => String(item.id) === String(articuloId))
-      : null;
-    if (divisionEl) divisionEl.textContent = articulo && articulo.division ? articulo.division : "Directo";
-    if (asignadaEl) asignadaEl.textContent = articulo ? (articulo.cantidad_asignada || disponible) : disponible;
-    if (reservadaEl) reservadaEl.textContent = articulo ? (articulo.cantidad_reservada || 0) : 0;
-    if (consumidaEl) consumidaEl.textContent = articulo ? (articulo.cantidad_consumida || 0) : 0;
-
-    if (cantidadInput) {
-      cantidadInput.max = disponible > 0 ? disponible : "";
-      cantidadInput.placeholder = disponible > 0 ? "Máximo " + disponible : "Sin disponible";
-    }
+    const fuente = fuentesData.find((f) => f.key === origen.value && String(f.articulo_id) === select.value);
+    const disponible = Number(fuente ? fuente.cantidad_disponible : 0);
+    row.querySelector(".cantidad-disponible").textContent = disponible;
+    row.querySelector(".cantidad-asignada").textContent = fuente ? fuente.cantidad_asignada : 0;
+    row.querySelector(".cantidad-reservada").textContent = fuente ? fuente.cantidad_reservada : 0;
+    row.querySelector(".cantidad-consumida").textContent = fuente ? fuente.cantidad_consumida : 0;
+    const cantidad = row.querySelector(".cantidad-solicitada");
+    cantidad.max = disponible;
+    cantidad.placeholder = fuente ? "Máximo " + disponible : "Seleccione origen";
   }
 
   function actualizarOpcionesSelect(select, items) {
@@ -349,7 +345,7 @@ document.addEventListener("DOMContentLoaded", function () {
     items.forEach((item) => {
       const option = document.createElement("option");
       option.value = item.id;
-      option.textContent = item.codigo + " - " + item.nombre + (item.division ? " | División: " + item.division : "") + " | Disponible: " + item.cantidad_disponible;
+      option.textContent = item.codigo + " - " + item.nombre;
       option.dataset.codigo = item.codigo;
       option.dataset.disponible = item.cantidad_disponible;
       select.appendChild(option);
@@ -416,6 +412,8 @@ document.addEventListener("DOMContentLoaded", function () {
   document.addEventListener("change", function (event) {
     if (event.target.classList.contains("select-articulo")) {
       actualizarDisponible(event.target);
+    } else if (event.target.classList.contains("select-origen")) {
+      actualizarDisponible(event.target.closest("tr").querySelector(".select-articulo"), false);
     }
   });
 
@@ -440,6 +438,7 @@ document.addEventListener("DOMContentLoaded", function () {
       if (!resp.ok) throw new Error("No se pudieron consultar los artículos.");
       const payload = await resp.json();
       articulosDepartamento = payload.articulos || [];
+      fuentesData = articulosDepartamento.flatMap((item) => item.fuentes || []);
       stockData = {};
       articulosDepartamento.forEach((item) => {
         stockData[String(item.id)] = item.cantidad_disponible;

@@ -18,6 +18,10 @@
             </div>
           </div>
           <div class="card-body p-4">
+        {% for message in messages %}
+          <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-info{% endif %}" role="alert">{{ message }}</div>
+        {% endfor %}
+
             <div class="row g-3 mb-3">
               <div class="col-md-3"><span class="text-muted d-block">Departamento</span><strong>{{ solicitud.departamento }}</strong></div>
               <div class="col-md-3"><span class="text-muted d-block">Solicitante</span><strong>{{ solicitud.usuario_solicitante }}</strong></div>
@@ -62,7 +66,7 @@
 
             <div class="dt-ext table-responsive custom-scrollbar">
               <table class="display datatables" id="tabla-detalle-solicitud-requerimiento">
-                <thead class="table-light"><tr><th>Código</th><th>Renglón</th><th>Artículo</th><th>Categoría</th><th>Unidad de medida</th><th style="width:150px;">Cantidad</th></tr></thead>
+                <thead class="table-light"><tr><th>Código</th><th>Renglón</th><th>Artículo</th><th>Origen</th><th>Categoría</th><th>Unidad de medida</th><th style="width:150px;">Cantidad</th></tr></thead>
                 <tbody>
                   {% for d in solicitud.detalles.all %}
                   <tr>
@@ -74,7 +78,7 @@
                         <span class="text-muted">S/R</span>
                       {% endif %}
                     </td>
-                    <td>{{ d.articulo.nombre }}</td>
+                    <td>{{ d.articulo.nombre }}</td><td>{{ d.origen_label }}</td>
                     <td>
                       {% if d.articulo.categoria %}
                         <span class="badge badge-light-secondary">{{ d.articulo.categoria.nombre }}</span>
@@ -86,7 +90,7 @@
                     <td>{{ d.cantidad }}</td>
                   </tr>
                   {% empty %}
-                  <tr><td colspan="6" class="text-center text-muted">Sin detalles cargados.</td></tr>
+                  <tr><td colspan="7" class="text-center text-muted">Sin detalles cargados.</td></tr>
                   {% endfor %}
                 </tbody>
               </table>
