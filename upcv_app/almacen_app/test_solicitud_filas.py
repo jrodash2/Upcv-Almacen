@@ -39,8 +39,9 @@ class SolicitudFilasTests(TestCase):
                          f'detalles-{i}-cantidad': cantidad})
             if deleted:
                 data[f'detalles-{i}-DELETE'] = 'on'
+        headers = {key: overrides.pop(key) for key in list(overrides) if key.startswith('HTTP_')}
         data.update(overrides)
-        return self.client.post(self.url, data)
+        return self.client.post(self.url, data, **headers)
 
     def test_only_remaining_article_is_saved(self):
         self.assertEqual(self.post([(self.a, 1, False)]).status_code, 302)
@@ -109,3 +110,86 @@ class SolicitudFilasTests(TestCase):
         self.assertFalse(SolicitudRequerimiento.objects.exists())
         source.refresh_from_db()
         self.assertEqual(source.cantidad_reservada, Decimal('2'))
+
+    def test_three_active_rows_are_saved(self):
+        response = self.post([(self.a, 2, False), (self.b, 3, False), (self.a, 1, False)])
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(list(SolicitudRequerimiento.objects.get().detalles.order_by('pk').values_list(
+            'articulo_id', 'cantidad')), [(self.a.pk, 2), (self.b.pk, 3), (self.a.pk, 1)])
+
+    def test_json_save_returns_redirect_and_persists_all_twelve_rows(self):
+        AsignacionDetalleFactura.objects.filter(articulo=self.a).update(cantidad_asignada=30)
+        response = self.post([(self.a, 1, False)] * 12, HTTP_ACCEPT='application/json')
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json(), {
+            'ok': True, 'redirect_url': reverse('almacen:listado_solicitudes_gestor')})
+        self.assertEqual(SolicitudRequerimiento.objects.get().detalles.count(), 12)
+
+    def test_json_header_and_detail_errors_are_both_reported(self):
+        response = self.post([(self.a, 0, False)], departamento='',
+                             tipos_solicitud=[], HTTP_ACCEPT='application/json')
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(response.json()['ok'])
+        errors = ' '.join(response.json()['errors'])
+        self.assertIn('Departamento', errors)
+        self.assertIn('Tipo de solicitud', errors)
+        self.assertIn('Fila 1', errors)
+        self.assertFalse(SolicitudRequerimiento.objects.exists())
+
+    def test_json_division_error_is_visible_and_rolls_back(self):
+        from unittest.mock import patch
+        from django.core.exceptions import ValidationError
+        source = self.division_source()
+        with patch.object(DivisionArticuloUbicacion, 'save', side_effect=ValidationError('Disponible modificado.')):
+            response = self.post([(self.a, 2, False)], HTTP_ACCEPT='application/json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('Disponible modificado.', ' '.join(response.json()['errors']))
+        self.assertFalse(SolicitudRequerimiento.objects.exists())
+        source.refresh_from_db()
+        self.assertEqual(source.cantidad_reservada, Decimal('2'))
+
+    def test_traditional_post_shows_transaction_error(self):
+        from unittest.mock import patch
+        from django.core.exceptions import ValidationError
+        self.division_source()
+        with patch.object(DivisionArticuloUbicacion, 'save', side_effect=ValidationError('Disponible modificado.')):
+            response = self.post([(self.a, 2, False)])
+        self.assertContains(response, 'Disponible modificado.')
+        self.assertFalse(SolicitudRequerimiento.objects.exists())
+
+    def test_json_management_form_error_is_visible(self):
+        response = self.post([(self.a, 1, False)], **{
+            'detalles-TOTAL_FORMS': 'invalid', 'HTTP_ACCEPT': 'application/json'})
+        self.assertEqual(response.status_code, 400)
+        self.assertTrue(response.json()['errors'])
+        self.assertFalse(SolicitudRequerimiento.objects.exists())
+
+    def test_json_deleted_row_is_not_saved(self):
+        response = self.post([(self.a, 2, False), (self.b, 999, True)], HTTP_ACCEPT='application/json')
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(list(SolicitudRequerimiento.objects.get().detalles.values_list(
+            'articulo_id', 'cantidad')), [(self.a.pk, 2)])
+
+    def test_json_empty_or_overdrawn_request_saves_nothing(self):
+        for rows in [[], [(self.a, 0, False)], [(self.a, 5, False), (self.a, 5, False)]]:
+            with self.subTest(rows=rows):
+                response = self.post(rows, HTTP_ACCEPT='application/json')
+                self.assertEqual(response.status_code, 400)
+                self.assertTrue(response.json()['errors'])
+                self.assertFalse(SolicitudRequerimiento.objects.exists())
+
+    def test_json_division_save_preserves_source(self):
+        source = self.division_source()
+        response = self.post([(self.a, 2, False)], HTTP_ACCEPT='application/json')
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(SolicitudRequerimiento.objects.get().detalles.get().division_articulo_ubicacion, source)
+        source.refresh_from_db()
+        self.assertEqual(source.cantidad_reservada, Decimal('4'))
+
+    def test_empty_stock_does_not_silently_disable_save(self):
+        AsignacionDetalleFactura.objects.all().delete()
+        response = self.client.get(self.url)
+        self.assertContains(response, 'id="guardar-solicitud" class="btn btn-primary gestor-btn" type="submit">')
+        response = self.post([], HTTP_ACCEPT='application/json')
+        self.assertEqual(response.status_code, 400)
+        self.assertTrue(response.json()['errors'])

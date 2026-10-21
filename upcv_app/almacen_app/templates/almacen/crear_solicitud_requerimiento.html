@@ -31,11 +31,13 @@
             <h5 class="mb-0"><i class="fa fa-file-text-o me-2"></i>Crear Solicitud de Requerimiento</h5>
           </div>
           <div class="card-body p-4">
-            {% if sin_stock_disponible %}
-              <div class="alert alert-warning">
-                No tiene artículos asignados disponibles para solicitar. Comuníquese con el administrador o con su departamento.
-              </div>
-            {% endif %}
+            <div id="solicitud-sin-stock" class="alert alert-warning" {% if not sin_stock_disponible %}hidden{% endif %}>
+              No tiene artículos asignados disponibles para solicitar. Comuníquese con el administrador o con su departamento.
+            </div>
+            <div id="solicitud-errores" class="alert alert-danger" role="alert" tabindex="-1" {% if not errores_guardado %}hidden{% endif %}>
+              <strong>No se pudo guardar la solicitud.</strong>
+              <ul class="mb-0">{% for error in errores_guardado %}<li>{{ error }}</li>{% endfor %}</ul>
+            </div>
             <form method="post" autocomplete="off" id="solicitud-form">
               {% csrf_token %}
               <div class="row">
@@ -155,7 +157,7 @@
 
               <div class="d-flex justify-content-end gap-2 mt-4">
                 <a href="{% url 'almacen:listado_solicitudes_gestor' %}" class="btn btn-light border gestor-btn">Cancelar</a>
-                <button class="btn btn-primary gestor-btn" type="submit" {% if sin_stock_disponible %}disabled{% endif %}>Guardar Solicitud</button>
+                <button id="guardar-solicitud" class="btn btn-primary gestor-btn" type="submit">Guardar Solicitud</button>
               </div>
             </form>
             {{ stock_dict|json_script:"stock-articulos-data" }}
@@ -216,12 +218,96 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   sincronizarIndices();
-  // Native validation must run after filtered/paginated controls are attached.
+  const guardarButton = document.getElementById("guardar-solicitud");
+  const erroresPanel = document.getElementById("solicitud-errores");
+  let guardando = false;
+
+  function mostrarErrores(errores) {
+    const lista = erroresPanel.querySelector("ul");
+    lista.replaceChildren();
+    errores.forEach((error) => {
+      const item = document.createElement("li");
+      item.textContent = error;
+      lista.appendChild(item);
+    });
+    erroresPanel.hidden = false;
+    erroresPanel.focus();
+  }
+
+  // Serialize every active row, including detached pages, without drawing the table.
+  // CSRF and header fields come from the real form; detail names remain Django's.
   solicitudForm.noValidate = true;
-  solicitudForm.addEventListener("submit", function (event) {
-    if (tabla) tabla.search("").columns().search("").page.len(-1).draw(false);
-    sincronizarIndices();
-    if (!solicitudForm.reportValidity()) event.preventDefault();
+  solicitudForm.addEventListener("submit", async function (event) {
+    event.preventDefault();
+    if (guardando) return;
+    erroresPanel.hidden = true;
+    let redirigiendo = false;
+    try {
+      sincronizarIndices();
+      const filas = filasActivas();
+      const errores = [];
+      const departamento = document.getElementById("id_departamento");
+      if (!departamento.value) errores.push("Seleccione el departamento.");
+      if (!obtenerTiposSeleccionados().length) errores.push("Seleccione al menos un tipo de solicitud.");
+      if (!filas.length) errores.push("Debe agregar al menos un artículo a la solicitud.");
+      filas.forEach((row, index) => {
+        const articulo = row.querySelector(".select-articulo");
+        const cantidad = row.querySelector(".cantidad-solicitada");
+        if (!articulo.value) errores.push(`Fila ${index + 1}: seleccione un artículo.`);
+        if (!cantidad.value || !cantidad.checkValidity() || Number(cantidad.value) <= 0) {
+          errores.push(`Fila ${index + 1}: ingrese una cantidad mayor a cero dentro del disponible.`);
+        }
+      });
+      if (errores.length) {
+        mostrarErrores(errores);
+        return;
+      }
+      const datos = new FormData(solicitudForm);
+      // Discard the DOM's partial selection before appending the complete formset.
+      Array.from(datos.keys()).forEach((name) => {
+        if (/^detalles-\d+-/.test(name)) datos.delete(name);
+      });
+      filas.forEach((row) => {
+        row.querySelectorAll("input[name], select[name], textarea[name]").forEach((input) => {
+          if (input.disabled || ((input.type === "checkbox" || input.type === "radio") && !input.checked)) return;
+          datos.append(input.name, input.value);
+        });
+      });
+      guardando = true;
+      guardarButton.disabled = true;
+      guardarButton.textContent = "Guardando…";
+      solicitudForm.setAttribute("aria-busy", "true");
+      const response = await fetch(solicitudForm.action || window.location.href, {
+        method: "POST", body: datos, credentials: "same-origin",
+        headers: {Accept: "application/json"}
+      });
+      if (response.redirected) {
+        mostrarErrores(["El servidor redirigió sin confirmar el guardado. Revise el listado antes de reintentar y compruebe que su sesión sigue activa."]);
+        return;
+      }
+      const esJson = (response.headers.get("content-type") || "").includes("application/json");
+      const resultado = esJson ? await response.json() : null;
+      if (response.ok && resultado && resultado.ok && resultado.redirect_url) {
+        window.location.assign(resultado.redirect_url);
+        redirigiendo = true;
+      } else if (resultado && Array.isArray(resultado.errors) && resultado.errors.length) {
+        mostrarErrores(resultado.errors);
+      } else {
+        const detalle = response.status === 403
+          ? "La sesión, los permisos o la verificación CSRF impidieron guardar. Recargue la página y compruebe su sesión."
+          : "El servidor no confirmó el guardado. Revise el listado antes de reintentar y comunique este error al administrador.";
+        mostrarErrores([`HTTP ${response.status}: ${detalle}`]);
+      }
+    } catch (error) {
+      mostrarErrores(["No se pudo confirmar el guardado. Compruebe la conexión y revise el listado antes de reintentar para evitar duplicados."]);
+    } finally {
+      if (!redirigiendo) {
+        guardando = false;
+        guardarButton.disabled = false;
+        guardarButton.textContent = "Guardar Solicitud";
+        solicitudForm.removeAttribute("aria-busy");
+      }
+    }
   });
 
   function actualizarDisponible(select) {
@@ -349,17 +435,21 @@ document.addEventListener("DOMContentLoaded", function () {
     obtenerTiposSeleccionados().forEach((tipo) => params.append("tipos_solicitud", tipo));
     const query = params.toString() ? `?${params.toString()}` : "";
 
-    const resp = await fetch(`${endpointBase}${deptId}/${query}`);
-    if (!resp.ok) return;
-
-    const payload = await resp.json();
-    articulosDepartamento = payload.articulos || [];
-    stockData = {};
-    articulosDepartamento.forEach((item) => {
-      stockData[String(item.id)] = item.cantidad_disponible;
-    });
-
-    actualizarOpcionesFilas(articulosDepartamento);
+    try {
+      const resp = await fetch(`${endpointBase}${deptId}/${query}`);
+      if (!resp.ok) throw new Error("No se pudieron consultar los artículos.");
+      const payload = await resp.json();
+      articulosDepartamento = payload.articulos || [];
+      stockData = {};
+      articulosDepartamento.forEach((item) => {
+        stockData[String(item.id)] = item.cantidad_disponible;
+      });
+      actualizarOpcionesFilas(articulosDepartamento);
+      addButton.disabled = !articulosDepartamento.length;
+      document.getElementById("solicitud-sin-stock").hidden = Boolean(articulosDepartamento.length);
+    } catch (error) {
+      mostrarErrores(["No se pudieron cargar los artículos del departamento. Compruebe su sesión y conexión, y vuelva a seleccionar el departamento."]);
+    }
   }
 
   if (deptSelect) {
