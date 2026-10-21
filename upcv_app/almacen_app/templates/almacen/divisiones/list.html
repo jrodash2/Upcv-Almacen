@@ -1,4 +1,5 @@
 {% extends 'almacen/base.html' %}
+{% load cantidad_filters %}
 {% load static %}
 {% block content %}
 <div class="page-body">
@@ -55,7 +56,7 @@
                 <td>{{ d.descripcion|default:'-' }}</td>
                 <td>{{ d.total_ubicaciones_listado }}</td>
                 <td>{{ d.total_articulos_listado }}</td>
-                <td>{{ d.total_reservado_listado|default:0 }}</td>
+                <td>{{ d.total_reservado_listado|default:0|cantidad_formato }}</td>
                 <td>
                   <span class="badge {% if d.activa %}badge-light-success{% else %}badge-light-danger{% endif %}">
                     {{ d.activa|yesno:'Activa,Inactiva' }}

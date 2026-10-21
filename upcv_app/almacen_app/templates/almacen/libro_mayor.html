@@ -1,4 +1,6 @@
 {% extends 'almacen/base.html' %}
+{% load cantidad_filters %}
+
 {% load moneda_filters %}
 {% load custom_filters %}
 {% block content %}
@@ -25,8 +27,8 @@
       </form>
     </div></div>
     <div class="row">
-      <div class="col-sm"><div class="card small-widget"><div class="card-body"><span>Artículos</span><h4>{{ totales.total_articulos|cantidad_limpia }}</h4></div></div></div>
-      <div class="col-sm"><div class="card small-widget"><div class="card-body"><span>Entradas Cant.</span><h4>{{ totales.total_entradas_cantidad|cantidad_limpia }}</h4></div></div></div>
+      <div class="col-sm"><div class="card small-widget"><div class="card-body"><span>Artículos</span><h4>{{ totales.total_articulos|cantidad_formato }}</h4></div></div></div>
+      <div class="col-sm"><div class="card small-widget"><div class="card-body"><span>Entradas Cant.</span><h4>{{ totales.total_entradas_cantidad|cantidad_formato }}</h4></div></div></div>
       <div class="col-sm"><div class="card small-widget"><div class="card-body"><span>Entradas Q</span><h4>{{ totales.total_entradas_monto|quetzales }}</h4></div></div></div>
       <div class="col-sm"><div class="card small-widget"><div class="card-body"><span>Salidas Q</span><h4>{{ totales.total_salidas_monto|quetzales }}</h4></div></div></div>
       <div class="col-sm"><div class="card small-widget"><div class="card-body"><span>Saldo Final Q</span><h4>{{ totales.saldo_final_monto|quetzales }}</h4></div></div></div>
@@ -34,7 +36,7 @@
     <div class="card"><div class="card-header pb-0 card-no-border"><div class="d-flex justify-content-between align-items-center flex-wrap gap-2"><div><h4>Libro Mayor</h4><span>Movimientos valorizados por renglón presupuestario del 300 al 399.</span></div><div><a class="btn btn-danger btn-sm" href="{% url 'almacen:libro_mayor_pdf' %}?{{ request.GET.urlencode }}">Exportar PDF</a><a class="btn btn-success btn-sm" href="{% url 'almacen:libro_mayor_excel' %}?{{ request.GET.urlencode }}">Exportar Excel</a></div></div></div>
       <div class="card-body"><div class="dt-ext table-responsive custom-scrollbar"><table class="display datatables" id="tabla-libro-mayor">
         <thead><tr><th>Renglón</th><th>Código</th><th>Artículo</th><th>Unidad</th><th>Saldo Inicial</th><th>Entradas</th><th>Salidas</th><th>Saldo Final</th><th>Costo Promedio</th><th>Estado</th><th>Acción</th></tr></thead>
-        <tbody>{% for fila in filas %}<tr><td>{{ fila.renglon }}</td><td><span class="badge badge-light-secondary">{{ fila.codigo }}</span></td><td>{{ fila.articulo }}</td><td>{{ fila.unidad }}</td><td>Cant: {{ fila.saldo_inicial_cantidad|cantidad_limpia }}<br>{{ fila.saldo_inicial_monto|quetzales }}</td><td>Cant: {{ fila.entradas_cantidad|cantidad_limpia }}<br>{{ fila.entradas_monto|quetzales }}</td><td>Cant: {{ fila.salidas_cantidad|cantidad_limpia }}<br>{{ fila.salidas_monto|quetzales }}</td><td>Cant: {{ fila.saldo_final_cantidad|cantidad_limpia }}<br>{{ fila.saldo_final_monto|quetzales }}</td><td>{{ fila.costo_promedio|quetzales }}</td><td>{% if fila.sin_costo %}<span class="badge badge-light-warning">Sin costo</span>{% endif %}{% if fila.revisar %}<span class="badge badge-light-danger">Revisar</span>{% endif %}</td><td><a class="btn btn-outline-primary btn-sm" href="{% url 'almacen:libro_mayor_movimientos' fila.articulo_id %}?{{ request.GET.urlencode }}">Ver movimientos</a></td></tr>{% endfor %}</tbody>
+        <tbody>{% for fila in filas %}<tr><td>{{ fila.renglon }}</td><td><span class="badge badge-light-secondary">{{ fila.codigo }}</span></td><td>{{ fila.articulo }}</td><td>{{ fila.unidad }}</td><td>Cant: {{ fila.saldo_inicial_cantidad|cantidad_formato }}<br>{{ fila.saldo_inicial_monto|quetzales }}</td><td>Cant: {{ fila.entradas_cantidad|cantidad_formato }}<br>{{ fila.entradas_monto|quetzales }}</td><td>Cant: {{ fila.salidas_cantidad|cantidad_formato }}<br>{{ fila.salidas_monto|quetzales }}</td><td>Cant: {{ fila.saldo_final_cantidad|cantidad_formato }}<br>{{ fila.saldo_final_monto|quetzales }}</td><td>{{ fila.costo_promedio|quetzales }}</td><td>{% if fila.sin_costo %}<span class="badge badge-light-warning">Sin costo</span>{% endif %}{% if fila.revisar %}<span class="badge badge-light-danger">Revisar</span>{% endif %}</td><td><a class="btn btn-outline-primary btn-sm" href="{% url 'almacen:libro_mayor_movimientos' fila.articulo_id %}?{{ request.GET.urlencode }}">Ver movimientos</a></td></tr>{% endfor %}</tbody>
       </table></div></div>
     </div>
   </div>

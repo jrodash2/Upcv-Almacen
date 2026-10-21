@@ -1,3 +1,5 @@
+
+{% load cantidad_filters %}
 {% load moneda_filters %}
 {% load static %}
 {% load custom_filters %}
@@ -298,7 +300,7 @@
         <td>{{ item.descripcion }}</td>
         <td class="text-center">{{ item.unidad }}</td>
         <td class="text-right">{{ item.costo_unitario|quetzales }}</td>
-        <td class="text-center">{{ item.cantidad }}</td>
+        <td class="text-center">{{ item.cantidad|cantidad_formato }}</td>
         <td class="text-right">{{ item.total|quetzales }}</td>
       </tr>
       {% empty %}

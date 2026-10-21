@@ -1,4 +1,6 @@
 {% extends 'almacen/base.html' %}
+{% load cantidad_filters %}
+
 {% load moneda_filters %}
 {% block title %}Historial de Transferencias{% endblock %}
 {% block content %}
@@ -29,7 +31,7 @@
               <tr>
                 <td>{{ transferencia.articulo.nombre }}</td>
                 <td>{% if transferencia.articulo.categoria %}<span class="badge badge-light-primary">{{ transferencia.articulo.categoria.nombre }}</span>{% else %}<span class="text-muted">S/C</span>{% endif %}</td>
-                <td>{{ transferencia.cantidad }}</td>
+                <td>{{ transferencia.cantidad|cantidad_formato }}</td>
                 <td>{{ transferencia.departamento_origen.nombre }}</td>
                 <td>{{ transferencia.departamento_destino.nombre }}</td>
                 <td>{{ transferencia.fecha_transferencia|fecha_corta }}</td>

@@ -1,4 +1,6 @@
 {% extends 'almacen/base.html' %}
+{% load cantidad_filters %}
+
 {% load moneda_filters %}
 {% load static %}
 
@@ -71,16 +73,16 @@
                   {% endif %}
                 </td>
                 <td>
-                  <span class="badge badge-light-primary">{{ item.asignado }}</span>
-                  <small class="d-block text-muted">Directo: {{ item.asignado_directo }} | Divisiones: {{ item.asignado_division }}</small>
+                  <span class="badge badge-light-primary">{{ item.asignado|cantidad_formato }}</span>
+                  <small class="d-block text-muted">Directo: {{ item.asignado_directo|cantidad_formato }} | Divisiones: {{ item.asignado_division|cantidad_formato }}</small>
                 </td>
-                <td><span class="badge badge-light-warning">{{ item.reservado }}</span></td>
-                <td><span class="badge badge-light-info">{{ item.despachado }}</span></td>
+                <td><span class="badge badge-light-warning">{{ item.reservado|cantidad_formato }}</span></td>
+                <td><span class="badge badge-light-info">{{ item.despachado|cantidad_formato }}</span></td>
                 <td>
                   {% if item.requiere_revision %}
                     <span class="badge badge-light-danger">Revisar</span>
                   {% elif item.disponible > 0 %}
-                    <span class="badge badge-light-success">{{ item.disponible }}</span>
+                    <span class="badge badge-light-success">{{ item.disponible|cantidad_formato }}</span>
                   {% else %}
                     <span class="badge badge-light-danger">0</span>
                   {% endif %}
@@ -141,12 +143,12 @@
                 <td><span class="badge {% if a.origen == 'División' %}badge-light-info{% else %}badge-light-primary{% endif %}">{{ a.origen }}</span></td>
                 <td>{{ a.division|default:"N/A" }}</td>
                 <td>{{ a.departamento.nombre }}</td>
-                <td><span class="badge badge-light-primary">{{ a.cantidad_asignada }}</span></td>
-                <td><span class="badge badge-light-warning">{{ a.reservado }}</span></td>
-                <td><span class="badge badge-light-info">{{ a.consumido }}</span></td>
+                <td><span class="badge badge-light-primary">{{ a.cantidad_asignada|cantidad_formato }}</span></td>
+                <td><span class="badge badge-light-warning">{{ a.reservado|cantidad_formato }}</span></td>
+                <td><span class="badge badge-light-info">{{ a.consumido|cantidad_formato }}</span></td>
                 <td>
                   {% if a.disponible > 0 %}
-                    <span class="badge badge-light-success">{{ a.disponible }}</span>
+                    <span class="badge badge-light-success">{{ a.disponible|cantidad_formato }}</span>
                   {% else %}
                     <span class="badge badge-light-danger">0</span>
                   {% endif %}
@@ -205,7 +207,7 @@
                     <span class="text-muted">S/C</span>
                   {% endif %}
                 </td>
-                <td>{{ transferencia.cantidad }}</td>
+                <td>{{ transferencia.cantidad|cantidad_formato }}</td>
                 <td>{{ transferencia.departamento_origen.nombre }}</td>
                 <td>{{ transferencia.departamento_destino.nombre }}</td>
                 <td>{{ transferencia.fecha_transferencia|fecha_corta }}</td>
@@ -314,7 +316,7 @@
     // Establecer los valores en el modal
     document.getElementById('transferir-articulo-id').value = articuloId;
     document.getElementById('transferir-nombre-articulo').value = nombreArticulo;
-    document.getElementById('transferir-stock-disponible').textContent = cantidad;
+    document.getElementById('transferir-stock-disponible').textContent = formatoCantidad(cantidad);
 
     // Limitar la cantidad transferible al stock disponible
     const cantidadInput = document.getElementById('id_cantidad_transferir');

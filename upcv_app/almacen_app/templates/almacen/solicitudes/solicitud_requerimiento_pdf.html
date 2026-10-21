@@ -1,3 +1,5 @@
+
+{% load cantidad_filters %}
 {% load moneda_filters %}
 {% load static %}
 <!DOCTYPE html>
@@ -116,7 +118,7 @@
         <td class="text-center">{{ detalle.articulo.renglon_presupuestario|default:"-" }}</td>
         <td>{{ detalle.articulo.nombre|default:detalle.articulo }}<br><small>Categoría: {{ detalle.articulo.categoria.nombre|default:"S/C" }}</small></td>
         <td class="text-center">{{ detalle.articulo.unidad_medida|default:"-" }}</td>
-        <td class="text-center">{{ detalle.cantidad }}</td>
+        <td class="text-center">{{ detalle.cantidad|cantidad_formato }}</td>
         <td></td>
       </tr>
       {% endfor %}

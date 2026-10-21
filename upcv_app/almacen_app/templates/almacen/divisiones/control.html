@@ -1,4 +1,6 @@
 {% extends 'almacen/base.html' %}
+{% load cantidad_filters %}
+
 {% load static %}
 {% block content %}
 <div class="page-body">
@@ -54,10 +56,10 @@
                 <td><span class="badge badge-light-primary">{{ x.division_articulo.articulo.codigo }}</span></td>
                 <td>{{ x.division_articulo.articulo.renglon_presupuestario|default:'S/R' }}</td>
                 <td>{{ x.division_articulo.articulo.nombre }}</td>
-                <td>{{ x.cantidad_asignada }}</td>
-                <td>{{ x.cantidad_reservada }}</td>
-                <td>{{ x.cantidad_consumida }}</td>
-                <td><span class="badge badge-light-info">{{ x.disponible_ubicacion }}</span></td>
+                <td>{{ x.cantidad_asignada|cantidad_formato }}</td>
+                <td>{{ x.cantidad_reservada|cantidad_formato }}</td>
+                <td>{{ x.cantidad_consumida|cantidad_formato }}</td>
+                <td><span class="badge badge-light-info">{{ x.disponible_ubicacion|cantidad_formato }}</span></td>
                 <td class="text-center">
                   <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#desasignarControl{{ x.id }}">
                     <i data-feather="trash-2"></i> Desasignar
@@ -94,10 +96,10 @@
           <p class="mb-1"><strong>Artículo:</strong> {{ x.division_articulo.articulo.nombre }}</p>
           <p class="mb-1"><strong>Ubicación:</strong> {{ x.ubicacion }}</p>
           <div class="row g-3 mt-2">
-            <div class="col-6"><small class="text-muted">Asignado</small><h6>{{ x.cantidad_asignada }}</h6></div>
-            <div class="col-6"><small class="text-muted">Reservado</small><h6>{{ x.cantidad_reservada }}</h6></div>
-            <div class="col-6"><small class="text-muted">Consumido</small><h6>{{ x.cantidad_consumida }}</h6></div>
-            <div class="col-6"><small class="text-muted">Disponible para desasignar</small><h6 class="text-success">{{ x.disponible_ubicacion }}</h6></div>
+            <div class="col-6"><small class="text-muted">Asignado</small><h6>{{ x.cantidad_asignada|cantidad_formato }}</h6></div>
+            <div class="col-6"><small class="text-muted">Reservado</small><h6>{{ x.cantidad_reservada|cantidad_formato }}</h6></div>
+            <div class="col-6"><small class="text-muted">Consumido</small><h6>{{ x.cantidad_consumida|cantidad_formato }}</h6></div>
+            <div class="col-6"><small class="text-muted">Disponible para desasignar</small><h6 class="text-success">{{ x.disponible_ubicacion|cantidad_formato }}</h6></div>
           </div>
           <label class="form-label mt-3">Cantidad a desasignar</label>
           <input type="number" name="cantidad_desasignar" class="form-control" min="0.01" step="0.01" max="{{ x.disponible_ubicacion }}" required>

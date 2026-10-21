@@ -1,4 +1,6 @@
 {% extends 'almacen/base.html' %}
+{% load cantidad_filters %}
+
 {% load static %}
 {% block content %}
 <div class="page-body gestor-page">
@@ -53,8 +55,8 @@
                 <td>{{ a.articulo.categoria|default:'S/C' }}</td>
                 <td>{{ a.articulo.renglon_presupuestario|default:'S/R' }}</td>
                 <td>{{ a.articulo.unidad_medida|default:'-' }}</td>
-                <td>{{ a.cantidad_asignada }}</td>
-                <td><span class="badge badge-light-info">{{ a.disponible_division }}</span></td>
+                <td>{{ a.cantidad_asignada|cantidad_formato }}</td>
+                <td><span class="badge badge-light-info">{{ a.disponible_division|cantidad_formato }}</span></td>
                 <td class="text-center">
                   <form method="post" action="{% url 'almacen:autoasignar_division_articulo' a.id %}" class="d-flex justify-content-center gap-2">
                     {% csrf_token %}

@@ -1,4 +1,5 @@
 """Saldos por fuente. No repara ni reescribe históricos o contadores heredados."""
+from .formatos_cantidades import cantidad_formato
 from collections import defaultdict
 from decimal import Decimal
 
@@ -151,8 +152,8 @@ def validar_y_reservar(departamento, formularios):
 def mensaje_saldo(fila, cantidad):
     articulo = fila['articulo']
     origen = 'asignación directa' if fila['origen'] == 'Directo' else f"división {fila['division']}"
-    return (f"El artículo {articulo.codigo} - {articulo.nombre} tiene {fila['disponible']:g} unidades "
-            f"disponibles en {origen} (asignación {fila['asignacion'].pk}). La cantidad solicitada es {cantidad:g}.")
+    return (f"El artículo {articulo.codigo} - {articulo.nombre} tiene {cantidad_formato(fila['disponible'])} unidades "
+            f"disponibles en {origen} (asignación {fila['asignacion'].pk}). La cantidad solicitada es {cantidad_formato(cantidad)}.")
 
 
 def liberar_reservas_division(solicitud):

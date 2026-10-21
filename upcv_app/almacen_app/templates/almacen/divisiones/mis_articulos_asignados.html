@@ -1,4 +1,6 @@
 {% extends 'almacen/base.html' %}
+{% load cantidad_filters %}
+
 {% load static %}
 {% block content %}
 <div class="page-body gestor-page">
@@ -51,10 +53,10 @@
                 <td><span class="badge badge-light-primary">{{ x.articulo.codigo }}</span></td>
                 <td>{{ x.articulo.renglon_presupuestario|default:'S/R' }}</td>
                 <td>{{ x.articulo.nombre }}</td>
-                <td>{{ x.cantidad_asignada }}</td>
-                <td>{{ x.reservado }}</td>
-                <td>{{ x.consumido }}</td>
-                <td><span class="badge badge-light-info">{{ x.disponible }}</span>{% if x.requiere_revision %}<small class="d-block text-danger">Requiere revisión</small>{% endif %}</td>
+                <td>{{ x.cantidad_asignada|cantidad_formato }}</td>
+                <td>{{ x.reservado|cantidad_formato }}</td>
+                <td>{{ x.consumido|cantidad_formato }}</td>
+                <td><span class="badge badge-light-info">{{ x.disponible|cantidad_formato }}</span>{% if x.requiere_revision %}<small class="d-block text-danger">Requiere revisión</small>{% endif %}</td>
                 <td class="text-center"><a class="btn btn-outline-primary btn-sm" href="{% url 'almacen:crear_solicitud_requerimiento' %}"><i data-feather="plus-circle"></i> Crear solicitud</a></td>
               </tr>
               {% empty %}

@@ -1,4 +1,6 @@
 {% extends 'almacen/base.html' %}
+{% load cantidad_filters %}
+
 {% load moneda_filters %}
 {% load static %}
 {% block content %}
@@ -33,7 +35,7 @@
           <table class="display datatables" id="tabla-carga-inicial">
             <thead><tr><th>Código</th><th>Renglón</th><th>Artículo</th><th>Categoría</th><th>Unidad</th><th>Cantidad</th><th>Costo unitario</th><th>Total</th><th>Estado</th></tr></thead>
             <tbody>{% for fila in filas %}<tr>
-              <td>{{ fila.codigo|default:'—' }}</td><td>{{ fila.renglon|default:'S/R' }}</td><td>{{ fila.nombre|default:'—' }}</td><td>{{ fila.categoria|default:'S/C' }}</td><td>{{ fila.unidad }}</td><td>{{ fila.cantidad }}</td><td>{{ fila.costo_unitario|quetzales }}</td><td>{{ fila.total|quetzales }}</td>
+              <td>{{ fila.codigo|default:'—' }}</td><td>{{ fila.renglon|default:'S/R' }}</td><td>{{ fila.nombre|default:'—' }}</td><td>{{ fila.categoria|default:'S/C' }}</td><td>{{ fila.unidad }}</td><td>{{ fila.cantidad|cantidad_formato }}</td><td>{{ fila.costo_unitario|quetzales }}</td><td>{{ fila.total|quetzales }}</td>
               <td>{% if fila.estado == 'error' %}<span class="badge badge-light-danger">Error</span>{% elif fila.estado == 'actualizar' %}<span class="badge badge-light-info">Ya existe, se actualizará</span>{% else %}<span class="badge badge-light-success">Nuevo artículo</span>{% endif %}
                 {% for error in fila.errores %}<div class="text-danger small">Fila {{ fila.fila }}: {{ error }}.</div>{% endfor %}
                 {% for advertencia in fila.advertencias %}<div class="mt-1"><span class="badge badge-light-warning">Advertencia</span><small> {{ advertencia }}</small></div>{% endfor %}

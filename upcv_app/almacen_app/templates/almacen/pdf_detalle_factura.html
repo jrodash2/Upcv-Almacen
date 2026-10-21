@@ -1,3 +1,5 @@
+
+{% load cantidad_filters %}
 {% load moneda_filters %}
 <!DOCTYPE html>
 <html lang="es">
@@ -97,7 +99,7 @@
         {% if inventarios|length > 0 %}
           <!-- Fila principal con rowspan -->
           <tr>
-            <td rowspan="{{ inventarios|length }}" style="padding-left: 3px;">{{ d.cantidad }}</td>
+            <td rowspan="{{ inventarios|length }}" style="padding-left: 3px;">{{ d.cantidad|cantidad_formato }}</td>
             <td rowspan="{{ inventarios|length }}" style="padding-left: 3px;">{{ d.articulo.nombre }}<br><small>Categoría: {{ d.articulo.categoria.nombre|default:"S/C" }}</small></td>
             <td rowspan="{{ inventarios|length }}" style="padding-right: 55px;">{{ d.renglon }}</td>
             <td rowspan="{{ inventarios|length }}" style="padding-left: 15px;">{{ d.numero_linea }}</td>
@@ -118,7 +120,7 @@
         {% else %}
           <!-- Sin inventarios -->
           <tr>
-            <td style="padding-left: 3px;">{{ d.cantidad }}</td>
+            <td style="padding-left: 3px;">{{ d.cantidad|cantidad_formato }}</td>
             <td style="padding-left: 3px;">{{ d.articulo.nombre }}<br><small>Categoría: {{ d.articulo.categoria.nombre|default:"S/C" }}</small></td>
             <td style="padding-right: 55px;">{{ d.renglon }}</td>
             <td style="padding-left: 15px;">{{ d.numero_linea }}</td>
