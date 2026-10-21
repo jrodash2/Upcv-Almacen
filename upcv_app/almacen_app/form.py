@@ -1,3 +1,4 @@
+from .formatos_cantidades import cantidad_formato
 from django import forms
 from django.contrib.auth.models import User, Group
 from django.forms import CheckboxInput, DateInput, inlineformset_factory, modelformset_factory
@@ -694,7 +695,7 @@ class DetalleSolicitudRequerimientoForm(forms.ModelForm):
         from .disponibilidad import fuentes_departamento
         self.fuentes = fuentes if fuentes is not None else {fila['fuente']: fila for fila in fuentes_departamento(self.departamento)}
         self.fields['origen'].choices = [('', 'Seleccione origen')] + [
-            (key, f"{fila['origen']} {fila['division'] or ''} · Asignación {fila['asignacion'].pk} · Disponible {fila['disponible']:g}")
+            (key, f"{fila['origen']} {fila['division'] or ''} · Asignación {fila['asignacion'].pk} · Disponible {cantidad_formato(fila['disponible'])}")
             for key, fila in self.fuentes.items()
         ]
         if self.departamento:

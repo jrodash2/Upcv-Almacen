@@ -155,7 +155,7 @@
         colors: ['#0c4a6e', '#4cb8a4', '#1e7d94', '#f9e5b4'],
         dataLabels: { enabled: false },
         tooltip: {
-          y: { formatter: val => val }
+          y: { formatter: val => formatoCantidad(val) }
         },
         yaxis: { min: 0 }
       };
@@ -190,7 +190,7 @@
          colors: ['#0c4a6e', '#4cb8a4', '#1e7d94', '#f9e5b4'],
         dataLabels: { enabled: false },
         tooltip: {
-          y: { formatter: val => val }
+          y: { formatter: val => formatoCantidad(val) }
         },
         yaxis: { min: 0 }
       };
@@ -227,7 +227,7 @@ var optionsVencimiento = {
    colors: ['#0c4a6e', '#4cb8a4', '#1e7d94', '#f9e5b4'],
   dataLabels: { enabled: false },
   tooltip: {
-    y: { formatter: val => val }
+    y: { formatter: val => formatoCantidad(val) }
   },
   yaxis: { min: 0 }
 };

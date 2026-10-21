@@ -1,0 +1,36 @@
+<div class="modal fade" id="modal-seleccionar-articulo" tabindex="-1" aria-labelledby="modal-articulos-titulo" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modal-articulos-titulo"><i class="fa fa-cubes me-2" aria-hidden="true"></i>Seleccionar artículo para solicitud</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3 mb-3">
+          <div class="col-sm-6 col-lg-3"><label for="modal-articulo-codigo" class="form-label">Código</label><input id="modal-articulo-codigo" type="search" class="form-control" placeholder="Buscar por código"></div>
+          <div class="col-sm-6 col-lg-4"><label for="modal-articulo-nombre" class="form-label">Nombre del artículo</label><input id="modal-articulo-nombre" type="search" class="form-control" placeholder="Buscar por nombre"></div>
+          <div class="col-sm-6 col-lg-3"><label for="modal-articulo-categoria" class="form-label">Categoría</label><select id="modal-articulo-categoria" class="form-select"><option value="">Todas las seleccionadas</option></select></div>
+          <div class="col-sm-6 col-lg-2"><label for="modal-articulo-origen" class="form-label">Origen</label><select id="modal-articulo-origen" class="form-select"><option value="">Todos</option><option value="Directo">Directo</option><option value="División">División</option></select></div>
+        </div>
+        <div id="modal-articulos-aviso" class="alert alert-info" role="status" hidden></div>
+        <div class="table-responsive custom-scrollbar">
+          <table class="table table-hover table-sm align-middle" id="tabla-modal-articulos">
+            <thead class="table-light"><tr><th>Código / artículo</th><th>Categoría</th><th>Origen</th><th>Asignado</th><th>Reservado</th><th>Consumido</th><th>Disponible</th><th>Acción</th></tr></thead>
+            <tbody id="modal-articulos-resultados"></tbody>
+          </table>
+        </div>
+        <div id="modal-articulo-elegido" class="border rounded p-3 mt-3" hidden>
+          <p id="modal-articulo-resumen" class="fw-semibold mb-2"></p>
+          <label for="modal-articulo-cantidad" class="form-label">Cantidad a agregar</label>
+          <input id="modal-articulo-cantidad" type="number" min="1" step="1" value="1" class="form-control" style="max-width:180px">
+          <small id="modal-articulo-restante" class="text-muted"></small>
+        </div>
+        <div id="modal-articulos-error" class="alert alert-danger mt-3" role="alert" hidden></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="modal-articulo-agregar" disabled><i class="fa fa-plus-circle me-1" aria-hidden="true"></i>Agregar</button>
+      </div>
+    </div>
+  </div>
+</div>

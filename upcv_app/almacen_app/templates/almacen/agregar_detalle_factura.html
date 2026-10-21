@@ -1,4 +1,6 @@
-{% extends 'almacen/base.html' %} {% load static %} {% block content %}
+{% extends 'almacen/base.html' %}
+{% load cantidad_filters %}
+ {% load static %} {% block content %}
 {% load moneda_filters %}
 
 
@@ -307,7 +309,7 @@ table.order-details th {
                       <span>{{ detalle.precio_unitario|quetzales }}</span>
                     </td>
                     <td style="padding: 18px 15px">
-                      <span>{{ detalle.cantidad }}</span>
+                      <span>{{ detalle.cantidad|cantidad_formato }}</span>
                     </td>
                     <td style="padding: 18px 15px; text-align: right">
                       <span>{{ detalle.precio_total|quetzales }}</span>
@@ -420,7 +422,7 @@ table.order-details th {
                 <td>{{ detalle.articulo.codigo }}</td>
                 <td>{{ detalle.articulo.nombre }}</td>
                 <td>{{ detalle.renglon|default:"S/R" }}</td>
-                <td>{{ detalle.cantidad }}</td>
+                <td>{{ detalle.cantidad|cantidad_formato }}</td>
                 <td>{{ detalle.precio_unitario|quetzales }}</td>
                 <td>
                   <input type="hidden" name="detalle_id" value="{{ detalle.id }}">

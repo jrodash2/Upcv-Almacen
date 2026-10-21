@@ -1,4 +1,6 @@
 {% extends 'almacen/base.html' %}
+{% load cantidad_filters %}
+
 {% load static %}
 {% block content %}
 <style>
@@ -57,10 +59,10 @@
             <div class="card mb-4">
               <div class="card-body">
                 <div class="row g-3 text-center">
-                  <div class="col-md-3"><small class="text-muted">Existencia total</small><h5><span class="badge badge-light-primary">{{ disponibilidad.total_ingresado }}</span></h5></div>
-                  <div class="col-md-3"><small class="text-muted">Asignado directo</small><h5><span class="badge badge-light-info">{{ disponibilidad.asignado_directo }}</span></h5></div>
-                  <div class="col-md-3"><small class="text-muted">Asignado a divisiones</small><h5><span class="badge badge-light-warning">{{ disponibilidad.asignado_divisiones }}</span></h5></div>
-                  <div class="col-md-3"><small class="text-muted">Disponible división</small><h5>{% if disponibilidad.requiere_revision %}<span class="badge badge-light-danger">Revisar</span>{% elif disponibilidad.disponible_para_division > 0 %}<span class="badge badge-light-success">{{ disponibilidad.disponible_para_division }}</span>{% else %}<span class="badge badge-light-danger">0</span>{% endif %}</h5></div>
+                  <div class="col-md-3"><small class="text-muted">Existencia total</small><h5><span class="badge badge-light-primary">{{ disponibilidad.total_ingresado|cantidad_formato }}</span></h5></div>
+                  <div class="col-md-3"><small class="text-muted">Asignado directo</small><h5><span class="badge badge-light-info">{{ disponibilidad.asignado_directo|cantidad_formato }}</span></h5></div>
+                  <div class="col-md-3"><small class="text-muted">Asignado a divisiones</small><h5><span class="badge badge-light-warning">{{ disponibilidad.asignado_divisiones|cantidad_formato }}</span></h5></div>
+                  <div class="col-md-3"><small class="text-muted">Disponible división</small><h5>{% if disponibilidad.requiere_revision %}<span class="badge badge-light-danger">Revisar</span>{% elif disponibilidad.disponible_para_division > 0 %}<span class="badge badge-light-success">{{ disponibilidad.disponible_para_division|cantidad_formato }}</span>{% else %}<span class="badge badge-light-danger">0</span>{% endif %}</h5></div>
                 </div>
               </div>
             </div>

@@ -1,4 +1,6 @@
 {% extends 'almacen/base.html' %}
+{% load cantidad_filters %}
+
 {% load moneda_filters %}
 {% load static %}
 
@@ -72,7 +74,7 @@
         <span class="text-muted">S/C</span>
       {% endif %}
     </td>
-    <td>{{ detalle.cantidad }}</td>
+    <td>{{ detalle.cantidad|cantidad_formato }}</td>
     <td>
       {% if detalle.stock_restante > 0 %}
         {{ detalle.stock_restante }}
@@ -138,7 +140,7 @@
         <span class="text-muted">S/C</span>
       {% endif %}
     </td>
-    <td>{{ detalle.cantidad }}</td>
+    <td>{{ detalle.cantidad|cantidad_formato }}</td>
     <td>
       {% if detalle.stock_restante > 0 %}
         {{ detalle.stock_restante }}

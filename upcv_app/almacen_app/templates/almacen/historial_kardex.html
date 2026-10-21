@@ -1,4 +1,6 @@
 {% extends 'almacen/base.html' %}
+{% load cantidad_filters %}
+
 {% load moneda_filters %}
 {% load static %}
 {% load custom_filters %}
@@ -59,12 +61,12 @@
               <tr>
                 <td>{{ m.fecha|fecha_corta }}</td>
                 <td>{{ m.get_tipo_movimiento_display }}</td>
-                <td>{{ m.entrada_cantidad }}</td>
+                <td>{{ m.entrada_cantidad|cantidad_formato }}</td>
                 <td>{{ m.precio_unitario|quetzales }}</td>
                 <td>{{ m.entrada_costo_total|quetzales }}</td>
-                <td>{{ m.salida_cantidad }}</td>
+                <td>{{ m.salida_cantidad|cantidad_formato }}</td>
                 <td>{{ m.salida_costo_total|quetzales }}</td>
-                <td>{{ m.saldo_calculado }}</td>
+                <td>{{ m.saldo_calculado|cantidad_formato }}</td>
                 <td>{{ m.saldo_costo_total|quetzales }}</td>
                 <td>{% if m.esta_revertido %}<span class="badge badge-light-warning">Revertido</span>{% elif m.es_reversion %}<span class="badge badge-light-info">Reversión</span>{% elif m.sin_costo %}<span class="badge badge-light-secondary">Revisar costo</span>{% else %}<span class="badge badge-light-success">Activo</span>{% endif %}</td>
                 <td>{{ m.observacion }}</td>
@@ -79,9 +81,9 @@
         </div>
         {% if totales %}
         <div class="mt-3 text-end">
-          <strong>Entradas:</strong> {{ totales.total_ingresos }} / {{ totales.total_costo_ingresos|quetzales }} &nbsp;
-          <strong>Salidas:</strong> {{ totales.total_salidas }} / {{ totales.total_costo_salidas|quetzales }} &nbsp;
-          <strong>Saldo final:</strong> {{ totales.saldo_final_unidades }} / {{ totales.saldo_final_costo|quetzales }}
+          <strong>Entradas:</strong> {{ totales.total_ingresos|cantidad_formato }} / {{ totales.total_costo_ingresos|quetzales }} &nbsp;
+          <strong>Salidas:</strong> {{ totales.total_salidas|cantidad_formato }} / {{ totales.total_costo_salidas|quetzales }} &nbsp;
+          <strong>Saldo final:</strong> {{ totales.saldo_final_unidades|cantidad_formato }} / {{ totales.saldo_final_costo|quetzales }}
         </div>
         {% endif %}
         

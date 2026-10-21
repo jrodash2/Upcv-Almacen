@@ -145,7 +145,7 @@
                 <td><span class="badge badge-light-secondary">${articulo.renglon_presupuestario || 'S/R'}</span></td>
                 <td>${articulo.codigo} - ${articulo.nombre}</td>
                 <td><span class="badge badge-light-secondary">${articulo.categoria || 'S/C'}</span></td>
-                <td>${articulo.cantidad_asignada || articulo.cantidad_disponible || 0}</td>
+                <td>${formatoCantidad(articulo.cantidad_asignada || articulo.cantidad_disponible || 0)}</td>
                 <td><button class="btn btn-success btn-sm transferir-btn" data-articulo-id="${articulo.id}" data-articulo-nombre="${articulo.nombre}">Transferir</button></td>
               `;
               articulosList.appendChild(tr);

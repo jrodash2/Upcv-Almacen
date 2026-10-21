@@ -1,4 +1,6 @@
 {% extends 'almacen/base.html' %}
+{% load cantidad_filters %}
+
 {% load static %}
 {% block content %}
 <style>
@@ -138,7 +140,7 @@
               </div>
               <div class="col-md-4">
                 <label class="form-label" for="{{ articulo_form.cantidad_asignada.id_for_label }}">Cantidad asignada</label>
-                {{ articulo_form.cantidad_asignada }}
+                {{ articulo_form.cantidad_asignada|cantidad_formato }}
                 {{ articulo_form.cantidad_asignada.errors }}
               </div>
               <div class="col-md-8">
@@ -180,10 +182,10 @@
                     <td><span class="badge badge-light-primary">{{ a.articulo.codigo }}</span></td>
                     <td>{{ a.articulo.renglon_presupuestario|default:'S/R' }}</td>
                     <td>{{ a.articulo.nombre }}</td>
-                    <td>{{ a.cantidad_asignada }}</td>
-                    <td>{{ a.total_asignado_ubicaciones }}</td>
-                    <td>{{ a.total_reservado }}</td>
-                    <td><span class="badge badge-light-info">{{ a.disponible_division }}</span></td>
+                    <td>{{ a.cantidad_asignada|cantidad_formato }}</td>
+                    <td>{{ a.total_asignado_ubicaciones|cantidad_formato }}</td>
+                    <td>{{ a.total_reservado|cantidad_formato }}</td>
+                    <td><span class="badge badge-light-info">{{ a.disponible_division|cantidad_formato }}</span></td>
                   </tr>
                   {% empty %}<tr><td colspan="7" class="text-center text-muted">Sin artículos asignados.</td></tr>{% endfor %}
                 </tbody>
@@ -207,10 +209,10 @@
                 <td>{{ a.articulo.renglon_presupuestario|default:'S/R' }}</td>
                 <td>{{ a.articulo.nombre }}</td>
                 <td>{{ x.ubicacion }}</td>
-                <td>{{ x.cantidad_asignada }}</td>
-                <td>{{ x.cantidad_reservada }}</td>
-                <td>{{ x.cantidad_consumida }}</td>
-                <td>{{ x.disponible_ubicacion }}</td>
+                <td>{{ x.cantidad_asignada|cantidad_formato }}</td>
+                <td>{{ x.cantidad_reservada|cantidad_formato }}</td>
+                <td>{{ x.cantidad_consumida|cantidad_formato }}</td>
+                <td>{{ x.disponible_ubicacion|cantidad_formato }}</td>
                 <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#desasignarDetalle{{ x.id }}"><i data-feather="trash-2"></i> Desasignar</button></td>
               </tr>
               {% endfor %}{% empty %}<tr><td colspan="9" class="text-center text-muted">Sin asignaciones registradas.</td></tr>{% endfor %}
@@ -241,10 +243,10 @@
             <p class="mb-1"><strong>Artículo:</strong> {{ a.articulo.nombre }}</p>
             <p class="mb-1"><strong>Ubicación:</strong> {{ x.ubicacion }}</p>
             <div class="row g-3 mt-2">
-              <div class="col-6"><small class="text-muted">Asignado</small><h6>{{ x.cantidad_asignada }}</h6></div>
-              <div class="col-6"><small class="text-muted">Reservado</small><h6>{{ x.cantidad_reservada }}</h6></div>
-              <div class="col-6"><small class="text-muted">Consumido</small><h6>{{ x.cantidad_consumida }}</h6></div>
-              <div class="col-6"><small class="text-muted">Disponible para desasignar</small><h6 class="text-success">{{ x.disponible_ubicacion }}</h6></div>
+              <div class="col-6"><small class="text-muted">Asignado</small><h6>{{ x.cantidad_asignada|cantidad_formato }}</h6></div>
+              <div class="col-6"><small class="text-muted">Reservado</small><h6>{{ x.cantidad_reservada|cantidad_formato }}</h6></div>
+              <div class="col-6"><small class="text-muted">Consumido</small><h6>{{ x.cantidad_consumida|cantidad_formato }}</h6></div>
+              <div class="col-6"><small class="text-muted">Disponible para desasignar</small><h6 class="text-success">{{ x.disponible_ubicacion|cantidad_formato }}</h6></div>
             </div>
             <label class="form-label mt-3">Cantidad a desasignar</label>
             <input type="number" name="cantidad_desasignar" class="form-control" min="0.01" step="0.01" max="{{ x.disponible_ubicacion }}" required>
@@ -302,10 +304,10 @@ document.addEventListener("DOMContentLoaded", function () {
     const data = await response.json();
     fields.codigo.textContent = data.codigo;
     fields.nombre.textContent = data.nombre;
-    fields.existencia.textContent = data.existencia_total;
-    fields.asignado.textContent = data.asignado_divisiones;
-    fields.reservado.textContent = data.reservado;
-    fields.disponible.textContent = data.disponible_para_division;
+    fields.existencia.textContent = formatoCantidad(data.existencia_total);
+    fields.asignado.textContent = formatoCantidad(data.asignado_divisiones);
+    fields.reservado.textContent = formatoCantidad(data.reservado);
+    fields.disponible.textContent = formatoCantidad(data.disponible_para_division);
     fields.disponible.classList.toggle("text-danger", data.revisar);
     fields.disponible.classList.toggle("text-success", !data.revisar);
     card.classList.remove("d-none");

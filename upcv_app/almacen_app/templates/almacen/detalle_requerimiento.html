@@ -1,4 +1,6 @@
 {% extends 'almacen/base.html' %}
+{% load cantidad_filters %}
+
 {% load moneda_filters %}
 {% load static %}
 {% load estado_tags %}
@@ -193,7 +195,7 @@
                             </div>
                           </td>
                           <td>
-                            <span class="badge-soft badge-success-soft">{{ detalle.cantidad }}</span>
+                            <span class="badge-soft badge-success-soft">{{ detalle.cantidad|cantidad_formato }}</span>
                           </td>
                           <td>{{ detalle.observacion|default:"-" }}</td>
                           <td class="text-center">
@@ -354,7 +356,7 @@
                         <td>{{ detalle.articulo.nombre }}{% if detalle.detalle_solicitud_origen %}<small class="d-block text-muted">{{ detalle.detalle_solicitud_origen.origen_label }}</small>{% endif %}</td>
                         <td>{{ detalle.articulo.renglon_presupuestario|default:"S/R" }}</td>
                         <td>{{ detalle.articulo.categoria.nombre|default:"S/C" }}</td>
-                        <td>{{ detalle.cantidad }}</td>
+                        <td>{{ detalle.cantidad|cantidad_formato }}</td>
                         <td>
                           <input
                             type="number"
@@ -429,7 +431,7 @@
   {% for articulo in articulos %}
     <option value="{{ articulo.id }}"
             data-stock="{{ stock_disponible|get_item:articulo.id|default:0 }}">
-      {{ articulo.codigo }} - {{ articulo.nombre }} — Categoría: {{ articulo.categoria.nombre|default:"S/C" }} — Renglón: {{ articulo.renglon_presupuestario|default:"S/R" }} — Disponible: {{ stock_disponible|get_item:articulo.id|default:0 }}
+      {{ articulo.codigo }} - {{ articulo.nombre }} — Categoría: {{ articulo.categoria.nombre|default:"S/C" }} — Renglón: {{ articulo.renglon_presupuestario|default:"S/R" }} — Disponible: {{ stock_disponible|get_item:articulo.id|default:0|cantidad_formato }}
     </option>
   {% endfor %}
 </select>

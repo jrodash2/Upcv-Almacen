@@ -1,4 +1,6 @@
 {% extends 'almacen/base.html' %}
+{% load cantidad_filters %}
+
 {% load moneda_filters %}
 {% load estado_tags %}
 {% block content %}
@@ -87,7 +89,7 @@
                       {% endif %}
                     </td>
                     <td>{{ d.articulo.unidad_medida|default:"-" }}</td>
-                    <td>{{ d.cantidad }}</td>
+                    <td>{{ d.cantidad|cantidad_formato }}</td>
                   </tr>
                   {% empty %}
                   <tr><td colspan="7" class="text-center text-muted">Sin detalles cargados.</td></tr>

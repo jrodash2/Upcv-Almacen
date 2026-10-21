@@ -1,3 +1,4 @@
+from .formatos_cantidades import cantidad_formato, formato_excel_cantidad
 from .categorias_solicitud import filtrar_por_tipos, tipo_categoria
 from .disponibilidad import (fuentes_departamento, totales_departamento, bloquear_departamento, validar_y_reservar, liberar_reservas_division, resumen_global_articulo, saldo_global_sin_asignar)
 from datetime import datetime, timezone
@@ -298,6 +299,10 @@ def exportar_detalle_factura_excel(request, form1h_id):
                 "-", "-"
             ])
 
+    for row in ws.iter_rows(min_row=6, min_col=1, max_col=1):
+        for cell in row:
+            cell.number_format = formato_excel_cantidad(cell.value)
+
     for row in ws.iter_rows(min_row=5, min_col=5, max_col=6):
         for cell in row:
             cell.number_format = '"Q"#,##0.00'
@@ -418,7 +423,7 @@ def libro_ingresos_pdf(request):
     y = height - 2*inch
     for ingreso in ingresos_por_articulo:
         p.drawString(1*inch, y, ingreso['articulo__nombre'])
-        p.drawString(4*inch, y, str(ingreso['total_cantidad']))
+        p.drawString(4*inch, y, str(cantidad_formato(ingreso['total_cantidad'])))
         p.drawString(7*inch, y, f"{ingreso['total_ingresos']:.2f}")
         y -= 0.3*inch  # Ajustar la distancia entre filas
         if y < 1*inch:
@@ -472,7 +477,7 @@ def articulos_asignados(request, departamento_id):
         # Request creation opts into the stricter empty-selection contract.
         if tipos_solicitud or request.GET.get('contexto') == 'solicitud':
             articulos = filtrar_por_tipos(articulos, tipos_solicitud)
-        if request.GET.get('contexto') == 'solicitud':
+        if request.GET.get('contexto') == 'solicitud' and request.GET.get('incluir_agotados') != '1':
             articulos = articulos.filter(pk__in=[pk for pk, cantidad in stock_disponible.items() if cantidad > 0])
         articulos = articulos.order_by('nombre')
 
@@ -736,6 +741,7 @@ def crear_solicitud_requerimiento(request):
     catalogo = {fila['articulo'].pk: fila['articulo'] for fila in fuentes}
     articulos_data = [
         {'id': articulo.pk, 'codigo': articulo.codigo, 'nombre': articulo.nombre,
+         'categoria': articulo.categoria.nombre if articulo.categoria else 'S/C',
          'tipo_solicitud': tipo_categoria(articulo.categoria.nombre if articulo.categoria else '')}
         for articulo in catalogo.values()
         if articulo.activo and stock_disponible.get(articulo.pk, 0) > 0
@@ -1046,7 +1052,7 @@ def detalle_requerimiento(request, requerimiento_id):
             disponible = stock_disponible.get(str(articulo.id), 0)
 
             if cantidad > disponible:
-                messages.error(request, f"No puedes requerir más de {disponible} unidades de {articulo.nombre}.")
+                messages.error(request, f"No puedes requerir más de {cantidad_formato(disponible)} unidades de {articulo.nombre}.")
             else:
                 DetalleRequerimiento.objects.create(
                     requerimiento=requerimiento,
@@ -1759,7 +1765,7 @@ def transferir_articulos(request):
             observacion=observacion
         )
 
-        messages.success(request, f'Se transfirieron {cantidad} unidades de {articulo.nombre} de {departamento_origen.nombre} a {departamento_destino.nombre}.')
+        messages.success(request, f'Se transfirieron {cantidad_formato(cantidad)} unidades de {articulo.nombre} de {departamento_origen.nombre} a {departamento_destino.nombre}.')
 
         return redirect('almacen:detalle_departamento', pk=departamento_origen_id)
 
@@ -3045,6 +3051,10 @@ def libro_mayor_excel(request):
         datos['totales']['total_salidas_cantidad'], datos['totales']['total_salidas_monto'],
         datos['totales']['saldo_final_cantidad'], datos['totales']['saldo_final_monto'], ''
     ])
+    for row in ws.iter_rows(min_row=8, min_col=5, max_col=11):
+        for cell in row:
+            if cell.column in [5, 7, 9, 11]:
+                cell.number_format = formato_excel_cantidad(cell.value)
     for row in ws.iter_rows(min_row=8, min_col=6, max_col=13):
         for cell in row:
             if cell.column in [6, 8, 10, 12, 13]:
@@ -3128,7 +3138,7 @@ def desasignar_articulo_ubicacion(request, asignacion_id):
     if asignacion.cantidad_asignada <= 0 and asignacion.cantidad_reservada <= 0 and asignacion.cantidad_consumida <= 0:
         asignacion.activo = False
     asignacion.save(update_fields=['cantidad_asignada', 'activo', 'fecha_actualizacion'])
-    messages.success(request, f'Se desasignaron {cantidad} unidades correctamente.')
+    messages.success(request, f'Se desasignaron {cantidad_formato(cantidad)} unidades correctamente.')
     return redirect(redirect_to)
 
 @login_required

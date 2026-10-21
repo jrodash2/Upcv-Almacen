@@ -1,4 +1,6 @@
 {% extends 'almacen/base.html' %}
+{% load cantidad_filters %}
+
 {% block title %}Historial de reversiones{% endblock %}
 {% block content %}
 <div class="page-body">
@@ -17,7 +19,7 @@
     <div class="card"><div class="card-header pb-0 card-no-border"><div class="d-flex justify-content-between align-items-center"><div><h4>Reversiones realizadas</h4><span>Registro auditable de movimientos originales e inversos.</span></div><a class="btn btn-primary btn-sm" href="{% url 'almacen:reversiones_movimientos' %}">Movimientos</a></div></div>
       <div class="card-body"><div class="dt-ext table-responsive custom-scrollbar"><table class="display datatables" id="tabla-historial-reversiones">
         <thead><tr><th>Fecha</th><th>Administrador</th><th>Código</th><th>Artículo</th><th>Movimiento original</th><th>Tipo original</th><th>Movimiento reversión</th><th>Tipo reversión</th><th>Cantidad</th><th>Justificación</th><th>Documento</th><th>Acción</th></tr></thead>
-        <tbody>{% for reversion in reversiones %}<tr><td>{{ reversion.fecha_reversion|date:'d/m/Y H:i' }}</td><td>{{ reversion.realizado_por.username }}</td><td>{{ reversion.articulo.codigo }}</td><td>{{ reversion.articulo.nombre }}</td><td>{{ reversion.movimiento_original.numero_kardex }}</td><td>{{ reversion.movimiento_original.get_tipo_movimiento_display }}</td><td>{{ reversion.movimiento_reversion.numero_kardex }}</td><td>{{ reversion.movimiento_reversion.get_tipo_movimiento_display }}</td><td>{{ reversion.cantidad }}</td><td>{{ reversion.justificacion }}</td><td>{{ reversion.documento_referencia }}</td><td><a class="btn btn-outline-primary btn-sm" href="{% url 'almacen:detalle_reversion' reversion.id %}">Ver detalle</a></td></tr>{% endfor %}</tbody>
+        <tbody>{% for reversion in reversiones %}<tr><td>{{ reversion.fecha_reversion|date:'d/m/Y H:i' }}</td><td>{{ reversion.realizado_por.username }}</td><td>{{ reversion.articulo.codigo }}</td><td>{{ reversion.articulo.nombre }}</td><td>{{ reversion.movimiento_original.numero_kardex }}</td><td>{{ reversion.movimiento_original.get_tipo_movimiento_display }}</td><td>{{ reversion.movimiento_reversion.numero_kardex }}</td><td>{{ reversion.movimiento_reversion.get_tipo_movimiento_display }}</td><td>{{ reversion.cantidad|cantidad_formato }}</td><td>{{ reversion.justificacion }}</td><td>{{ reversion.documento_referencia }}</td><td><a class="btn btn-outline-primary btn-sm" href="{% url 'almacen:detalle_reversion' reversion.id %}">Ver detalle</a></td></tr>{% endfor %}</tbody>
       </table></div></div>
     </div>
   </div>

@@ -74,7 +74,7 @@
 
               <div class="d-flex justify-content-between align-items-center mt-2 mb-3">
                 <h6 class="fw-bold mb-0">Detalle de artículos solicitados</h6>
-                <button type="button" id="agregar-item" class="btn btn-outline-primary gestor-btn" {% if sin_stock_disponible %}disabled{% endif %}>
+                <button type="button" id="agregar-item" class="btn btn-outline-primary gestor-btn">
                   <i class="fa fa-plus-circle me-1"></i>
                   Agregar ítem
                 </button>
@@ -102,7 +102,8 @@
                       {% if not detalle_form.DELETE.value %}
                       <tr class="detalle-form-row">
                         <td>
-                          {{ detalle_form.articulo }}
+                          <div class="d-none">{{ detalle_form.articulo }}</div>
+                          <strong class="articulo-seleccionado">Seleccione un artículo</strong>
                           {% for error in detalle_form.articulo.errors %}
                             <div class="text-danger small">{{ error }}</div>
                           {% endfor %}
@@ -110,7 +111,7 @@
                             <div class="text-danger small">{{ error }}</div>
                           {% endfor %}
                         </td>
-                        <td>{{ detalle_form.origen }}{% for error in detalle_form.origen.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}</td>
+                        <td><div class="d-none">{{ detalle_form.origen }}</div><span class="badge badge-light-info origen-seleccionado"></span>{% for error in detalle_form.origen.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}</td>
                         <td class="text-center"><span class="badge badge-light-primary cantidad-asignada">0</span></td>
                         <td class="text-center"><span class="badge badge-light-warning cantidad-reservada">0</span></td>
                         <td class="text-center"><span class="badge badge-light-secondary cantidad-consumida">0</span></td>
@@ -139,8 +140,8 @@
 
               <template id="empty-form-template">
                 <tr class="detalle-form-row">
-                  <td>{{ formset.empty_form.articulo }}</td>
-                  <td>{{ formset.empty_form.origen }}</td>
+                  <td><div class="d-none">{{ formset.empty_form.articulo }}</div><strong class="articulo-seleccionado">Seleccione un artículo</strong></td>
+                  <td><div class="d-none">{{ formset.empty_form.origen }}</div><span class="badge badge-light-info origen-seleccionado"></span></td>
                   <td class="text-center"><span class="badge badge-light-primary cantidad-asignada">0</span></td>
                   <td class="text-center"><span class="badge badge-light-warning cantidad-reservada">0</span></td>
                   <td class="text-center"><span class="badge badge-light-secondary cantidad-consumida">0</span></td>
@@ -170,6 +171,7 @@
     </div>
   </div>
 </div>
+{% include "almacen/solicitudes/modal_articulos.html" %}
 <script>
 document.addEventListener("DOMContentLoaded", function () {
   let stockData = JSON.parse(document.getElementById("stock-articulos-data").textContent || "{}");
@@ -269,9 +271,18 @@ document.addEventListener("DOMContentLoaded", function () {
         const cantidad = row.querySelector(".cantidad-solicitada");
         if (!row.querySelector(".select-origen").value) errores.push(`Fila ${index + 1}: seleccione el origen o asignación.`);
         if (!articulo.value) errores.push(`Fila ${index + 1}: seleccione un artículo.`);
-        if (!cantidad.value || !cantidad.checkValidity() || Number(cantidad.value) <= 0) {
+        if (!cantidad.value || !cantidad.checkValidity() || !Number.isSafeInteger(Number(cantidad.value)) || Number(cantidad.value) <= 0) {
           errores.push(`Fila ${index + 1}: ingrese una cantidad mayor a cero dentro del disponible.`);
         }
+      });
+      const totalesPorFuente = new Map();
+      filas.forEach((row) => {
+        const key = row.querySelector(".select-origen").value;
+        totalesPorFuente.set(key, (totalesPorFuente.get(key) || 0) + Number(row.querySelector(".cantidad-solicitada").value || 0));
+      });
+      totalesPorFuente.forEach((cantidad, key) => {
+        const fuente = fuentesData.find((f) => f.key === key);
+        if (fuente && cantidad > Number(fuente.cantidad_disponible)) errores.push("La cantidad total de una fuente supera su disponible: " + formatoCantidad(fuente.cantidad_disponible) + ".");
       });
       if (errores.length) {
         mostrarErrores(errores);
@@ -335,20 +346,23 @@ document.addEventListener("DOMContentLoaded", function () {
       const fuentes = fuentesData.filter((f) => String(f.articulo_id) === select.value);
       origen.replaceChildren(new Option("Seleccione origen", ""));
       fuentes.forEach((f) => origen.add(new Option(
-        `${f.origen}${f.division ? ' ' + f.division : ''} · Asignación ${f.asignacion_id} · Disponible ${f.cantidad_disponible}`,
+        `${f.origen}${f.division ? ' ' + f.division : ''} · Asignación ${f.asignacion_id} · Disponible ${formatoCantidad(f.cantidad_disponible)}`,
         f.key)));
       if (fuentes.some((f) => f.key === previo)) origen.value = previo;
       else if (fuentes.length === 1) origen.value = fuentes[0].key;
     }
     const fuente = fuentesData.find((f) => f.key === origen.value && String(f.articulo_id) === select.value);
     const disponible = Number(fuente ? fuente.cantidad_disponible : 0);
-    row.querySelector(".cantidad-disponible").textContent = disponible;
-    row.querySelector(".cantidad-asignada").textContent = fuente ? fuente.cantidad_asignada : 0;
-    row.querySelector(".cantidad-reservada").textContent = fuente ? fuente.cantidad_reservada : 0;
-    row.querySelector(".cantidad-consumida").textContent = fuente ? fuente.cantidad_consumida : 0;
+    row.querySelector(".cantidad-disponible").textContent = formatoCantidad(fuente ? fuente.cantidad_disponible : 0);
+    row.querySelector(".cantidad-asignada").textContent = formatoCantidad(fuente ? fuente.cantidad_asignada : 0);
+    row.querySelector(".cantidad-reservada").textContent = formatoCantidad(fuente ? fuente.cantidad_reservada : 0);
+    row.querySelector(".cantidad-consumida").textContent = formatoCantidad(fuente ? fuente.cantidad_consumida : 0);
     const cantidad = row.querySelector(".cantidad-solicitada");
     cantidad.max = disponible;
-    cantidad.placeholder = fuente ? "Máximo " + disponible : "Seleccione origen";
+    cantidad.placeholder = fuente ? "Máximo " + formatoCantidad(disponible) : "Seleccione origen";
+    const articulo = articulosDepartamento.find((item) => String(item.id) === select.value);
+    row.querySelector(".articulo-seleccionado").textContent = articulo ? `${articulo.codigo} — ${articulo.nombre}` : "Seleccione un artículo";
+    row.querySelector(".origen-seleccionado").textContent = fuente ? `${fuente.origen} ${fuente.division || ''} · #${fuente.asignacion_id}` : "";
   }
 
   function actualizarOpcionesSelect(select, items) {
@@ -377,32 +391,146 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  if (addButton && formsetBody && totalForms && template) {
-    addButton.addEventListener("click", function () {
-      const formIndex = parseInt(totalForms.value, 10);
-      const newRowHtml = template.innerHTML.replace(/__prefix__/g, formIndex);
+  const modalElement = document.getElementById("modal-seleccionar-articulo");
+  const modalArticulos = bootstrap.Modal.getOrCreateInstance(modalElement);
+  let modalVisible = false;
+  modalElement.addEventListener("shown.bs.modal", () => { modalVisible = true; });
+  modalElement.addEventListener("hide.bs.modal", () => { modalVisible = false; });
+  const resultados = document.getElementById("modal-articulos-resultados");
+  const modalAgregar = document.getElementById("modal-articulo-agregar");
+  const modalCantidad = document.getElementById("modal-articulo-cantidad");
+  let fuenteElegida = null;
 
-      const fragment = document.createElement("template");
-      fragment.innerHTML = newRowHtml.trim();
-      const newRow = fragment.content.firstElementChild;
-      const newSelect = newRow ? newRow.querySelector(".select-articulo") : null;
-      if (newSelect && articulosDepartamento) {
-        actualizarOpcionesSelect(newSelect, articulosDepartamento);
-      } else if (newSelect) {
-        actualizarDisponible(newSelect);
-      }
-      if (tabla) {
-        tabla.search("").columns().search("");
-        const added = tabla.row.add(newRow);
-        tabla.draw(false);
-        const position = tabla.rows({order: 'applied', search: 'applied'}).indexes().toArray().indexOf(added.index());
-        if (tabla.page.len() > 0) tabla.page(Math.floor(position / tabla.page.len())).draw('page');
-      } else {
-        formsetBody.appendChild(newRow);
-      }
-      sincronizarIndices();
-    });
+  function pendienteFuente(key) {
+    return filasActivas().reduce((total, row) => {
+      return row.querySelector(".select-origen").value === key
+        ? total + Number(row.querySelector(".cantidad-solicitada").value || 0) : total;
+    }, 0);
   }
+
+  function resultadosModal() {
+    const tipos = obtenerTiposSeleccionados();
+    const aviso = document.getElementById("modal-articulos-aviso");
+    resultados.replaceChildren();
+    aviso.hidden = false;
+    if (!tipos.length) {
+      aviso.textContent = "Seleccione al menos un tipo de solicitud antes de agregar artículos.";
+      return;
+    }
+    if (!deptSelect.value) {
+      aviso.textContent = "Seleccione un departamento antes de agregar artículos.";
+      return;
+    }
+    if (cargandoArticulos) {
+      aviso.textContent = "Cargando asignaciones…";
+      return;
+    }
+    const codigo = document.getElementById("modal-articulo-codigo").value.trim().toLocaleLowerCase();
+    const nombre = document.getElementById("modal-articulo-nombre").value.trim().toLocaleLowerCase();
+    const categoria = document.getElementById("modal-articulo-categoria").value;
+    const origen = document.getElementById("modal-articulo-origen").value;
+    const catalogo = new Map(articulosDepartamento.map((a) => [String(a.id), a]));
+    fuentesData.forEach((fuente) => {
+      const articulo = catalogo.get(String(fuente.articulo_id));
+      if (!articulo || !tipos.includes(articulo.tipo_solicitud) || (categoria && articulo.tipo_solicitud !== categoria)) return;
+      if (!String(articulo.codigo).toLocaleLowerCase().includes(codigo) || !articulo.nombre.toLocaleLowerCase().includes(nombre)) return;
+      if (origen && fuente.origen !== origen) return;
+      const row = document.createElement("tr");
+      row.dataset.fuente = fuente.key;
+      const disponible = Number(fuente.cantidad_disponible);
+      const restante = Math.max(0, disponible - pendienteFuente(fuente.key));
+      const textos = [`${articulo.codigo} — ${articulo.nombre}`, articulo.categoria || articulo.tipo_solicitud,
+        `${fuente.origen} ${fuente.division || ''} · #${fuente.asignacion_id}`,
+        formatoCantidad(fuente.cantidad_asignada), formatoCantidad(fuente.cantidad_reservada),
+        formatoCantidad(fuente.cantidad_consumida), formatoCantidad(fuente.cantidad_disponible)];
+      textos.forEach((texto, index) => {
+        const cell = row.insertCell();
+        if (index === 2) {
+          const badge = document.createElement("span");
+          badge.className = "badge badge-light-info";
+          badge.textContent = texto;
+          cell.appendChild(badge);
+        } else cell.textContent = texto;
+      });
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "btn btn-outline-primary btn-sm text-nowrap";
+      button.disabled = restante < 1;
+      button.textContent = disponible <= 0 ? "Sin disponibilidad" : disponible < 1 ? "No admite unidades enteras" : restante < 1 ? "Ya agregado" : "Seleccionar";
+      button.addEventListener("click", () => {
+        fuenteElegida = fuente.key;
+        document.getElementById("modal-articulo-elegido").hidden = false;
+        document.getElementById("modal-articulo-resumen").textContent = textos[0] + " · " + textos[2];
+        document.getElementById("modal-articulo-restante").textContent = "Puede agregar hasta " + formatoCantidad(Math.floor(restante)) + " unidades enteras de esta fuente.";
+        modalCantidad.value = "1";
+        modalCantidad.max = Math.floor(restante);
+        modalAgregar.disabled = false;
+        document.getElementById("modal-articulos-error").hidden = true;
+        modalCantidad.focus();
+      });
+      row.insertCell().appendChild(button);
+      if (button.disabled) row.classList.add("text-muted");
+      resultados.appendChild(row);
+    });
+    aviso.hidden = Boolean(resultados.children.length);
+    aviso.textContent = "No hay asignaciones que coincidan con los filtros seleccionados.";
+  }
+
+  addButton.addEventListener("click", async () => {
+    fuenteElegida = null;
+    modalAgregar.disabled = true;
+    document.getElementById("modal-articulo-elegido").hidden = true;
+    document.getElementById("modal-articulos-error").hidden = true;
+    document.getElementById("modal-articulo-codigo").value = "";
+    document.getElementById("modal-articulo-nombre").value = "";
+    document.getElementById("modal-articulo-origen").value = "";
+    const categorias = document.getElementById("modal-articulo-categoria");
+    categorias.replaceChildren(new Option("Todas las seleccionadas", ""));
+    const etiquetas = {bienes: "Bienes", suministros: "Suministros", insumos: "Insumos"};
+    obtenerTiposSeleccionados().forEach((tipo) => categorias.add(new Option(etiquetas[tipo], tipo)));
+    modalArticulos.show();
+    await cargarArticulosDepartamento();
+    resultadosModal();
+  });
+  ["modal-articulo-codigo", "modal-articulo-nombre", "modal-articulo-categoria", "modal-articulo-origen"].forEach((id) => {
+    document.getElementById(id).addEventListener("input", resultadosModal);
+  });
+
+  modalAgregar.addEventListener("click", () => {
+    const fuente = fuentesData.find((f) => f.key === fuenteElegida);
+    const cantidad = Number(modalCantidad.value);
+    const restante = fuente ? Number(fuente.cantidad_disponible) - pendienteFuente(fuente.key) : 0;
+    if (!fuente || !Number.isSafeInteger(cantidad) || cantidad <= 0 || cantidad > restante || cargandoArticulos) {
+      const error = document.getElementById("modal-articulos-error");
+      error.textContent = "Ingrese una cantidad entera positiva sin superar el disponible de esta fuente.";
+      error.hidden = false;
+      return;
+    }
+    let row = filasActivas().find((r) => r.querySelector(".select-origen").value === fuente.key);
+    const existente = Boolean(row);
+    if (!row) row = filasActivas().find((r) => !r.querySelector(".select-articulo").value);
+    if (!row) {
+      const fragment = document.createElement("template");
+      fragment.innerHTML = template.innerHTML.replace(/__prefix__/g, totalForms.value).trim();
+      row = fragment.content.firstElementChild;
+      if (tabla) tabla.row.add(row).draw(false);
+      else formsetBody.appendChild(row);
+    }
+    const select = row.querySelector(".select-articulo");
+    actualizarOpcionesSelect(select, articulosDepartamento);
+    select.value = String(fuente.articulo_id);
+    actualizarDisponible(select);
+    row.querySelector(".select-origen").value = fuente.key;
+    actualizarDisponible(select, false);
+    const input = row.querySelector(".cantidad-solicitada");
+    input.value = existente ? Number(input.value || 0) + cantidad : cantidad;
+    row.querySelectorAll(".text-danger").forEach((element) => element.remove());
+    sincronizarIndices();
+    if (tabla) tabla.row(row).invalidate('dom').draw(false);
+    // Bootstrap ignores hide() while the opening transition is still running.
+    if (modalVisible) modalArticulos.hide();
+    else modalElement.addEventListener("shown.bs.modal", () => modalArticulos.hide(), {once: true});
+  });
 
   function quitarFila(row, redibujar = true) {
     if (tabla) {
@@ -454,7 +582,12 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   actualizarOpcionesFilas(articulosDepartamento);
-  addButton.disabled = !articulosDepartamento.length;
+  filasActivas().forEach((row) => {
+    if (!row.querySelector(".select-articulo").value && !row.querySelector(".text-danger")) quitarFila(row, false);
+  });
+  if (tabla) tabla.draw(false);
+  sincronizarIndices();
+  addButton.disabled = false;
 
   const deptSelect = document.getElementById("id_departamento");
   function obtenerTiposSeleccionados() {
@@ -473,13 +606,13 @@ document.addEventListener("DOMContentLoaded", function () {
       cargandoArticulos = false;
       articulosDepartamento = [];
       actualizarOpcionesFilas([]);
-      addButton.disabled = true;
+      addButton.disabled = false;
       return;
     }
     cargandoArticulos = true;
-    addButton.disabled = true;
+    addButton.disabled = false;
     controladorCarga = new AbortController();
-    const params = new URLSearchParams({contexto: "solicitud"});
+    const params = new URLSearchParams({contexto: "solicitud", incluir_agotados: "1"});
     tipos.forEach((tipo) => params.append("tipos_solicitud", tipo));
     try {
       const resp = await fetch(`${endpointBase}${deptId}/?${params}`, {signal: controladorCarga.signal});
@@ -499,7 +632,7 @@ document.addEventListener("DOMContentLoaded", function () {
     } finally {
       if (numeroCarga === cargaActual) {
         cargandoArticulos = false;
-        addButton.disabled = !articulosDepartamento.length;
+        addButton.disabled = false;
       }
     }
   }

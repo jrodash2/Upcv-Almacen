@@ -23,10 +23,6 @@ def get_item(dictionary, key):
 
 @register.filter
 def cantidad_limpia(value):
-    try:
-        number = float(value or 0)
-    except (TypeError, ValueError):
-        return value
-    if number.is_integer():
-        return f"{int(number):,}"
-    return f"{number:,.2f}".rstrip('0').rstrip('.')
+    # Backward-compatible alias; presentation now preserves fractional precision.
+    from almacen_app.formatos_cantidades import cantidad_formato
+    return cantidad_formato(value)
