@@ -5,33 +5,72 @@
 <head>
   <meta charset="UTF-8">
   <style>
-    @page { size: legal portrait; margin: 1.2cm 1.2cm 2.0cm 1.2cm; }
+    @page { 
+      size: letter portrait; /* Tamaño Carta */
+      margin-top: 1.0cm;
+      margin-left: 1.2cm;
+      margin-right: 1.2cm;
+      margin-bottom: 4.8cm; /* Reserva el espacio inferior para que la tabla no sobreponga las firmas */
+    }
     body { font-family: Arial, sans-serif; font-size: 11px; color: #000; }
-    .top-area { position: relative; min-height: 125px; margin-bottom: 8px; }
-    .logo-secundario { position: absolute; top: 0; left: 0; width: 135px; height: auto; }
-    .numero { position: absolute; top: 0; right: 0; font-size: 13px; font-weight: bold; }
-    .header { text-align: center; font-weight: bold; text-transform: uppercase; line-height: 1.35; margin-bottom: 12px; padding-left: 0; padding-right: 0; padding-top: 8px; }
-    .title { font-size: 14px; margin-top: 6px; text-decoration: underline; }
-    .row { width: 100%; margin-bottom: 8px; }
-    .checkbox { display: inline-block; width: 12px; height: 12px; border: 1px solid #000; text-align: center; line-height: 11px; font-size: 10px; font-weight: bold; margin-left: 12px; margin-right: 4px; }
-    .intro { text-align: justify; margin: 10px 0; }
-    table { width: 100%; border-collapse: collapse; margin-top: 8px; border: 1px solid #000; }
-    thead th { border: 1px solid #000; text-align: center; font-weight: bold; font-size: 10px; padding: 4px; vertical-align: middle; }
-    tbody td { border-left: 1px solid #000; border-right: 1px solid #000; border-top: none; border-bottom: none; padding: 4px; vertical-align: top; height: 22px; }
+    .top-area { position: relative; min-height: 110px; margin-bottom: 6px; }
+    .logo-secundario { position: absolute; top: 0; left: 0; width: 125px; height: auto; }
+    .numero { position: absolute; top: 0; right: 0; font-size: 12px; font-weight: bold; }
+    .header { text-align: center; font-weight: bold; text-transform: uppercase; line-height: 1.3; margin-bottom: 10px; padding-top: 4px; }
+    .title { font-size: 13px; margin-top: 4px; text-decoration: underline; }
+    .row { width: 100%; margin-bottom: 6px; }
+    .checkbox { display: inline-block; width: 12px; height: 12px; border: 1px solid #000; text-align: center; line-height: 11px; font-size: 10px; font-weight: bold; margin-left: 10px; margin-right: 4px; }
+    .intro { text-align: justify; margin: 8px 0; }
+    table { width: 100%; border-collapse: collapse; margin-top: 6px; border: 1px solid #000; }
+    thead th { border: 1px solid #000; text-align: center; font-weight: bold; font-size: 9.5px; padding: 4px; vertical-align: middle; }
+    tbody td { border-left: 1px solid #000; border-right: 1px solid #000; border-top: none; border-bottom: none; padding: 3px 4px; vertical-align: top; height: 20px; }
     tbody tr:last-child td { border-bottom: 1px solid #000; }
     .text-center { text-align: center; }
-    .justificacion { margin-top: 10px; padding: 0; min-height: 35px; }
-    .firmas { margin-top: 35px; width: 100%; }
-    .firma-col { width: 48%; display: inline-block; vertical-align: top; }
-    .firma-col + .firma-col { margin-left: 3%; }
-    .firma-linea { margin-top: 35px; border-top: 1px solid #000; width: 85%; text-align: center; padding-top: 4px; }
-    .sello { margin-top: 20px; text-align: center; font-weight: bold; }
-    .nota-cierre { margin-top: 6px; font-size: 10.5px; }
-    .footer-img { position: fixed; bottom: 0.05cm; left: 0; right: 0; text-align: center; }
-    .footer-img img { width: 100%; max-width: 100%; height: auto; }
+    .justificacion { margin-top: 8px; padding: 0; min-height: 30px; }
+    .nota-cierre { margin-top: 4px; font-size: 10px; }
+
+    /* Bloque de Firmas Fijo justo encima del pie de página */
+    .firmas-container {
+      position: fixed;
+      bottom: -50px; /* Posicionamiento exacto sobre el pie institucional */
+      left: 0;
+      width: 100%;
+      font-size: 11px;
+    }
+    .firma-box {
+      width: 40%;
+      text-align: center;
+    }
+    .firma-left { float: left; margin-left: 5%; }
+    .firma-right { float: right; margin-right: 5%; }
+    .firma-center {
+      clear: both;
+      width: 40%;
+      margin: 30px auto 0 auto;
+      text-align: center;
+    }
+    .firma-linea {
+      border-top: 1px solid #000;
+      width: 100%;
+      margin-bottom: 4px;
+    }
+
+    /* Pie de página pegado al fondo absoluto */
+    .institucion-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      position: fixed;
+      bottom: -120px; /* Pega el pie de página hasta el borde inferior de la hoja */
+      left: 0;
+      background-color: white;
+      padding-top: 8px;
+    }
   </style>
 </head>
 <body>
+
   <div class="top-area">
     {% if institucion and institucion.logo2 %}
       <img src="{{ institucion.logo2.url }}" class="logo-secundario" alt="Logo secundario">
@@ -96,62 +135,47 @@
     {{ solicitud.justificacion|default:solicitud.observaciones|default:"" }}
   </div>
 
- 
-<style>
-  .firmas-footer{
-    position: fixed;
-    bottom: 20px;
-    left: 0;
-    width: 100%;
-}
-
-.firma-col{
-    width: 35%;
-    text-align: center;
-}
-
-.firma-col:first-child{
-    float: left;
-    margin-left: 5%;
-}
-
-.firma-col:nth-child(2){
-    float: right;
-    margin-right: 5%;
-}
-
-.firma-centro{
-    clear: both;
-    width: 35%;
-    margin: 90px auto 0;
-    text-align: center;
-}
-
-.firma-linea{
-    border-top: 2px solid #000;
-    width: 100%;
-    margin-bottom: 5px;
-}
-</style>
-  <div class="footer-img">
-    <div class="firmas-footer">
-    <div class="firma-col">.
-        <div class="firma-linea"></div>
-        
-        <strong>SOLICITADO POR</strong>
-          <p>{{ solicitud.usuario_solicitante.get_full_name|default:solicitud.usuario_solicitante.username }}</p>
+  <!-- Bloque de Firmas -->
+  <div class="firmas-container">
+    <div class="firma-box firma-left">
+      <div class="firma-linea"></div>
+      <strong>SOLICITADO POR</strong>
+      <p style="margin: 2px 0 0 0;">{{ solicitud.usuario_solicitante.get_full_name|default:solicitud.usuario_solicitante.username }}</p>
     </div>
 
-    <div class="firma-col">
-        <div class="firma-linea"></div>
-        <strong>AUTORIZADO POR</strong>
+    <div class="firma-box firma-right">
+      <div class="firma-linea"></div>
+      <strong>AUTORIZADO POR</strong>
     </div>
 
-    <div class="firma-centro">
-        <div class="firma-linea"></div>
-        <strong>RECIBIDO POR</strong>
-    </div>
-</div>
+    <!-- <div class="firma-center">
+      <div class="firma-linea"></div>
+      <strong>RECIBIDO POR</strong>
+    </div> -->
   </div>
+
+  <!-- Pie de página Institucional pegado al fondo absoluto -->
+  <div class="institucion-info">
+    <div style="position: absolute; top: -5px; left: 0; width: 100%; height: 5px; 
+      background: linear-gradient(to right, #0b2a4a 33%, #ffffff 33%, #ffffff 66%, #0b2a4a 66%);
+      border: 0.3px solid #000;">
+    </div>
+    
+    <div style="display: flex; align-items: center; flex: 1;">
+      <img src="{% static 'assets/images/globo.png' %}" style="margin-right: 8px; width: 18px; height: 18px;">
+      <span style="font-size: 10px; font-weight: bold;">{% if institucion.pagina_web %}{{ institucion.pagina_web|slice:"7:" }}{% endif %}</span>
+    </div>
+    
+    <div style="display: flex; align-items: center; flex: 1;">
+      <img src="{% static 'assets/images/telefono.png' %}" alt="Teléfono" style="margin-right: 8px; width: 18px; height: 18px;">
+      <span style="font-size: 10px; font-weight: bold;">{{ institucion.telefono }}</span>
+    </div>
+    
+    <div style="display: flex; align-items: center; flex: 1;">
+      <img src="{% static 'assets/images/posicion.png' %}" alt="Ubicación" style="margin-right: 8px; width: 18px; height: 18px;">
+      <span style="font-size: 10px; font-weight: bold;">{{ institucion.direccion }}</span>
+    </div>
+  </div>
+
 </body>
 </html>
