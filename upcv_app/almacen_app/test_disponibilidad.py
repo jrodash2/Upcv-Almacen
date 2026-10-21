@@ -269,6 +269,7 @@ class ReservasConcurrentesTests(TransactionTestCase):
         cookie = self.client.cookies['sessionid'].value
         url = self.url
         data = {'departamento': self.dept.pk, 'tipos_solicitud': 'suministros',
+                'justificacion': 'Solicitud concurrente de material.',
                 'detalles-TOTAL_FORMS': '1', 'detalles-INITIAL_FORMS': '0',
                 'detalles-0-articulo': self.a.pk, 'detalles-0-cantidad': '7',
                 'detalles-0-origen': key}

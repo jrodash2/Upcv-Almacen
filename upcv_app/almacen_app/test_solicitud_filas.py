@@ -31,6 +31,7 @@ class SolicitudFilasTests(TestCase):
     def post(self, rows, **overrides):
         data = {
             'departamento': self.dept.pk, 'tipos_solicitud': ['suministros'],
+            'justificacion': 'Material para las actividades de la sección.',
             'detalles-TOTAL_FORMS': len(rows), 'detalles-INITIAL_FORMS': 0,
             'detalles-MIN_NUM_FORMS': 0, 'detalles-MAX_NUM_FORMS': 1000,
         }

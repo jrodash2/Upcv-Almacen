@@ -602,13 +602,16 @@ DetalleRequerimientoFormSet = modelformset_factory(
 )
 
 
+from .categorias_solicitud import filtrar_por_tipos, tipo_categoria, MENSAJE_TIPOS, MENSAJE_JUSTIFICACION
+
+
 class SolicitudRequerimientoForm(forms.ModelForm):
     tipos_solicitud = forms.MultipleChoiceField(
         choices=SolicitudRequerimiento.TIPO_SOLICITUD_CHOICES,
         widget=forms.CheckboxSelectMultiple,
         required=True,
         label="Tipo de solicitud",
-        error_messages={'required': 'Debe seleccionar al menos un tipo de solicitud.'},
+        error_messages={'required': MENSAJE_TIPOS},
     )
 
     class Meta:
@@ -621,6 +624,8 @@ class SolicitudRequerimientoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         usuario = kwargs.pop('usuario', None)
         super().__init__(*args, **kwargs)
+        self.fields['justificacion'].required = True
+        self.fields['justificacion'].error_messages['required'] = MENSAJE_JUSTIFICACION
         if usuario:
             self.fields['departamento'].queryset = Departamento.objects.filter(
                 usuariodepartamento__usuario=usuario
@@ -641,8 +646,14 @@ class SolicitudRequerimientoForm(forms.ModelForm):
     def clean_tipos_solicitud(self):
         tipos = self.cleaned_data.get('tipos_solicitud') or []
         if not tipos:
-            raise forms.ValidationError('Debe seleccionar al menos un tipo de solicitud.')
+            raise forms.ValidationError(MENSAJE_TIPOS)
         return tipos
+
+    def clean_justificacion(self):
+        justificacion = (self.cleaned_data.get('justificacion') or '').strip()
+        if not justificacion:
+            raise forms.ValidationError(MENSAJE_JUSTIFICACION)
+        return justificacion
 
     def save(self, commit=True):
         solicitud = super().save(commit=False)
@@ -690,20 +701,16 @@ class DetalleSolicitudRequerimientoForm(forms.ModelForm):
             articulos = Articulo.objects.filter(
                 id__in={fila['articulo'].pk for fila in self.fuentes.values()}, activo=True
             )
-            if self.tipos_solicitud:
-                categoria_query = Q()
-                filtros_categoria = {
-                    'bienes': 'bien',
-                    'suministros': 'suministro',
-                    'insumos': 'insumo',
-                }
-                for tipo in self.tipos_solicitud:
-                    categoria_query |= Q(categoria__nombre__icontains=filtros_categoria.get(tipo, tipo))
-                articulos = articulos.filter(categoria_query)
-            articulos = articulos.distinct().order_by('nombre')
-            for articulo in articulos:
-                articulo.cantidad_disponible = self.stock_disponible.get(articulo.id, 0)
+            # The field validates identity/authorization against the full assigned
+            # queryset; the widget offers only selected categories with availability.
+            articulos = articulos.select_related('categoria').distinct().order_by('nombre')
             self.fields['articulo'].queryset = articulos
+            permitidos = filtrar_por_tipos(articulos, self.tipos_solicitud).filter(
+                pk__in=[pk for pk, cantidad in self.stock_disponible.items() if cantidad > 0])
+            self.fields['articulo'].choices = [('', '---------')] + [
+                (articulo.pk, self.fields['articulo'].label_from_instance(articulo))
+                for articulo in permitidos
+            ]
         self.fields['articulo'].widget.attrs.update({
             'class': 'form-select rounded-3 select-articulo'
         })
@@ -717,6 +724,11 @@ class DetalleSolicitudRequerimientoForm(forms.ModelForm):
         articulo = self.cleaned_data.get('articulo')
         if articulo and articulo.id not in {fila['articulo'].pk for fila in self.fuentes.values()}:
             raise forms.ValidationError("El artículo seleccionado no está asignado a la ubicación actual.")
+        if articulo and tipo_categoria(articulo.categoria.nombre if articulo.categoria else '') not in self.tipos_solicitud:
+            categoria = articulo.categoria.nombre if articulo.categoria else 'Sin categoría'
+            raise forms.ValidationError(
+                f'El artículo {articulo.codigo} - {articulo.nombre} pertenece a {categoria} '
+                'y no corresponde al tipo de solicitud seleccionado.')
         return articulo
 
     def clean(self):

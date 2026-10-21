@@ -1,3 +1,4 @@
+from .categorias_solicitud import filtrar_por_tipos, tipo_categoria
 from .disponibilidad import (fuentes_departamento, totales_departamento, bloquear_departamento, validar_y_reservar, liberar_reservas_division, resumen_global_articulo, saldo_global_sin_asignar)
 from datetime import datetime, timezone
 from venv import logger
@@ -467,22 +468,19 @@ def articulos_asignados(request, departamento_id):
         stock_disponible = obtener_stock_disponible_por_departamento(departamento)
         articulos = Articulo.objects.filter(id__in=stock_disponible.keys(), activo=True)
         tipos_solicitud = request.GET.getlist('tipos_solicitud') or request.GET.getlist('tipos_solicitud[]')
-        if tipos_solicitud:
-            categoria_query = Q()
-            filtros_categoria = {
-                'bienes': 'bien',
-                'suministros': 'suministro',
-                'insumos': 'insumo',
-            }
-            for tipo in tipos_solicitud:
-                categoria_query |= Q(categoria__nombre__icontains=filtros_categoria.get(tipo, tipo))
-            articulos = articulos.filter(categoria_query)
+        # The shared endpoint also serves transfers without category parameters.
+        # Request creation opts into the stricter empty-selection contract.
+        if tipos_solicitud or request.GET.get('contexto') == 'solicitud':
+            articulos = filtrar_por_tipos(articulos, tipos_solicitud)
+        if request.GET.get('contexto') == 'solicitud':
+            articulos = articulos.filter(pk__in=[pk for pk, cantidad in stock_disponible.items() if cantidad > 0])
         articulos = articulos.order_by('nombre')
 
         fuentes = fuentes_departamento(departamento)
         data = {'articulos': [
             {'id': articulo.pk, 'codigo': articulo.codigo, 'nombre': articulo.nombre,
              'categoria': articulo.categoria.nombre if articulo.categoria else 'S/C',
+             'tipo_solicitud': tipo_categoria(articulo.categoria.nombre if articulo.categoria else ''),
              'cantidad_disponible': str(stock_disponible.get(articulo.pk, 0)),
              'cantidad_asignada': str(sum((fila['cantidad_asignada'] for fila in fuentes if fila['articulo'].pk == articulo.pk), Decimal('0'))),
              'renglon_presupuestario': articulo.renglon_presupuestario or 'S/R',
@@ -734,8 +732,18 @@ def crear_solicitud_requerimiento(request):
         if respuesta_json:
             return JsonResponse({'ok': False, 'errors': errores_guardado}, status=400)
 
+    fuentes = fuentes_departamento(departamento)
+    catalogo = {fila['articulo'].pk: fila['articulo'] for fila in fuentes}
+    articulos_data = [
+        {'id': articulo.pk, 'codigo': articulo.codigo, 'nombre': articulo.nombre,
+         'tipo_solicitud': tipo_categoria(articulo.categoria.nombre if articulo.categoria else '')}
+        for articulo in catalogo.values()
+        if articulo.activo and stock_disponible.get(articulo.pk, 0) > 0
+        and tipo_categoria(articulo.categoria.nombre if articulo.categoria else '') in tipos_solicitud
+    ]
     return render(request, 'almacen/crear_solicitud_requerimiento.html', {
-        'fuentes_data': [fuente_json(fila) for fila in fuentes_departamento(departamento)],
+        'articulos_data': articulos_data,
+        'fuentes_data': [fuente_json(fila) for fila in fuentes],
         'errores_guardado': errores_guardado,
         'form': form,
         'formset': formset,
