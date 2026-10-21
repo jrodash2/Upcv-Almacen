@@ -715,7 +715,9 @@ def crear_requerimiento(request):
 @login_required
 @grupo_requerido('Gestor')
 def crear_solicitud_requerimiento(request):
-    form = SolicitudRequerimientoForm(request.POST or None, usuario=request.user)
+    datos = request.POST if request.method == 'POST' else None
+    respuesta_json = request.headers.get('Accept') == 'application/json'
+    form = SolicitudRequerimientoForm(datos, usuario=request.user)
     departamentos_qs = form.fields['departamento'].queryset
     departamento = departamentos_qs.first() if request.method == 'GET' else None
     if request.method == 'POST':
@@ -727,7 +729,7 @@ def crear_solicitud_requerimiento(request):
     tipos_solicitud = request.POST.getlist('tipos_solicitud') if request.method == 'POST' else []
 
     formset = DetalleSolicitudRequerimientoFormSet(
-        request.POST or None,
+        datos,
         queryset=DetalleSolicitudRequerimiento.objects.none(),
         prefix='detalles',
         departamento=departamento,
@@ -735,13 +737,15 @@ def crear_solicitud_requerimiento(request):
         tipos_solicitud=tipos_solicitud
     )
 
-    if request.method == 'POST' and not tipos_solicitud:
-        messages.error(request, "Debe seleccionar al menos un tipo de solicitud.")
+    errores_guardado = []
+    # Validate both: a header error must not hide errors in the active details.
+    valido = False
+    if request.method == 'POST':
+        formulario_valido = form.is_valid()
+        detalles_validos = formset.is_valid()
+        valido = formulario_valido and detalles_validos
 
-    if request.method == 'POST' and not stock_disponible:
-        messages.error(request, "No tiene artículos asignados disponibles para solicitar. Comuníquese con el administrador o con su departamento.")
-
-    if request.method == 'POST' and form.is_valid() and formset.is_valid():
+    if valido:
         try:
             with transaction.atomic():
                 solicitud = form.save(commit=False)
@@ -773,11 +777,29 @@ def crear_solicitud_requerimiento(request):
                             detalle.division_articulo_ubicacion = asignacion_division
                         detalle.save()
         except ValidationError as e:
-            messages.error(request, e.message_dict if hasattr(e, 'message_dict') else e.messages)
+            form.add_error(None, ValidationError(e.messages))
         else:
+            destino = reverse('almacen:listado_solicitudes_gestor')
+            if respuesta_json:
+                return JsonResponse({'ok': True, 'redirect_url': destino}, status=201)
             messages.success(request, "Solicitud creada correctamente.")
-            return redirect('almacen:listado_solicitudes_gestor')
+            return redirect(destino)
+    if request.method == 'POST':
+        for campo, errores in form.errors.items():
+            etiqueta = form.fields[campo].label or campo if campo in form.fields else 'Solicitud'
+            errores_guardado.extend(f"{etiqueta}: {error}" for error in errores)
+        errores_guardado.extend(str(error) for error in formset.non_form_errors())
+        for indice, detalle_form in enumerate(formset.forms, 1):
+            if detalle_form.cleaned_data.get('DELETE'):
+                continue
+            for campo, errores in detalle_form.errors.items():
+                etiqueta = detalle_form.fields[campo].label or campo if campo in detalle_form.fields else 'Detalle'
+                errores_guardado.extend(f"Fila {indice}, {etiqueta}: {error}" for error in errores)
+        if respuesta_json:
+            return JsonResponse({'ok': False, 'errors': errores_guardado}, status=400)
+
     return render(request, 'almacen/crear_solicitud_requerimiento.html', {
+        'errores_guardado': errores_guardado,
         'form': form,
         'formset': formset,
         'stock_disponible': {str(k): str(v) for k, v in stock_disponible.items()},
