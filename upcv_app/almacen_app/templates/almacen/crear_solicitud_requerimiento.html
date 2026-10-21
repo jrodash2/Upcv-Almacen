@@ -36,7 +36,7 @@
                 No tiene artículos asignados disponibles para solicitar. Comuníquese con el administrador o con su departamento.
               </div>
             {% endif %}
-            <form method="post">
+            <form method="post" autocomplete="off" id="solicitud-form">
               {% csrf_token %}
               <div class="row">
                 <div class="col-md-6 mb-3">
@@ -96,6 +96,7 @@
                   </thead>
                   <tbody id="detalle-formset-body">
                     {% for detalle_form in formset %}
+                      {% if not detalle_form.DELETE.value %}
                       <tr class="detalle-form-row">
                         <td>
                           {{ detalle_form.articulo }}
@@ -121,12 +122,13 @@
                           {% if detalle_form.DELETE %}
                             <div class="d-none">{{ detalle_form.DELETE }}</div>
                           {% endif %}
-                          <button type="button" class="btn btn-outline-danger btn-sm quitar-item">
+                          <button type="button" class="btn btn-outline-danger btn-sm quitar-item text-nowrap">
                             <i class="fa fa-trash"></i>
                             Quitar
                           </button>
                         </td>
                       </tr>
+                      {% endif %}
                     {% endfor %}
                   </tbody>
                 </table>
@@ -143,7 +145,7 @@
                   <td>{{ formset.empty_form.cantidad }}</td>
                   <td class="text-center">
                     <div class="d-none">{{ formset.empty_form.DELETE }}</div>
-                    <button type="button" class="btn btn-outline-danger btn-sm quitar-item">
+                    <button type="button" class="btn btn-outline-danger btn-sm quitar-item text-nowrap">
                       <i class="fa fa-trash"></i>
                       Quitar
                     </button>
@@ -173,20 +175,54 @@ document.addEventListener("DOMContentLoaded", function () {
   const totalForms = document.getElementById("id_detalles-TOTAL_FORMS");
   const template = document.getElementById("empty-form-template");
 
-  function obtenerCategoria(select) {
-    const articuloId = select.value;
-    const articulo = articulosDepartamento
-      ? articulosDepartamento.find((item) => String(item.id) === String(articuloId))
-      : null;
+  const solicitudForm = document.getElementById("solicitud-form");
+  const tablaElement = document.getElementById("tabla-crear-solicitud-requerimiento");
+  // Initialize once, before the shared Riho initializer. All rows belong to DataTables.
+  const tabla = window.jQuery && window.jQuery.fn.DataTable
+    ? window.jQuery(tablaElement).DataTable({
+        pageLength: 10,
+        lengthMenu: [10, 25, 50, 100],
+        autoWidth: false,
+        order: [],
+        stateSave: false,
+        columnDefs: [{targets: [6, 7], orderable: false}],
+        language: {
+          search: "Buscar:", lengthMenu: "Mostrar _MENU_ registros",
+          info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
+          infoEmpty: "Mostrando 0 a 0 de 0 registros",
+          infoFiltered: "(filtrado de _MAX_ registros)",
+          zeroRecords: "No se encontraron registros", emptyTable: "No hay artículos",
+          paginate: {previous: "Anterior", next: "Siguiente"}
+        }
+      }) : null;
 
-    if (articulo && articulo.categoria) {
-      return articulo.categoria;
-    }
-
-    const optionText = select.selectedOptions.length ? select.selectedOptions[0].textContent : "";
-    const match = optionText.match(/Categoría:\s*(.*?)\s*—/);
-    return match ? match[1].trim() : "S/C";
+  function filasActivas() {
+    return tabla ? tabla.rows().nodes().toArray()
+      : Array.from(formsetBody.querySelectorAll(".detalle-form-row"));
   }
+
+  // This screen creates new details only; compact indices after physical removal.
+  function sincronizarIndices() {
+    const filas = filasActivas();
+    filas.forEach((row, index) => {
+      row.querySelectorAll("[name], [id], label[for]").forEach((element) => {
+        ["name", "id", "for"].forEach((attribute) => {
+          const value = element.getAttribute(attribute);
+          if (value) element.setAttribute(attribute, value.replace(/detalles-\d+-/g, `detalles-${index}-`));
+        });
+      });
+    });
+    totalForms.value = filas.length;
+  }
+
+  sincronizarIndices();
+  // Native validation must run after filtered/paginated controls are attached.
+  solicitudForm.noValidate = true;
+  solicitudForm.addEventListener("submit", function (event) {
+    if (tabla) tabla.search("").columns().search("").page.len(-1).draw(false);
+    sincronizarIndices();
+    if (!solicitudForm.reportValidity()) event.preventDefault();
+  });
 
   function actualizarDisponible(select) {
     const articuloId = select.value;
@@ -241,8 +277,8 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function actualizarOpcionesFilas(items) {
-    document.querySelectorAll(".select-articulo").forEach((select) => {
-      actualizarOpcionesSelect(select, items);
+    filasActivas().forEach((row) => {
+      actualizarOpcionesSelect(row.querySelector(".select-articulo"), items);
     });
   }
 
@@ -251,16 +287,25 @@ document.addEventListener("DOMContentLoaded", function () {
       const formIndex = parseInt(totalForms.value, 10);
       const newRowHtml = template.innerHTML.replace(/__prefix__/g, formIndex);
 
-      formsetBody.insertAdjacentHTML("beforeend", newRowHtml);
-      totalForms.value = formIndex + 1;
-
-      const newRow = formsetBody.querySelector(".detalle-form-row:last-child");
+      const fragment = document.createElement("template");
+      fragment.innerHTML = newRowHtml.trim();
+      const newRow = fragment.content.firstElementChild;
       const newSelect = newRow ? newRow.querySelector(".select-articulo") : null;
       if (newSelect && articulosDepartamento) {
         actualizarOpcionesSelect(newSelect, articulosDepartamento);
       } else if (newSelect) {
         actualizarDisponible(newSelect);
       }
+      if (tabla) {
+        tabla.search("").columns().search("");
+        const added = tabla.row.add(newRow);
+        tabla.draw(false);
+        const position = tabla.rows({order: 'applied', search: 'applied'}).indexes().toArray().indexOf(added.index());
+        if (tabla.page.len() > 0) tabla.page(Math.floor(position / tabla.page.len())).draw('page');
+      } else {
+        formsetBody.appendChild(newRow);
+      }
+      sincronizarIndices();
     });
   }
 
@@ -272,14 +317,14 @@ document.addEventListener("DOMContentLoaded", function () {
     const row = button.closest(".detalle-form-row");
     if (!row) return;
 
-    const deleteInput = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
-
-    if (deleteInput) {
-      deleteInput.checked = true;
-      row.style.display = "none";
+    if (tabla) {
+      tabla.row(row).remove().draw(false);
     } else {
       row.remove();
     }
+    // Remove controls too: a detached node must never enter the POST payload.
+    row.replaceChildren();
+    sincronizarIndices();
   });
 
   document.addEventListener("change", function (event) {
@@ -288,7 +333,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  document.querySelectorAll(".select-articulo").forEach(actualizarDisponible);
+  filasActivas().forEach((row) => actualizarDisponible(row.querySelector(".select-articulo")));
 
   const deptSelect = document.getElementById("id_departamento");
   function obtenerTiposSeleccionados() {
