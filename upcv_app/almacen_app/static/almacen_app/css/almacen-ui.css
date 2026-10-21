@@ -215,6 +215,13 @@
   .almacen-ui .sidebar-wrapper .sidebar-link { padding-block: .75rem; color: var(--almacen-text); }
   .almacen-ui .sidebar-wrapper :is(.sidebar-link:hover, .sidebar-submenu a:hover, a[aria-current='page']) { background: var(--almacen-primary-light); color: var(--almacen-primary-dark); }
   .almacen-ui .sidebar-wrapper a[aria-current='page'] { box-shadow: inset 3px 0 var(--almacen-primary); font-weight: 650; }
+  /* El enlace del logo no es una opción del menú, aunque reciba aria-current. */
+  .almacen-ui .sidebar-wrapper :is(.logo-wrapper, .logo-icon-wrapper) > a,
+  .almacen-ui .sidebar-wrapper :is(.logo-wrapper, .logo-icon-wrapper) > a[aria-current],
+  .almacen-ui .sidebar-wrapper :is(.logo-wrapper, .logo-icon-wrapper) > a:hover {
+    background: transparent;
+    box-shadow: none;
+  }
   .almacen-ui .sidebar-main-title h6 { color: var(--almacen-text-muted); font-size: .7rem; letter-spacing: .06em; }
   .almacen-ui .sidebar-submenu a { font-size: .8rem; }
   .almacen-ui .dropdown-wide { min-width: 220px; padding: .65rem; text-align: center; }

@@ -27,7 +27,7 @@
         </div>
       </div>
     </div>
-    <div class="gestor-header mb-4 gestor-animate"><div><span class="gestor-eyebrow">Almacén</span><h4 class="gestor-title">{% if es_gestor %}Seguimiento de Requerimientos{% else %}Requerimientos{% endif %}</h4><p class="gestor-subtitle">{% if es_gestor %}Consulte en modo lectura los requerimientos asociados a sus ubicaciones o solicitudes.{% else %}Gestione y consulte requerimientos según sus permisos.{% endif %}</p></div></div>
+    <div class="gestor-header mb-4 gestor-animate"><div><span class="gestor-eyebrow">Almacén</span><p class="gestor-subtitle">{% if es_gestor %}Consulte en modo lectura los requerimientos asociados a sus ubicaciones o solicitudes.{% else %}Gestione y consulte requerimientos según sus permisos.{% endif %}</p></div></div>
   </div>
 
   <div class="container-fluid">
@@ -114,7 +114,7 @@
         <div class="card card gestor-animate">
           <div class="card-header pb-0 card-no-border py-3 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
             <div>
-              <h5 class="mb-0 fw-bold text-dark"><i class="fa fa-tasks me-2 text-primary"></i>{% if es_gestor %}Seguimiento de Requerimientos{% else %}Listado de Requerimientos{% endif %}</h5>
+
               <small class="text-muted">{% if es_gestor %}Consulta en modo lectura los requerimientos asociados a tus departamentos o solicitudes convertidas.{% else %}Administra y consulta los requerimientos registrados según tus permisos.{% endif %}</small>
             </div>
             {% if puede_crear_requerimiento %}
