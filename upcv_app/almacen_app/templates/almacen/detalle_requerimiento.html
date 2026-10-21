@@ -351,7 +351,7 @@
                     <tbody>
                       {% for detalle in detalles_requerimiento %}
                       <tr>
-                        <td>{{ detalle.articulo.nombre }}</td>
+                        <td>{{ detalle.articulo.nombre }}{% if detalle.detalle_solicitud_origen %}<small class="d-block text-muted">{{ detalle.detalle_solicitud_origen.origen_label }}</small>{% endif %}</td>
                         <td>{{ detalle.articulo.renglon_presupuestario|default:"S/R" }}</td>
                         <td>{{ detalle.articulo.categoria.nombre|default:"S/C" }}</td>
                         <td>{{ detalle.cantidad }}</td>

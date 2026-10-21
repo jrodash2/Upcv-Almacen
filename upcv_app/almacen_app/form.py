@@ -667,6 +667,8 @@ class DetalleSolicitudRequerimientoForm(forms.ModelForm):
             return texto
 
     articulo = ArticuloAsignadoChoiceField(queryset=Articulo.objects.none())
+    origen = forms.ChoiceField(required=False, label='Origen / asignación',
+                               widget=forms.Select(attrs={'class': 'form-select select-origen'}))
 
     class Meta:
         model = DetalleSolicitudRequerimiento
@@ -676,10 +678,17 @@ class DetalleSolicitudRequerimientoForm(forms.ModelForm):
         self.departamento = kwargs.pop('departamento', None)
         self.stock_disponible = kwargs.pop('stock_disponible', {})
         self.tipos_solicitud = kwargs.pop('tipos_solicitud', [])
+        fuentes = kwargs.pop('fuentes', None)
         super().__init__(*args, **kwargs)
+        from .disponibilidad import fuentes_departamento
+        self.fuentes = fuentes if fuentes is not None else {fila['fuente']: fila for fila in fuentes_departamento(self.departamento)}
+        self.fields['origen'].choices = [('', 'Seleccione origen')] + [
+            (key, f"{fila['origen']} {fila['division'] or ''} · Asignación {fila['asignacion'].pk} · Disponible {fila['disponible']:g}")
+            for key, fila in self.fuentes.items()
+        ]
         if self.departamento:
             articulos = Articulo.objects.filter(
-                id__in=self.stock_disponible.keys()
+                id__in={fila['articulo'].pk for fila in self.fuentes.values()}, activo=True
             )
             if self.tipos_solicitud:
                 categoria_query = Q()
@@ -706,7 +715,7 @@ class DetalleSolicitudRequerimientoForm(forms.ModelForm):
 
     def clean_articulo(self):
         articulo = self.cleaned_data.get('articulo')
-        if articulo and articulo.id not in self.stock_disponible:
+        if articulo and articulo.id not in {fila['articulo'].pk for fila in self.fuentes.values()}:
             raise forms.ValidationError("El artículo seleccionado no está asignado a la ubicación actual.")
         return articulo
 
@@ -717,9 +726,18 @@ class DetalleSolicitudRequerimientoForm(forms.ModelForm):
         if cantidad is not None and cantidad <= 0:
             raise forms.ValidationError("La cantidad solicitada debe ser mayor a cero.")
         if articulo and cantidad:
-            disponible = self.stock_disponible.get(articulo.id, 0)
-            if cantidad > disponible:
-                raise forms.ValidationError("La cantidad solicitada supera la cantidad disponible.")
+            from .disponibilidad import mensaje_saldo
+            key = cleaned_data.get('origen')
+            candidatas = [fila for fila in self.fuentes.values() if fila['articulo'].pk == articulo.pk]
+            if not key and len(candidatas) == 1:
+                # Compatibilidad con formularios antiguos solo cuando no hay ambigüedad.
+                key = candidatas[0]['fuente']
+                cleaned_data['origen'] = key
+            fila = self.fuentes.get(key)
+            if not fila or fila['articulo'].pk != articulo.pk:
+                self.add_error('origen', 'Seleccione una asignación autorizada del artículo y departamento.')
+            elif Decimal(cantidad) > fila['disponible']:
+                self.add_error('cantidad', mensaje_saldo(fila, Decimal(cantidad)))
         return cleaned_data
 
 
@@ -728,6 +746,8 @@ class BaseDetalleSolicitudRequerimientoFormSet(BaseModelFormSet):
         self.departamento = kwargs.pop('departamento', None)
         self.stock_disponible = kwargs.pop('stock_disponible', {})
         self.tipos_solicitud = kwargs.pop('tipos_solicitud', [])
+        from .disponibilidad import fuentes_departamento
+        self.fuentes = {fila['fuente']: fila for fila in fuentes_departamento(self.departamento)}
         super().__init__(*args, **kwargs)
 
     def get_form_kwargs(self, index):
@@ -735,11 +755,12 @@ class BaseDetalleSolicitudRequerimientoFormSet(BaseModelFormSet):
         kwargs['departamento'] = self.departamento
         kwargs['stock_disponible'] = self.stock_disponible
         kwargs['tipos_solicitud'] = self.tipos_solicitud
+        kwargs['fuentes'] = self.fuentes
         return kwargs
 
     def clean(self):
         super().clean()
-        acumulado = defaultdict(float)
+        acumulado = defaultdict(Decimal)
         tiene_detalles = False
 
         for form in self.forms:
@@ -756,17 +777,17 @@ class BaseDetalleSolicitudRequerimientoFormSet(BaseModelFormSet):
 
             if articulo and cantidad:
                 tiene_detalles = True
-                acumulado[articulo.id] += float(cantidad)
+                acumulado[form.cleaned_data.get('origen')] += Decimal(cantidad)
 
         if not tiene_detalles:
             raise forms.ValidationError("Debe agregar al menos un artículo a la solicitud.")
 
-        for articulo_id, cantidad_total in acumulado.items():
-            disponible = float(self.stock_disponible.get(articulo_id, 0))
-            if cantidad_total > disponible:
-                raise forms.ValidationError(
-                    f"La cantidad solicitada supera lo disponible para uno de los artículos. Disponible: {disponible:g}"
-                )
+        from .disponibilidad import mensaje_saldo
+        fuentes = self.fuentes
+        for key, cantidad_total in acumulado.items():
+            fila = fuentes.get(key)
+            if fila and cantidad_total > fila['disponible']:
+                raise forms.ValidationError(mensaje_saldo(fila, cantidad_total))
 
 
 DetalleSolicitudRequerimientoFormSet = modelformset_factory(

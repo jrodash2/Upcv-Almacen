@@ -63,7 +63,7 @@
       <th>Asignado</th>
       <th>Reservado</th>
       <th>Departamento(s) / División(es)</th>
-      <th>Disponible</th>
+      <th>Disponible sin asignar</th>
       <th>Acción</th> <!-- Nueva columna -->
     </tr>
   </thead>
@@ -96,7 +96,7 @@
       </td>
       <td>
         <span class="badge badge-light-warning">{{ item.reservado_total }}</span>
-        <small class="d-block text-muted">Consumido divisiones: {{ item.consumido_total }}</small>
+        <small class="d-block text-muted">Consumido asignaciones: {{ item.consumido_total }}</small>
       </td>
       <td>
         <div><strong>Deptos:</strong> {{ item.departamentos }}</div>

@@ -1,5 +1,11 @@
 # Crear Solicitud: filas, guardado e IIS
 
+> Documento de la corrección anterior del botón Guardar. Para desplegar la revisión
+> actual con fuentes Directo/División, consulte [Disponibilidad por origen](disponibilidad-origenes-iis.md).
+> Esta revisión sí requiere la migración aditiva `0059_fuentes_solicitud`; prevalecen
+> las instrucciones y el alcance de esa guía.
+
+
 ## Diagnóstico y alcance
 
 La pantalla usa un ModelFormSet nuevo (`detalles`, `INITIAL_FORMS=0`), con campos
