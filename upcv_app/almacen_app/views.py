@@ -1344,6 +1344,7 @@ def exportar_requerimiento_pdf(request, requerimiento_id):
         })
 
     elaborado_por = requerimiento.creado_por.get_full_name() or requerimiento.creado_por.username
+    solicitud_origen = requerimiento.solicitudes_origen.order_by('pk').first()
 
     html_string = render_to_string('almacen/pdf_requerimiento.html', {
         'requerimiento': requerimiento,
@@ -1353,7 +1354,7 @@ def exportar_requerimiento_pdf(request, requerimiento_id):
         'fecha': requerimiento.fecha_creacion.strftime('%d/%m/%Y'),
         'elaborado_por': elaborado_por,
         'motivo': requerimiento.motivo or 'No especificado.',
-        'correlativo': f'REQ-{requerimiento.id:06d}',
+        'correlativo': f'{solicitud_origen.pk:04d}' if solicitud_origen else 'Sin solicitud vinculada',
         'institucion': institucion,  # ✅ Pasamos la instancia al template
     })
 
