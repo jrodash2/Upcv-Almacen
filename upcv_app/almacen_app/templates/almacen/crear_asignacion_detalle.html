@@ -1,4 +1,5 @@
 {% extends 'almacen/base.html' %}
+{% load moneda_filters %}
 {% load static %}
 
 {% block content %}
@@ -91,7 +92,7 @@
               <li><span class="f-w-600 f-10">Categoría:</span> <span class="f-light f-10">{{ ultima_asignacion.articulo.categoria.nombre|default:"S/C" }}</span></li>
               <li><span class="f-w-600 f-10">Departamento:</span> <span class="f-light f-10">{{ ultima_asignacion.destino.nombre }}</span></li>
               <li><span class="f-w-600 f-10">Cantidad asignada:</span> <span class="f-light f-10">{{ ultima_asignacion.cantidad_asignada }}</span></li>
-              <li><span class="f-w-600 f-10">Fecha:</span> <span class="f-light f-10">{{ ultima_asignacion.fecha_asignacion }}</span></li>
+              <li><span class="f-w-600 f-10">Fecha:</span> <span class="f-light f-10">{{ ultima_asignacion.fecha_asignacion|fecha_corta }}</span></li>
             </ul>
           </div>
         </div>

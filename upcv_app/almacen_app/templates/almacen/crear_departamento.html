@@ -1,4 +1,5 @@
 {% extends 'almacen/base.html' %}
+{% load moneda_filters %}
 {% load static %}
 {% block content %}
 
@@ -116,8 +117,8 @@
                         <td>{{ departamento.id_departamento }}</td>
                         <td>{{ departamento.nombre }}</td>
                         <td>{{ departamento.descripcion }}</td>
-                        <td>{{ departamento.fecha_creacion }}</td>
-                        <td>{{ departamento.fecha_actualizacion }}</td>
+                        <td>{{ departamento.fecha_creacion|fecha_corta }}</td>
+                        <td>{{ departamento.fecha_actualizacion|fecha_corta }}</td>
                         <td> 
                           <a href="{% url 'almacen:editar_departamento' departamento.id %}" class="btn btn-primary btn-sm">Editar</a>
                         </td>

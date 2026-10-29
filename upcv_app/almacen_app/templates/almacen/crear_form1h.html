@@ -1,4 +1,5 @@
 {% extends 'almacen/base.html' %} {% load static %} {% block content %}
+{% load moneda_filters %}
 
 <!-- Cargar jQuery y DataTables -->
 
@@ -71,7 +72,7 @@
     <td>{{ registro.proveedor }}</td>
     <td>{{ registro.numero_factura }}</td>
     <td>{{ registro.numero_serie_completo }}</td>
-    <td>{{ registro.fecha_factura }}</td>
+    <td>{{ registro.fecha_factura|fecha_corta }}</td>
     <td>
 {% if registro.estado == 'confirmado' %}
     ✅

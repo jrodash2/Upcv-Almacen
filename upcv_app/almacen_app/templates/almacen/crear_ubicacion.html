@@ -1,4 +1,5 @@
 {% extends 'almacen/base.html' %}
+{% load moneda_filters %}
 {% load static %}
 {% block content %}
 
@@ -104,8 +105,8 @@
           <td>{{ ubicacion.id }}</td>
           <td>{{ ubicacion.nombre }}</td>
           <td>{{ ubicacion.descripcion }}</td>
-          <td>{{ ubicacion.fecha_creacion }}</td>
-          <td>{{ ubicacion.fecha_actualizacion }}</td>
+          <td>{{ ubicacion.fecha_creacion|fecha_corta }}</td>
+          <td>{{ ubicacion.fecha_actualizacion|fecha_corta }}</td>
           <td>{% if ubicacion.activo %}Activa{% else %}Inactiva{% endif %}</td>
           <td>
             <a href="{% url 'almacen:editar_ubicacion' ubicacion.id %}" class="btn btn-primary btn-sm">Editar</a>

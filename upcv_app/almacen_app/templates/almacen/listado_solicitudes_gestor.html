@@ -1,4 +1,5 @@
 {% extends 'almacen/base.html' %}
+{% load moneda_filters %}
 {% load estado_tags %}
 {% block content %}
 <div class="page-body gestor-page">
@@ -25,10 +26,10 @@
                   <td>
                     <span class="estado-badge {% estado_badge_class s.estado %}">{{ s.get_estado_display|default:s.estado }}</span>
                   </td>
-                  <td>{{ s.creado_en|date:"d/m/Y H:i" }}</td>
+                  <td>{{ s.creado_en|fecha_corta }}</td>
                   <td>
-                    {% if s.estado == 'convertida' and s.convertido_en %}{{ s.convertido_en|date:"d/m/Y H:i" }}
-                    {% elif s.estado == 'rechazada' and s.rechazado_en %}{{ s.rechazado_en|date:"d/m/Y H:i" }}
+                    {% if s.estado == 'convertida' and s.convertido_en %}{{ s.convertido_en|fecha_corta }}
+                    {% elif s.estado == 'rechazada' and s.rechazado_en %}{{ s.rechazado_en|fecha_corta }}
                     {% else %}<span class="text-muted">-</span>{% endif %}
                   </td>
                   <td>

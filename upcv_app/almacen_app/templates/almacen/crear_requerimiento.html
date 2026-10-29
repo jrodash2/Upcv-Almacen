@@ -1,4 +1,5 @@
 {% extends 'almacen/base.html' %}
+{% load moneda_filters %}
 {% load static %}
 {% load estado_tags %}
 {% block content %}
@@ -136,7 +137,7 @@
                     <td class="fw-semibold">#{{ req.id }}</td>
                     <td>{{ req.departamento.nombre }}</td>
                     <td>{{ req.creado_por.get_full_name|default:req.creado_por.username }}</td>
-                    <td>{{ req.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                    <td>{{ req.fecha_creacion|fecha_corta }}</td>
                     <td>
                       <span class="estado-badge {% estado_badge_class req.estado %}">{{ req.get_estado_display|default:req.estado }}</span>
                       {% if req.estado == 'despachado' and req.despachado_por %}<small class="text-muted d-block mt-1">Por {{ req.despachado_por.get_full_name|default:req.despachado_por.username }}</small>{% endif %}
@@ -144,9 +145,9 @@
                     </td>
                     <td>
                       {% if req.estado == 'despachado' and req.fecha_despachado %}
-                        {{ req.fecha_despachado|date:"d/m/Y H:i" }}
+                        {{ req.fecha_despachado|fecha_corta }}
                       {% elif req.estado == 'rechazado' and req.fecha_rechazado %}
-                        {{ req.fecha_rechazado|date:"d/m/Y H:i" }}
+                        {{ req.fecha_rechazado|fecha_corta }}
                       {% else %}
                         <span class="text-muted">-</span>
                       {% endif %}

@@ -1,3 +1,4 @@
+{% load moneda_filters %}
 
 {% extends 'empleados/base.html' %}
 {% load static %}
@@ -64,8 +65,8 @@
           <td>{{ empleado.dpi }}</td>
           <td>{{ empleado.tipoc }}</td>
           <td>{{ empleado.dcargo }}</td>
-          <td>{{ empleado.fecha_inicio }}</td>
-          <td>{{ empleado.fecha_vencimiento }}</td>
+          <td>{{ empleado.fecha_inicio|fecha_corta }}</td>
+          <td>{{ empleado.fecha_vencimiento|fecha_corta }}</td>
           <td>{{ empleado.created_at }}</td>
           <td>{% if empleado.activo %}<i class="icon-check"></i></a></li>{% else %}<i class="icon-close">{% endif %}</td>
           <td>

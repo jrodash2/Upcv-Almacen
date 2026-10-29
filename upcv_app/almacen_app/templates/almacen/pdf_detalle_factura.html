@@ -1,3 +1,4 @@
+{% load moneda_filters %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -62,7 +63,7 @@
 </div>
 
 <div style="position: absolute; top: 2.02cm; left: 14.4cm;">
-  {{ form1h_instance.fecha_factura }}
+  {{ form1h_instance.fecha_factura|fecha_corta }}
 </div>
 
 <div style="position: absolute; top: 2.67cm; left: 1.2cm;">
@@ -100,8 +101,8 @@
             <td rowspan="{{ inventarios|length }}" style="padding-left: 3px;">{{ d.articulo.nombre }}<br><small>Categoría: {{ d.articulo.categoria.nombre|default:"S/C" }}</small></td>
             <td rowspan="{{ inventarios|length }}" style="padding-right: 55px;">{{ d.renglon }}</td>
             <td rowspan="{{ inventarios|length }}" style="padding-left: 15px;">{{ d.numero_linea }}</td>
-            <td rowspan="{{ inventarios|length }}" style="padding-right: 10px;">Q{{ d.precio_unitario }}</td>
-            <td rowspan="{{ inventarios|length }}" style="padding-left: 8px;">Q{{ d.precio_total }}</td>
+            <td rowspan="{{ inventarios|length }}" style="padding-right: 10px;">{{ d.precio_unitario|quetzales }}</td>
+            <td rowspan="{{ inventarios|length }}" style="padding-left: 8px;">{{ d.precio_total|quetzales }}</td>
             <td style="padding-right: 12px;">{{ inventarios.0.folio_inventario }}</td>
             <td style="padding-left: 5px;">{{ inventarios.0.nomenclatura }}</td>
           </tr>
@@ -121,8 +122,8 @@
             <td style="padding-left: 3px;">{{ d.articulo.nombre }}<br><small>Categoría: {{ d.articulo.categoria.nombre|default:"S/C" }}</small></td>
             <td style="padding-right: 55px;">{{ d.renglon }}</td>
             <td style="padding-left: 15px;">{{ d.numero_linea }}</td>
-            <td style="padding-right: 10px;">Q{{ d.precio_unitario }}</td>
-            <td style="padding-left: 8px;">Q{{ d.precio_total }}</td>
+            <td style="padding-right: 10px;">{{ d.precio_unitario|quetzales }}</td>
+            <td style="padding-left: 8px;">{{ d.precio_total|quetzales }}</td>
             <td style="padding-right: 12px;">-</td>
             <td style="padding-left: 5px;">-</td>
           </tr>

@@ -1,4 +1,5 @@
 {% extends 'almacen/base.html' %}
+{% load moneda_filters %}
 {% load static %}
 {% block content %}
 <div class="page-body">
@@ -37,7 +38,7 @@
                 <td>{{ forloop.counter }}</td>
                 <td>{{ form.proveedor_nombre }}</td>
                 <td>{{ form.numero_factura }}</td>
-                <td>{{ form.fecha_factura }}</td>
+                <td>{{ form.fecha_factura|fecha_corta }}</td>
                 <td>
                   <div class="riho-actions">
                     <a href="" class="btn btn-warning btn-sm"><i data-feather="edit"></i> Editar</a>
