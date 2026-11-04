@@ -51,7 +51,7 @@
       <div class="card-body pt-0">
         {% for message in messages %}
         <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'warning' %}warning{% elif message.tags == 'success' %}success{% else %}info{% endif %} alert-dismissible fade show" role="alert">
-          {% if message.tags == 'warning' %}<strong>Ubicación duplicada:</strong> {% endif %}{{ message }}
+          {{ message }}
           <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
         </div>
         {% endfor %}
@@ -190,6 +190,7 @@
                     <td>{{ a.liberacion_estado.compromiso_vigente|cantidad_formato }}</td>
                     <td><span class="badge badge-light-info">{{ a.disponible_division|cantidad_formato }}</span></td>
                     <td>
+                      {% if a.liberacion_estado.advertencia %}<small class="d-block text-warning">{{ a.liberacion_estado.advertencia }}</small>{% endif %}
                       {% if es_administrador %}
                         {% if a.liberacion_estado.maximo_liberable > 0 %}
                         <button type="button" class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#liberarStock{{ a.pk }}"><i data-feather="unlock"></i> Liberar stock</button>
@@ -291,7 +292,7 @@
 {% if es_administrador %}{% for a in articulos_division %}{% if a.liberacion_estado.maximo_liberable > 0 %}
   {% include 'almacen/divisiones/_liberar_stock.html' %}
 {% endif %}{% endfor %}{% endif %}
-<script src="{% static 'almacen_app/js/liberacion_division.js' %}?v=20261104.1"></script>
+<script src="{% static 'almacen_app/js/liberacion_division.js' %}?v=20261104.2"></script>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {

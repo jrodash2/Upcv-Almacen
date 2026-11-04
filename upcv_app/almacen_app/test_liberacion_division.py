@@ -157,7 +157,7 @@ class LiberacionDivisionTests(EscenarioLiberacion, TestCase):
         self.assertEqual(resumen_global_articulo(self.art)['existencia_fisica'], 1200)
         self.assertEqual(resumen_global_articulo(self.art)['disponible_para_division'], 1200)
 
-    def test_compromiso_directo_duplicado_se_reporta_no_se_repara(self):
+    def test_exceso_global_permite_reducir_sin_modificar_compromisos_directos(self):
         self.ingreso(1720)
         self.da.refresh_from_db()
         self.ubicacion(620, consumo=620)
@@ -165,11 +165,13 @@ class LiberacionDivisionTests(EscenarioLiberacion, TestCase):
             articulo=self.art, destino=self.dept, cantidad_asignada=620)])
         anterior = self.snapshot()
         estado = estado_liberacion(self.da)
-        self.assertEqual(estado['maximo_liberable'], 0)
-        self.assertIn('requiere revisión', estado['motivo'])
-        with self.assertRaises(ValidationError):
-            self.liberar(1200)
+        self.assertEqual(estado['maximo_liberable'], 1200)
+        self.assertIn('exceso global', estado['advertencia'])
+        self.liberar(1200)
         self.assertEqual(self.snapshot(), anterior)
+        globales = resumen_global_articulo(self.art)
+        self.assertEqual(globales['comprometido_directo'], 620)
+        self.assertEqual(globales['disponible_para_division'], 580)
 
     def test_consumo_duplicado_directo_y_division_no_autoriza_liberacion(self):
         self.ubicacion(30, consumo=30)

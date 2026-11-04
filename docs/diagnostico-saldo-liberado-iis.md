@@ -34,8 +34,11 @@ no establece que la caché haya sido la causa del incidente productivo.
 
 ## Comprobación en el servidor real
 
-El servicio de liberación verifica antes de confirmar que el disponible general
-aumentó exactamente por la cantidad liberada. El mensaje de éxito por sí solo no
+La versión inicial del servicio exigía que el disponible general aumentase en
+toda la cantidad liberada. Esa condición se corrigió para déficits previos: ahora
+se comprueba la reducción exacta del compromiso y el aumento del saldo matemático,
+manteniendo bloqueadas las asignaciones mientras ese saldo siga negativo. Véase
+`docs/liberacion-con-deficit-iis.md`. El mensaje de éxito por sí solo no
 explica un resultado posterior distinto: hay que contrastar la bitácora con el
 resumen realmente servido por IIS. No repetir la liberación para intentar corregirlo.
 

@@ -5,6 +5,7 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.db.models import F, Q, Sum
 
+from .formatos_cantidades import cantidad_formato
 from .disponibilidad import ACTIVOS, fuentes_departamento, resumen_global_articulo
 from .models import (Articulo, Departamento, DetalleFacturaDivision, DetalleRequerimiento,
     DetalleSolicitudRequerimiento, DivisionArticulo, DivisionArticuloUbicacion,
@@ -20,7 +21,8 @@ def estado_liberacion(asignacion):
     C=consumido (incluido en U), R=reservado (incluido en U-C).
     Compromiso vigente=A-L-C. Máximo sin compromisos de ubicación=A-L-U.
     No se resta C ni R otra vez del máximo: ambos ya están protegidos por U.
-    Ante inconsistencias se bloquea, nunca se reconstruyen/ajustan históricos.
+    Los orígenes inconsistentes bloquean. Un exceso global no bloquea reducir
+    compromisos válidos; el saldo asignable posterior se calcula sin inventar stock.
     """
     ubicaciones = list(asignacion.asignaciones_ubicacion.all())  # también inactivas
     liberado = Decimal(asignacion.total_liberado)
@@ -83,15 +85,24 @@ def estado_liberacion(asignacion):
     if sin_origen.exists() or heredados.exists():
         motivos.append('Hay solicitudes o requerimientos vigentes sin origen verificable; requiere revisión.')
     globales = resumen_global_articulo(asignacion.articulo)
-    if globales['requiere_revision']:
-        motivos.append('El inventario general tiene compromisos históricos inconsistentes; requiere revisión.')
+    if globales['requiere_revision_origenes']:
+        motivos.append('El inventario general tiene reservas o consumos sin cobertura verificable; requiere revisión.')
     libre = max(ZERO, vigente - distribuido)
-    if not libre and not motivos:
-        motivos.append('Sin stock liberable: las unidades están distribuidas a ubicaciones o ya fueron liberadas.')
+    maximo = min(libre, max(ZERO, globales['existencia_fisica']))
+    if not maximo and not motivos:
+        motivos.append('Sin stock liberable: no hay existencia física positiva o las unidades están distribuidas o ya fueron liberadas.')
+    maximo = ZERO if motivos else maximo
+    exceso = max(ZERO, -globales['saldo_sin_asignar'])
+    advertencia = ''
+    if exceso:
+        advertencia = (f'Existe un exceso global previo de {cantidad_formato(exceso)} unidades. '
+                       'La liberación reducirá ese exceso antes de habilitar disponibilidad general. '
+                       'Se conservarán los compromisos de las ubicaciones y otros orígenes.')
     return dict(asignado=asignacion.cantidad_asignada, liberado=liberado,
                 distribuido=distribuido, reservado=reservado, consumido=consumido,
                 compromiso_vigente=vigente-consumido, disponible_division=libre,
-                maximo_liberable=ZERO if motivos else libre,
+                maximo_liberable=maximo, advertencia=advertencia,
+                disponible_general_al_liberar_maximo=max(ZERO, globales['saldo_sin_asignar']+maximo),
                 motivo=' '.join(dict.fromkeys(motivos)), globales=globales)
 
 
@@ -131,13 +142,15 @@ def liberar_stock_division(asignacion_id, cantidad, justificacion, usuario, oper
     registro = LiberacionStockDivision(asignacion=asignacion, division_id=asignacion.division_id,
         articulo_id=asignacion.articulo_id, cantidad=cantidad, justificacion=justificacion,
         usuario=usuario, operacion=operacion, procedencias=procedencias,
-        disponible_antes=estado['maximo_liberable'], disponible_despues=estado['maximo_liberable']-cantidad,
-        tipo='total' if cantidad == estado['maximo_liberable'] else 'parcial')
+        disponible_antes=estado['disponible_division'], disponible_despues=estado['disponible_division']-cantidad,
+        tipo='total' if cantidad == estado['disponible_division'] else 'parcial')
     registro.full_clean()
     registro.save()
     # Ningún save/update de la asignación original, las ubicaciones ni Kardex.
     despues = resumen_global_articulo(asignacion.articulo)
     if (despues['existencia_fisica'] != estado['globales']['existencia_fisica']
-            or despues['disponible_para_division'] != estado['globales']['disponible_para_division'] + cantidad):
+            or despues['comprometido'] != estado['globales']['comprometido'] - cantidad
+            or despues['saldo_sin_asignar'] != estado['globales']['saldo_sin_asignar'] + cantidad
+            or despues['requiere_revision_origenes']):
         raise ValidationError('Los saldos cambiaron durante la operación; no se liberó stock. Intente nuevamente.')
     return registro, True

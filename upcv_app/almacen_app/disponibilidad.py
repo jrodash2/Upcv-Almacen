@@ -241,6 +241,7 @@ def resumen_global_articulo(articulo):
                 existencia_fisica=fisico, comprometido=compromisos['comprometido'],
                 liberado_divisiones=liberado, saldo_sin_asignar=sin_asignar,
                 motivos_revision=motivos_revision,
+                requiere_revision_origenes=compromisos['requiere_revision'],
                 comprometido_divisiones=compromisos['comprometido_divisiones'],
                 comprometido_directo=compromisos['comprometido_directo'],
                 disponible_para_division=ZERO if compromisos['requiere_revision'] else max(ZERO, sin_asignar),

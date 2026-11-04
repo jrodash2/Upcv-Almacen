@@ -3142,8 +3142,14 @@ def liberar_stock_division_view(request, asignacion_id):
     except IntegrityError:
         messages.error(request, 'La operación no se registró. Recargue y compruebe el historial antes de reintentar.')
     else:
-        messages.success(request, f'Se liberaron {cantidad_formato(registro.cantidad)} unidades.' if creado
-                         else 'Esta liberación ya estaba registrada; no se duplicó.')
+        globales = resumen_global_articulo(asignacion.articulo)
+        texto = (f'Se liberaron {cantidad_formato(registro.cantidad)} unidades.' if creado
+                 else 'Esta liberación ya estaba registrada; no se duplicó.')
+        texto += (f' Disponible general para nuevas asignaciones: {cantidad_formato(globales["disponible_para_division"])}. '
+                  f'Compromiso vigente en divisiones: {cantidad_formato(globales["comprometido_divisiones"])}.')
+        messages.success(request, texto)
+        if globales['requiere_revision']:
+            messages.warning(request, ' '.join(globales['motivos_revision']))
     return redirect('almacen:division_detail', pk=asignacion.division_id)
 
 

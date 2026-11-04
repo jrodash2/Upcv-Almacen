@@ -18,8 +18,10 @@ Las pantallas ahora distinguen histórico, liberado y compromiso vigente.
 El número histórico 620 directo no se elimina ni se presume consumido. Hay que
 verificar qué despachos lo consumieron y desde qué origen. Si el mismo despacho
 aparece consumido tanto en directo como en división, o si subsiste un compromiso
-directo que hace exceder la existencia física, la liberación se bloquea y explica
-el motivo. Tampoco se liberan cantidades cuando hay solicitudes/requerimientos
+directo sin cobertura verificable, la liberación se bloquea y explica
+el motivo. Un exceso global de compromisos conocido, por sí solo, permite reducir
+la parte no distribuida mediante una liberación explícita; primero se absorbe el
+déficit y solo el saldo restante queda asignable. Tampoco se liberan cantidades cuando hay solicitudes/requerimientos
 vigentes sin origen verificable, reservas sin contadores suficientes o consumos
 sin despachos que los respalden. No se reparan automáticamente esas situaciones.
 
@@ -39,7 +41,11 @@ Compromiso vigente de división = **A − L − C**.
 
 Compromiso que sigue cubriendo ubicaciones = **U − C**.
 
-Máximo liberable = **(A − L − C) − (U − C) = A − L − U**.
+Remanente no distribuido = **(A − L − C) − (U − C) = A − L − U**.
+
+El máximo operable se limita además a la existencia física positiva. Se bloquean
+reservas/consumos sin cobertura y orígenes ambiguos; el exceso global simple se
+advierte y puede reducirse sin habilitar cantidades ficticias.
 
 Si el resultado es negativo o los registros presentan inconsistencias, el máximo
 operable es cero y se muestra la razón. C y R no se restan otra vez: ya están
@@ -57,7 +63,8 @@ Si las 30 unidades ya fueron consumidas, C=30: el compromiso de división es 70,
 el compromiso restante de ubicaciones es cero y se pueden liberar esas 70.
 El consumo no genera de nuevo 30 unidades físicas.
 
-En el escenario 675, sin otros compromisos y con despachos verificados:
+En el escenario 675 con las 620 consumidas **en la división**, sin otros compromisos
+y con despachos verificados (distinto del caso IIS documentado abajo):
 
 | Operación | Histórico A | Consumido C | Liberado L | Compromiso división | Físico | General disponible |
 |---|---:|---:|---:|---:|---:|---:|
@@ -88,7 +95,9 @@ Las procedencias son un snapshot de las distribuciones que componen la asignaci�
 no se inventa una atribución física por lote cuando la asignación acumulaba varias
 fuentes o incluía asignaciones manuales. La cobertura y el límite se controlan por
 asignación original, mediante el acumulado L y el bloqueo transaccional.
-“Total” significa todo el máximo liberable, no eliminar la asignación histórica.
+“Total” significa agotar el remanente no distribuido de esa asignación, no eliminar
+la asignación histórica. Si la existencia física limita una operación a una parte
+de ese remanente, se registra como parcial.
 
 La bitácora no tiene acciones de edición ni borrado en la vista y el modelo rechaza
 el guardado de registros existentes y su eliminación individual. La liberación no
@@ -100,9 +109,10 @@ artículo → departamentos por PK → asignación de división → ubicaciones 
 El cálculo se repite bajo bloqueo. Autoasignar toma primero el artículo para
 serializarse con la liberación; solicitudes/reservas conservan su orden de bloqueo
 departamento → ubicaciones. No hay FOR UPDATE sobre LEFT OUTER JOIN.
-Antes de confirmar se verifica que la existencia física no cambió y que la
-disponibilidad general aumentó exactamente en la cantidad liberada; un fallo
-revierte también la bitácora.
+Antes de confirmar se verifica que la existencia física no cambió, que el
+compromiso disminuyó exactamente en la cantidad liberada y que el saldo matemático
+sin asignar aumentó en la misma cantidad. El saldo asignable permanece en cero
+mientras persista un déficit. Un fallo revierte también la bitácora.
 
 ## Archivos modificados
 
@@ -233,3 +243,13 @@ local de nube a IIS. Una vez registradas liberaciones, no desplegar una versión
 antigua que ignore la bitácora ni eliminar la migración: calcularía compromisos sin
 L. Cualquier reversión del despliegue debe conservar y considerar esas operaciones.
 La comprobación en IIS queda pendiente de ejecutarse en ese servidor.
+
+
+## Corrección posterior: auditoría IIS con 620 consumidas en origen directo
+
+La auditoría del usuario confirmó A=1,820, L=0, U=620, consumo de división=0,
+consumo directo=620 y físico=1,200. No había registros de liberación. El guardado
+anterior rechazaba reducir la división por el exceso global de 620: impedía la
+misma operación que podía reducir ese exceso. La corrección permite la reducción
+local válida y conserva los bloqueos de origen, reservas y cobertura de ubicación.
+Véase `docs/liberacion-con-deficit-iis.md` para reproducción, resultados y pasos.
