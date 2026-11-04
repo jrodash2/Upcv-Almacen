@@ -77,6 +77,9 @@
                 <label class="form-label d-block">Cantidad en stock (existencia física):</label>
                 <span id="stock-cantidad" class="fw-bold">—</span>
                 <div>Disponible para asignación directa: <strong id="disponible-cantidad">—</strong></div>
+                <div class="text-muted">Liberado de divisiones: <span id="liberado-cantidad">—</span></div>
+                <div class="text-muted">Compromiso vigente en divisiones: <span id="comprometido-divisiones">—</span></div>
+                <div class="text-muted">Compromiso vigente directo: <span id="comprometido-directo">—</span></div>
                 <div id="estado-articulo" class="mt-2" role="status" aria-live="polite">Seleccione un artículo.</div>
               </div>
 
@@ -119,6 +122,6 @@
 </div>
 
 {{ articulo_seleccionado|json_script:"articulo-seleccionado" }}
-<script src="{% static 'almacen_app/js/asignacion_directa.js' %}?v=20261104.1"></script>
+<script src="{% static 'almacen_app/js/asignacion_directa.js' %}?v=20261104.2"></script>
 
 {% endblock %}

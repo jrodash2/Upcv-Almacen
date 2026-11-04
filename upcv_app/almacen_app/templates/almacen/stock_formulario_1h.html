@@ -104,13 +104,16 @@
         <small class="d-block text-muted">Consumido asignaciones: {{ item.consumido_total|cantidad_formato }}</small>
       </td>
       <td>
-        <div><strong>Deptos:</strong> {{ item.departamentos }}</div>
-        <div class="text-muted"><strong>Divisiones:</strong> {{ item.divisiones }}</div>
+        <div><strong>Deptos. vigentes:</strong> {{ item.departamentos }}</div>
+        <div><strong>Divisiones vigentes:</strong> {{ item.divisiones }}</div>
+        {% if item.departamentos_historicos %}<small class="d-block text-muted">Histórico deptos.: {{ item.departamentos_historicos }}</small>{% endif %}
+        {% if item.divisiones_historicas %}<small class="d-block text-muted">Histórico divisiones: {{ item.divisiones_historicas }}</small>{% endif %}
       </td>
       <td>
         {% if item.requiere_revision %}
           <span class="badge badge-light-danger">Revisar</span>
-          <small class="d-block text-muted">Disponible calculado: 0</small>
+          <small class="d-block text-muted">Disponibilidad bloqueada para asignar.</small>
+          {% for motivo in item.motivos_revision %}<small class="d-block text-danger">{{ motivo }}</small>{% endfor %}
         {% elif item.disponible > 0 %}
           <span class="badge badge-light-success">{{ item.disponible|cantidad_formato }}</span>
         {% else %}

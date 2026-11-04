@@ -11,7 +11,10 @@ class Command(BaseCommand):
     help = 'Documenta ingresos, Kardex y orígenes de consumo; no modifica datos.'
 
     def add_arguments(self, parser):
-        parser.add_argument('--articulo', type=int, required=True)
+        grupo = parser.add_mutually_exclusive_group(required=True)
+        grupo.add_argument('--articulo', type=int, help='Clave primaria interna, no código comercial.')
+        grupo.add_argument('--codigo', help='Código comercial exacto del catálogo.')
+        parser.add_argument('--resumen', action='store_true', help='Mostrar saldos, motivos y liberaciones sin el detalle completo de movimientos.')
 
     def handle(self, *args, **options):
         with transaction.atomic():
@@ -19,7 +22,8 @@ class Command(BaseCommand):
             from django.db import connection
             with connection.cursor() as cursor:
                 cursor.execute('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY')
-            articulo = m.Articulo.objects.filter(pk=options['articulo']).first()
+            filtro = {'codigo': options['codigo']} if options.get('codigo') is not None else {'pk': options['articulo']}
+            articulo = m.Articulo.objects.filter(**filtro).first()
             if articulo is None:
                 raise CommandError('Artículo inexistente en esta base.')
             datos = {'articulo': articulo.pk, 'codigo': articulo.codigo,
@@ -51,5 +55,7 @@ class Command(BaseCommand):
                     'solicitud__requerimiento_id', 'cantidad', 'asignacion_directa_id',
                     'division_articulo_ubicacion_id', 'detalle_requerimiento_id'),
             }
+            if options.get('resumen'):
+                consultas = {'liberaciones_division': consultas['liberaciones_division']}
             datos.update({nombre: list(qs.order_by('pk')) for nombre, qs in consultas.items()})
             self.stdout.write(json.dumps(datos, ensure_ascii=False, indent=2, default=str))

@@ -185,6 +185,7 @@ def compromisos_articulo(articulo, propuesta=None):
         divisiones.append(propuesta)
     comprometido = reservado = consumido = ZERO
     revision = False
+    motivos_revision = []
     for division in divisiones:
         totales = division.asignaciones_ubicacion.aggregate(
             consumido=Sum('cantidad_consumida'), reservado=Sum('cantidad_reservada'),
@@ -193,6 +194,10 @@ def compromisos_articulo(articulo, propuesta=None):
         reserva = totales.get('reservado') or ZERO
         neto = Decimal(division.cantidad_vigente) - gasto
         revision |= neto < reserva or (totales.get('asignado') or ZERO) > division.cantidad_vigente
+        if neto < reserva:
+            motivos_revision.append(f'La división {division.division.nombre} tiene {cantidad_formato(reserva)} reservados, pero su compromiso restante es {cantidad_formato(neto)}.')
+        if (totales.get('asignado') or ZERO) > division.cantidad_vigente:
+            motivos_revision.append(f'La división {division.division.nombre} mantiene distribuciones a ubicaciones superiores a su asignación después de las liberaciones.')
         comprometido += max(ZERO, neto)
         reservado += reserva
         consumido += gasto
@@ -205,10 +210,13 @@ def compromisos_articulo(articulo, propuesta=None):
                 reservado += fila['reservado']
                 consumido += fila['consumido']
                 revision |= fila['requiere_revision']
+                if fila['requiere_revision']:
+                    motivos_revision.append(f'La asignación directa del departamento {depto.nombre} tiene reservas o consumos sin cobertura verificable; requiere revisión.')
     return dict(comprometido=comprometido, reservado=reservado,
                 consumido=consumido, requiere_revision=revision,
                 comprometido_divisiones=comprometido_divisiones,
-                comprometido_directo=comprometido-comprometido_divisiones)
+                comprometido_directo=comprometido-comprometido_divisiones,
+                motivos_revision=list(dict.fromkeys(motivos_revision)))
 
 
 def resumen_global_articulo(articulo):
@@ -225,10 +233,14 @@ def resumen_global_articulo(articulo):
     compromisos = compromisos_articulo(articulo)
     fisico = Decimal(existencia_general_articulo(articulo))
     sin_asignar = fisico - compromisos['comprometido']
+    motivos_revision = list(compromisos['motivos_revision'])
+    if sin_asignar < 0:
+        motivos_revision.append(f'Los compromisos vigentes ({cantidad_formato(compromisos["comprometido"])}) superan la existencia física ({cantidad_formato(fisico)}) en {cantidad_formato(-sin_asignar)} unidades.')
     return dict(total_ingresado=ingresado, asignado_directo=directo, asignado_divisiones=asignado_divisiones,
                 reservado=compromisos['reservado'], consumido=compromisos['consumido'],
                 existencia_fisica=fisico, comprometido=compromisos['comprometido'],
-                liberado_divisiones=liberado,
+                liberado_divisiones=liberado, saldo_sin_asignar=sin_asignar,
+                motivos_revision=motivos_revision,
                 comprometido_divisiones=compromisos['comprometido_divisiones'],
                 comprometido_directo=compromisos['comprometido_directo'],
                 disponible_para_division=ZERO if compromisos['requiere_revision'] else max(ZERO, sin_asignar),

@@ -1407,16 +1407,20 @@ def construir_stock_list_administrador():
             f"{asig['destino__nombre']} ({asig['total_asignado_dept']})"
         )
 
-    asignaciones_division = DivisionArticulo.objects.filter(activo=True).values(
-        'articulo__id', 'division__nombre'
-    ).annotate(total_asignado=Sum('cantidad_asignada'))
+    asignaciones_division = DivisionArticulo.objects.select_related('division', 'articulo')
     asignado_division_dict = defaultdict(Decimal)
     divisiones_dict = {}
+    divisiones_historicas_dict = {}
     for div in asignaciones_division:
-        articulo_id = div['articulo__id']
-        cantidad = div['total_asignado'] or Decimal('0')
-        asignado_division_dict[articulo_id] += cantidad
-        divisiones_dict.setdefault(articulo_id, []).append(f"{div['division__nombre']} ({cantidad})")
+        articulo_id = div.articulo_id
+        asignado_division_dict[articulo_id] += div.cantidad_asignada
+        historico = f"{div.division.nombre} ({cantidad_formato(div.cantidad_asignada)})"
+        divisiones_historicas_dict.setdefault(articulo_id, []).append(historico)
+        # La asociación histórica se conserva, pero no representa compromiso actual.
+        vigente = div.compromiso_vigente
+        if vigente > 0:
+            divisiones_dict.setdefault(articulo_id, []).append(
+                f"{div.division.nombre} ({cantidad_formato(vigente)})")
         articulo_ids.add(articulo_id)
 
     ubicaciones_division = DivisionArticuloUbicacion.objects.filter(activo=True).values(
@@ -1436,12 +1440,19 @@ def construir_stock_list_administrador():
         consumido_dict[articulo_id] = item['consumido'] or Decimal('0')
         articulo_ids.add(articulo_id)
 
+    departamentos_vigentes_dict = {}
     for departamento in Departamento.objects.all():
+        por_articulo = defaultdict(Decimal)
         for fila in fuentes_departamento(departamento):
             if fila['origen'] == 'Directo':
                 articulo_id = fila['articulo'].pk
                 reservado_dict[articulo_id] += fila['reservado']
                 consumido_dict[articulo_id] += fila['consumido']
+                por_articulo[articulo_id] += max(Decimal('0'), fila['cantidad_asignada'] - fila['consumido'])
+        for articulo_id, vigente in por_articulo.items():
+            if vigente > 0:
+                departamentos_vigentes_dict.setdefault(articulo_id, []).append(
+                    f"{departamento.nombre} ({cantidad_formato(vigente)})")
 
     faltantes = articulo_ids - set(ingreso_dict.keys())
     if faltantes:
@@ -1472,8 +1483,8 @@ def construir_stock_list_administrador():
         asignado_total = asignado_directo + asignado_divisiones
         reservado_total = globales['reservado']
         consumido_total = globales['consumido']
-        departamentos = ", ".join(asignaciones_dept_dict.get(articulo_id, [])) or "Sin asignar"
-        divisiones = ", ".join(divisiones_dict.get(articulo_id, [])) or "Sin división"
+        departamentos = ", ".join(departamentos_vigentes_dict.get(articulo_id, [])) or "Sin compromiso vigente"
+        divisiones = ", ".join(divisiones_dict.get(articulo_id, [])) or "Sin compromiso vigente"
 
         stock_list.append({
             'articulo_id': articulo_id,
@@ -1495,8 +1506,11 @@ def construir_stock_list_administrador():
             'consumido_total': consumido_total,
             'disponible': disponible_general,
             'requiere_revision': requiere_revision,
+            'motivos_revision': globales['motivos_revision'],
             'departamentos': departamentos,
             'divisiones': divisiones,
+            'departamentos_historicos': ', '.join(asignaciones_dept_dict.get(articulo_id, [])),
+            'divisiones_historicas': ', '.join(divisiones_historicas_dict.get(articulo_id, [])),
         })
     return stock_list
 
@@ -1939,7 +1953,11 @@ def buscar_articulos(request):
     if incluir_existencias:
         for item, articulo in zip(results, articulos):
             item.update(datos_articulo_asignacion(articulo))
-    return JsonResponse(results, safe=False)
+    response = JsonResponse(results, safe=False)
+    if incluir_existencias:
+        from django.utils.cache import add_never_cache_headers
+        add_never_cache_headers(response)
+    return response
     
 @login_required
 @grupo_requerido('Administrador', 'Almacen')   

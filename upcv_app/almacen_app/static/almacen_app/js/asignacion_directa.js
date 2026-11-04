@@ -22,7 +22,7 @@
     submit.disabled = true;
     suggestions.replaceChildren();
     suggestions.style.display = 'none';
-    ['stock-cantidad', 'disponible-cantidad'].forEach(id => {
+    ['stock-cantidad', 'disponible-cantidad', 'liberado-cantidad', 'comprometido-divisiones', 'comprometido-directo'].forEach(id => {
       document.getElementById(id).textContent = '—';
     });
   }
@@ -46,11 +46,16 @@
     available = Number(stock.disponible_para_division);
     document.getElementById('stock-cantidad').textContent = formatoCantidad(stock.existencia_fisica);
     document.getElementById('disponible-cantidad').textContent = formatoCantidad(stock.disponible_para_division);
+    [['liberado-cantidad', 'liberado_divisiones'], ['comprometido-divisiones', 'comprometido_divisiones'],
+      ['comprometido-directo', 'comprometido_directo']].forEach(function (field) {
+      document.getElementById(field[0]).textContent = stock[field[1]] === undefined ? 'No informado' : formatoCantidad(stock[field[1]]);
+    });
     info.hidden = false;
     suggestions.style.display = 'none';
     quantity.disabled = !(available > 0);
     quantity.max = String(available);
-    status.textContent = stock.requiere_revision ? 'Los compromisos históricos requieren revisión; no se modificaron saldos.' :
+    const reasons = Array.isArray(stock.motivos_revision) ? stock.motivos_revision.join(' ') : '';
+    status.textContent = stock.requiere_revision ? (reasons || 'Los compromisos históricos requieren revisión; no se modificaron saldos.') :
       available > 0 ? 'Disponibilidad consultada. Se comprobará de nuevo al guardar.' : 'Sin disponibilidad para nuevas asignaciones directas.';
     validate();
   }
@@ -66,7 +71,7 @@
         const url = new URL(form.dataset.busquedaUrl, window.location.href);
         url.searchParams.set('q', query);
         url.searchParams.set('asignacion_directa', '1');
-        const response = await fetch(url, {headers: {'Accept': 'application/json'}});
+        const response = await fetch(url, {cache: 'no-store', headers: {'Accept': 'application/json'}});
         if (!response.ok) throw new Error('No se pudo consultar el catálogo.');
         const data = await response.json();
         if (current !== version) return;
