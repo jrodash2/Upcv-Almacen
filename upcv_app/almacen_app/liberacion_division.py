@@ -1,4 +1,5 @@
 """Liberar compromisos administrativos, conservando asignaciones e ingresos históricos."""
+from collections import defaultdict
 from decimal import Decimal
 
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -6,6 +7,7 @@ from django.db import transaction
 from django.db.models import F, Q, Sum
 
 from .formatos_cantidades import cantidad_formato
+from .consumo_historico_division import lectura_consumos
 from .disponibilidad import ACTIVOS, fuentes_departamento, resumen_global_articulo
 from .models import (Articulo, Departamento, DetalleFacturaDivision, DetalleRequerimiento,
     DetalleSolicitudRequerimiento, DivisionArticulo, DivisionArticuloUbicacion,
@@ -14,6 +16,7 @@ from .models import (Articulo, Departamento, DetalleFacturaDivision, DetalleRequ
 ZERO = Decimal('0')
 
 
+@lectura_consumos
 def estado_liberacion(asignacion):
     """U incluye el consumo histórico: se conserva su cobertura una sola vez.
 
@@ -24,11 +27,16 @@ def estado_liberacion(asignacion):
     Los orígenes inconsistentes bloquean. Un exceso global no bloquea reducir
     compromisos válidos; el saldo asignable posterior se calcula sin inventar stock.
     """
+    from .consumo_historico_division import reconocimientos_consumo
+    reconocimientos = reconocimientos_consumo(asignacion.articulo_id)
+    extras = defaultdict(Decimal)
+    for dato in reconocimientos:
+        extras[dato['ubicacion_id']] += Decimal(dato['consumo_extra'])
     ubicaciones = list(asignacion.asignaciones_ubicacion.all())  # también inactivas
     liberado = Decimal(asignacion.total_liberado)
     distribuido = sum((u.cantidad_asignada for u in ubicaciones), ZERO)
     reservado = sum((u.cantidad_reservada for u in ubicaciones), ZERO)
-    consumido = sum((u.cantidad_consumida for u in ubicaciones), ZERO)
+    consumido = sum((u.cantidad_consumida+extras.get(u.pk,ZERO) for u in ubicaciones), ZERO)
     vigente = asignacion.cantidad_asignada - liberado
     motivos = []
     if vigente < distribuido or distribuido < consumido + reservado:
@@ -36,7 +44,8 @@ def estado_liberacion(asignacion):
     for ubicacion in ubicaciones:
         if min(ubicacion.cantidad_asignada, ubicacion.cantidad_consumida, ubicacion.cantidad_reservada) < 0:
             motivos.append('Existen contadores negativos en una ubicación; requiere revisión.')
-        if ubicacion.cantidad_consumida + ubicacion.cantidad_reservada > ubicacion.cantidad_asignada:
+        consumo_efectivo=ubicacion.cantidad_consumida+extras.get(ubicacion.pk,ZERO)
+        if consumo_efectivo + ubicacion.cantidad_reservada > ubicacion.cantidad_asignada:
             motivos.append('Una ubicación tiene reservas o consumos superiores a su asignación.')
         esperado_reservado = esperado_consumido = ZERO
         detalles = DetalleSolicitudRequerimiento.objects.filter(
@@ -57,7 +66,7 @@ def estado_liberacion(asignacion):
                 if not despacho:
                     motivos.append('Un requerimiento vigente no tiene origen de despacho verificable.')
                 esperado_reservado += max(ZERO, Decimal(detalle.cantidad) - gastado)
-        if esperado_reservado > ubicacion.cantidad_reservada or esperado_consumido > ubicacion.cantidad_consumida:
+        if esperado_reservado > ubicacion.cantidad_reservada or esperado_consumido > consumo_efectivo:
             motivos.append('Las solicitudes o despachos exceden los contadores de su ubicación; requiere revisión.')
         # Consumos antiguos sin enlace exacto solo se aceptan si hay despachos
         # reales suficientes en ese departamento; jamás se inventa una salida.
@@ -67,11 +76,15 @@ def estado_liberacion(asignacion):
         despacho_depto = DetalleRequerimiento.objects.filter(
             articulo_id=asignacion.articulo_id,
             requerimiento__departamento_id=ubicacion.ubicacion_id).aggregate(total=Sum('cantidad_despachada'))['total'] or ZERO
+        ids_depto=set(DivisionArticuloUbicacion.objects.filter(division_articulo__articulo_id=asignacion.articulo_id,
+            ubicacion_id=ubicacion.ubicacion_id).values_list('pk',flat=True))
+        consumo_depto += sum((Decimal(d['consumo_extra']) for d in reconocimientos if d['ubicacion_id'] in ids_depto),ZERO)
+        compartido_depto=sum((Decimal(d['cantidad']) for d in reconocimientos if d['ubicacion_id'] in ids_depto),ZERO)
         if consumo_depto > despacho_depto:
             motivos.append('Hay consumo de división sin despachos suficientes que lo respalden.')
         consumo_directo = sum((f['consumido'] for f in fuentes_departamento(ubicacion.ubicacion)
                                if f['origen'] == 'Directo' and f['articulo'].pk == asignacion.articulo_id), ZERO)
-        if consumo_depto + consumo_directo > despacho_depto:
+        if consumo_depto + consumo_directo - compartido_depto > despacho_depto:
             motivos.append('Un despacho figura consumido en más de un origen; requiere revisión.')
     deptos = set(DivisionUbicacion.objects.filter(division_id=asignacion.division_id).values_list('ubicacion_id', flat=True))
     deptos.update(u.ubicacion_id for u in ubicaciones)
@@ -100,6 +113,8 @@ def estado_liberacion(asignacion):
                        'Se conservarán los compromisos de las ubicaciones y otros orígenes.')
     return dict(asignado=asignacion.cantidad_asignada, liberado=liberado,
                 distribuido=distribuido, reservado=reservado, consumido=consumido,
+                consumido_registrado=sum((u.cantidad_consumida for u in ubicaciones),ZERO),
+                consumido_historico_reconocido=sum((extras[u.pk] for u in ubicaciones),ZERO),
                 compromiso_vigente=vigente-consumido, disponible_division=libre,
                 maximo_liberable=maximo, advertencia=advertencia,
                 disponible_general_al_liberar_maximo=max(ZERO, globales['saldo_sin_asignar']+maximo),
@@ -139,6 +154,11 @@ def liberar_stock_division(asignacion_id, cantidad, justificacion, usuario, oper
                    for d in DetalleFacturaDivision.objects.filter(
                        division_id=asignacion.division_id, detalle_factura__articulo_id=asignacion.articulo_id)
                    .select_related('detalle_factura').order_by('pk')]
+    # Conservar el enlace probado en la bitácora para que las operaciones futuras
+    # no dependan de volver a inferir una asignación histórica ya reconocida.
+    from .consumo_historico_division import reconocimientos_consumo
+    procedencias.extend(d for d in reconocimientos_consumo(asignacion.articulo_id)
+                        if d['asignacion_division_id']==asignacion.pk)
     registro = LiberacionStockDivision(asignacion=asignacion, division_id=asignacion.division_id,
         articulo_id=asignacion.articulo_id, cantidad=cantidad, justificacion=justificacion,
         usuario=usuario, operacion=operacion, procedencias=procedencias,

@@ -185,7 +185,7 @@
                     <td>{{ a.cantidad_asignada|cantidad_formato }}</td>
                     <td>{{ a.total_asignado_ubicaciones|cantidad_formato }}</td>
                     <td>{{ a.total_reservado|cantidad_formato }}</td>
-                    <td>{{ a.liberacion_estado.consumido|cantidad_formato }}</td>
+                    <td>{{ a.liberacion_estado.consumido|cantidad_formato }}{% if a.liberacion_estado.consumido_historico_reconocido %}<small class="d-block text-muted">{{ a.liberacion_estado.consumido_historico_reconocido|cantidad_formato }} reconocidas en Kardex</small>{% endif %}</td>
                     <td>{{ a.liberacion_estado.liberado|cantidad_formato }}</td>
                     <td>{{ a.liberacion_estado.compromiso_vigente|cantidad_formato }}</td>
                     <td><span class="badge badge-light-info">{{ a.disponible_division|cantidad_formato }}</span></td>
@@ -225,7 +225,7 @@
                 <td>{{ x.ubicacion }}</td>
                 <td>{{ x.cantidad_asignada|cantidad_formato }}</td>
                 <td>{{ x.cantidad_reservada|cantidad_formato }}</td>
-                <td>{{ x.cantidad_consumida|cantidad_formato }}</td>
+                <td>{{ x.cantidad_consumida_efectiva|cantidad_formato }}</td>
                 <td>{{ x.disponible_ubicacion|cantidad_formato }}</td>
                 <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#desasignarDetalle{{ x.id }}"><i data-feather="trash-2"></i> Desasignar</button></td>
               </tr>
@@ -272,7 +272,7 @@
             <div class="row g-3 mt-2">
               <div class="col-6"><small class="text-muted">Asignado</small><h6>{{ x.cantidad_asignada|cantidad_formato }}</h6></div>
               <div class="col-6"><small class="text-muted">Reservado</small><h6>{{ x.cantidad_reservada|cantidad_formato }}</h6></div>
-              <div class="col-6"><small class="text-muted">Consumido</small><h6>{{ x.cantidad_consumida|cantidad_formato }}</h6></div>
+              <div class="col-6"><small class="text-muted">Consumido</small><h6>{{ x.cantidad_consumida_efectiva|cantidad_formato }}</h6></div>
               <div class="col-6"><small class="text-muted">Disponible para desasignar</small><h6 class="text-success">{{ x.disponible_ubicacion|cantidad_formato }}</h6></div>
             </div>
             <label class="form-label mt-3">Cantidad a desasignar</label>

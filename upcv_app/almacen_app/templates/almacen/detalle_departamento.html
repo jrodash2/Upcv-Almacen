@@ -75,6 +75,7 @@
                 <td>
                   <span class="badge badge-light-primary">{{ item.asignado|cantidad_formato }}</span>
                   <small class="d-block text-muted">Directo: {{ item.asignado_directo|cantidad_formato }} | Divisiones: {{ item.asignado_division|cantidad_formato }}</small>
+                  {% if item.consumo_historico_compartido %}<small class="d-block text-muted">Incluyen {{ item.consumo_historico_compartido|cantidad_formato }} históricas compartidas, contadas una sola vez en el total.</small>{% endif %}
                 </td>
                 <td><span class="badge badge-light-warning">{{ item.reservado|cantidad_formato }}</span></td>
                 <td><span class="badge badge-light-info">{{ item.despachado|cantidad_formato }}</span></td>

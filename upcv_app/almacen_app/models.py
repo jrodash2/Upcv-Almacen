@@ -641,7 +641,11 @@ class DivisionArticulo(models.Model):
 
     @property
     def total_consumido(self):
-        return self.asignaciones_ubicacion.aggregate(total=Sum('cantidad_consumida'))['total'] or 0
+        from .consumo_historico_division import reconocimientos_consumo
+        from decimal import Decimal
+        registrado = self.asignaciones_ubicacion.aggregate(total=Sum('cantidad_consumida'))['total'] or 0
+        return registrado + sum((Decimal(d['consumo_extra']) for d in reconocimientos_consumo(self.articulo_id)
+                                 if d['asignacion_division_id']==self.pk), Decimal('0'))
 
     @property
     def compromiso_vigente(self):
@@ -665,8 +669,7 @@ class DivisionArticulo(models.Model):
 
     @property
     def disponible_para_solicitud(self):
-        consumido = self.asignaciones_ubicacion.aggregate(total=Sum('cantidad_consumida'))['total'] or 0
-        return self.cantidad_vigente - self.total_reservado - consumido
+        return self.cantidad_vigente - self.total_reservado - self.total_consumido
 
     def clean(self):
         if self.cantidad_asignada is None or self.cantidad_asignada <= 0:
@@ -762,8 +765,13 @@ class DivisionArticuloUbicacion(models.Model):
         return f"{self.ubicacion} - {self.division_articulo}"
 
     @property
+    def cantidad_consumida_efectiva(self):
+        from .consumo_historico_division import extra_ubicacion
+        return self.cantidad_consumida + extra_ubicacion(self)
+
+    @property
     def disponible_ubicacion(self):
-        return self.cantidad_asignada - self.cantidad_reservada - self.cantidad_consumida
+        return self.cantidad_asignada - self.cantidad_reservada - self.cantidad_consumida_efectiva
 
     def clean(self):
         for field in ['cantidad_asignada', 'cantidad_reservada', 'cantidad_consumida']:
@@ -774,7 +782,7 @@ class DivisionArticuloUbicacion(models.Model):
             raise ValidationError({'cantidad_asignada': 'La cantidad debe ser mayor a cero.'})
         if self.activo and self.cantidad_asignada <= 0:
             raise ValidationError({'cantidad_asignada': 'La cantidad debe ser mayor a cero.'})
-        if self.cantidad_reservada > (self.cantidad_asignada - self.cantidad_consumida):
+        if self.cantidad_reservada > (self.cantidad_asignada - self.cantidad_consumida_efectiva):
             raise ValidationError({'cantidad_reservada': 'No puede reservar más de lo disponible en la ubicación.'})
         pertenece = DivisionUbicacion.objects.filter(division=self.division_articulo.division, ubicacion=self.ubicacion, activa=True).exists()
         if not pertenece:

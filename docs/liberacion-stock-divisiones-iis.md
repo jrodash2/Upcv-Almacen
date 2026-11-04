@@ -1,5 +1,10 @@
 # Liberar stock de una división
 
+> Para la relación histórica del artículo 675 documentada por el usuario, consultar
+> `docs/consumo-historico-kardex-675-iis.md`: reconoce las 620 ya despachadas sin
+> desasignarlas ni generar otra salida. Tras liberar el remanente quedan 1,200.
+
+
 ## Diagnóstico y significado de las cantidades
 
 `DivisionArticulo.cantidad_asignada` es una cantidad acumulada: puede incluir
@@ -17,7 +22,8 @@ Las pantallas ahora distinguen histórico, liberado y compromiso vigente.
 
 El número histórico 620 directo no se elimina ni se presume consumido. Hay que
 verificar qué despachos lo consumieron y desde qué origen. Si el mismo despacho
-aparece consumido tanto en directo como en división, o si subsiste un compromiso
+aparece consumido tanto en directo como en división sin evidencia que justifique
+su representación histórica compartida, o si subsiste un compromiso
 directo sin cobertura verificable, la liberación se bloquea y explica
 el motivo. Un exceso global de compromisos conocido, por sí solo, permite reducir
 la parte no distribuida mediante una liberación explícita; primero se absorbe el

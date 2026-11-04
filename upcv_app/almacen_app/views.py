@@ -1,5 +1,7 @@
 import uuid
 
+from .consumo_historico_division import contexto_lectura, lectura_consumos
+
 from .formatos_cantidades import cantidad_formato, formato_excel_cantidad
 from .categorias_solicitud import filtrar_por_tipos, tipo_categoria
 from .disponibilidad import (fuentes_departamento, totales_departamento, bloquear_departamento, validar_y_reservar, liberar_reservas_division, resumen_global_articulo)
@@ -489,7 +491,7 @@ def articulos_asignados(request, departamento_id):
              'categoria': articulo.categoria.nombre if articulo.categoria else 'S/C',
              'tipo_solicitud': tipo_categoria(articulo.categoria.nombre if articulo.categoria else ''),
              'cantidad_disponible': str(stock_disponible.get(articulo.pk, 0)),
-             'cantidad_asignada': str(sum((fila['cantidad_asignada'] for fila in fuentes if fila['articulo'].pk == articulo.pk), Decimal('0'))),
+             'cantidad_asignada': str(sum((fila['cantidad_asignada']-fila.get('consumo_historico_compartido',Decimal('0')) for fila in fuentes if fila['articulo'].pk == articulo.pk), Decimal('0'))),
              'renglon_presupuestario': articulo.renglon_presupuestario or 'S/R',
              'fuentes': [fuente_json(fila) for fila in fuentes if fila['articulo'].pk == articulo.pk]}
             for articulo in articulos
@@ -531,6 +533,9 @@ def despachar_requerimiento(request, requerimiento_id):
         messages.error(request, 'Método no permitido.')
         return destino()
     try:
+        # Mismo orden que liberar/autoasignar: artículo antes de departamento.
+        list(Articulo.objects.select_for_update().filter(
+            pk__in=requerimiento.detalles.values_list('articulo_id',flat=True)).order_by('pk'))
         bloquear_departamento(requerimiento.departamento)
         requerimiento = Requerimiento.objects.select_for_update().get(pk=requerimiento.pk)
         if requerimiento.estado != 'enviado':
@@ -1381,6 +1386,7 @@ def historial_kardex_articulo(request, articulo_id):
     })
 
 
+@lectura_consumos
 def construir_stock_list_administrador():
     ingresos = DetalleFactura.objects.filter(
         form1h__estado='confirmado'
@@ -1588,6 +1594,7 @@ def acceso_denegado(request, exception=None):
 from django.db.models import Q
 
 
+@lectura_consumos
 def construir_resumen_gestor_departamento(departamento):
     detalle_asignaciones = fuentes_departamento(departamento)
 
@@ -1604,6 +1611,7 @@ def construir_resumen_gestor_departamento(departamento):
             'asignado_division': Decimal('0'),
             'reservado': Decimal('0'),
             'despachado': Decimal('0'),
+            'consumo_historico_compartido': Decimal('0'),
             'disponible': Decimal('0'),
             'requiere_revision': False,
         })
@@ -1612,13 +1620,16 @@ def construir_resumen_gestor_departamento(departamento):
         else:
             item['asignado_division'] += fila['cantidad_asignada']
         item['reservado'] += fila['reservado']
-        item['despachado'] += fila['consumido']
+        compartido = fila.get('consumo_historico_compartido',Decimal('0'))
+        item['consumo_historico_compartido'] += compartido
+        item['despachado'] += fila['consumido']-compartido
         item['disponible'] += fila['disponible']
         item['requiere_revision'] = item['requiere_revision'] or fila['requiere_revision']
 
     resumen_stock = []
     for item in resumen_por_articulo.values():
-        item['asignado'] = item['asignado_directo'] + item['asignado_division']
+        item['asignado_historico'] = item['asignado_directo'] + item['asignado_division']
+        item['asignado'] = item['asignado_historico'] - item['consumo_historico_compartido']
         resumen_stock.append(item)
 
     resumen_stock.sort(key=lambda item: item['nombre_articulo'])
@@ -1930,6 +1941,7 @@ def datos_articulo_asignacion(articulo):
     }
 
 
+@lectura_consumos
 def buscar_articulos(request):
     incluir_existencias = request.GET.get('asignacion_directa') == '1'
     # El catálogo compartido conserva su contrato; los saldos solo se consultan
@@ -3113,7 +3125,7 @@ def desasignar_articulo_ubicacion(request, asignacion_id):
     except Exception:
         messages.error(request, 'Cantidad inválida para desasignar.')
         return redirect(redirect_to)
-    disponible_para_desasignar = max(Decimal('0'), asignacion.cantidad_asignada - asignacion.cantidad_reservada - asignacion.cantidad_consumida)
+    disponible_para_desasignar = max(Decimal('0'), asignacion.disponible_ubicacion)
     if cantidad <= 0:
         messages.error(request, 'La cantidad a desasignar debe ser mayor a cero.')
         return redirect(redirect_to)
@@ -3121,7 +3133,7 @@ def desasignar_articulo_ubicacion(request, asignacion_id):
         messages.error(request, 'No puede desasignar más de la cantidad disponible sin reservar.')
         return redirect(redirect_to)
     asignacion.cantidad_asignada -= cantidad
-    if asignacion.cantidad_asignada <= 0 and asignacion.cantidad_reservada <= 0 and asignacion.cantidad_consumida <= 0:
+    if asignacion.cantidad_asignada <= 0 and asignacion.cantidad_reservada <= 0 and asignacion.cantidad_consumida_efectiva <= 0:
         asignacion.activo = False
     asignacion.save(update_fields=['cantidad_asignada', 'activo', 'fecha_actualizacion'])
     messages.success(request, f'Se desasignaron {cantidad_formato(cantidad)} unidades correctamente.')
@@ -3236,17 +3248,18 @@ def division_detail(request, pk):
         except ValidationError as e:
             messages.error(request, e.message_dict if hasattr(e, 'message_dict') else e.messages)
         return redirect('almacen:division_detail', pk=division.pk)
-    ubicaciones = division.ubicaciones.select_related('ubicacion').order_by('ubicacion__nombre')
-    from .liberacion_division import estado_liberacion
-    articulos = list(division.articulos.select_related('articulo__categoria'))
-    for articulo in articulos:
-        articulo.liberacion_estado = estado_liberacion(articulo)
-        articulo.operacion_liberacion = uuid.uuid4()
-    es_administrador = request.user.is_superuser or request.user.groups.filter(name='Administrador').exists()
-    return render(request, 'almacen/divisiones/detail.html', {
-        'division': division, 'ubicacion_form': ubicacion_form, 'articulo_form': articulo_form,
-        'ubicaciones': ubicaciones, 'articulos_division': articulos, 'es_administrador': es_administrador,
-        'liberaciones': division.liberaciones.select_related('articulo', 'usuario', 'division', 'asignacion')})
+    with contexto_lectura():
+        ubicaciones = division.ubicaciones.select_related('ubicacion').order_by('ubicacion__nombre')
+        from .liberacion_division import estado_liberacion
+        articulos = list(division.articulos.select_related('articulo__categoria'))
+        for articulo in articulos:
+            articulo.liberacion_estado = estado_liberacion(articulo)
+            articulo.operacion_liberacion = uuid.uuid4()
+        es_administrador = request.user.is_superuser or request.user.groups.filter(name='Administrador').exists()
+        return render(request, 'almacen/divisiones/detail.html', {
+            'division': division, 'ubicacion_form': ubicacion_form, 'articulo_form': articulo_form,
+            'ubicaciones': ubicaciones, 'articulos_division': articulos, 'es_administrador': es_administrador,
+            'liberaciones': division.liberaciones.select_related('articulo', 'usuario', 'division', 'asignacion')})
 
 @login_required
 @grupo_requerido('Administrador', 'Almacen')
@@ -3290,6 +3303,7 @@ def division_ubicacion_eliminar(request, pk):
 
 @login_required
 @grupo_requerido('Administrador', 'Almacen')
+@lectura_consumos
 def division_control(request):
     articulos = DivisionArticulo.objects.select_related('division','articulo','articulo__categoria').order_by('division__nombre','articulo__nombre')
     asignaciones = DivisionArticuloUbicacion.objects.filter(activo=True).select_related('division_articulo__division', 'division_articulo__articulo', 'ubicacion').order_by('division_articulo__division__nombre', 'ubicacion__nombre', 'division_articulo__articulo__nombre')

@@ -1,5 +1,11 @@
 # Liberación confirmada, pero disponibilidad cero
 
+> Actualización con el reporte completo de IIS: las 620 del caso 675 ya fueron
+> despachadas y están representadas en asignaciones históricas espejo. Para ese
+> caso, no aplicar la retirada manual de las 620 ni limitar el saldo final a 580.
+> La corrección vigente está en `docs/consumo-historico-kardex-675-iis.md`.
+
+
 La captura de Asignación Directa muestra existencia física 1,200 y un bloqueo de
 revisión histórica. Ese bloqueo no prueba que una liberación haya desaparecido:
 la disponibilidad depende también de los compromisos directos, de otras divisiones

@@ -1,5 +1,11 @@
 # Liberación bloqueada por un exceso global previo: caso IIS 675
 
+> Actualización con el reporte completo de IIS: las 620 del caso 675 ya fueron
+> despachadas y están representadas en asignaciones históricas espejo. Para ese
+> caso, no aplicar la retirada manual de las 620 ni limitar el saldo final a 580.
+> La corrección vigente está en `docs/consumo-historico-kardex-675-iis.md`.
+
+
 ## Datos comprobados
 
 El usuario ejecutó la auditoría de solo lectura en IIS. Para el artículo de código

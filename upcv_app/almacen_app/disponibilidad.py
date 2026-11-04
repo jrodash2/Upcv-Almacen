@@ -1,5 +1,6 @@
 """Saldos por fuente. No repara ni reescribe históricos o contadores heredados."""
 from .formatos_cantidades import cantidad_formato
+from .consumo_historico_division import lectura_consumos
 from collections import defaultdict
 from decimal import Decimal
 
@@ -25,6 +26,7 @@ def bloquear_departamento(departamento):
     list(DivisionArticuloUbicacion.objects.select_for_update().filter(ubicacion=departamento).order_by('pk'))
 
 
+@lectura_consumos
 def fuentes_departamento(departamento):
     if not departamento:
         return []
@@ -33,6 +35,13 @@ def fuentes_departamento(departamento):
     divisiones = list(DivisionArticuloUbicacion.objects.filter(ubicacion=departamento)
                      .select_related('division_articulo__articulo__categoria', 'division_articulo__division')
                      .order_by('pk'))
+    from .consumo_historico_division import reconocimientos_consumo
+    extras = defaultdict(Decimal)
+    compartidos = defaultdict(Decimal)
+    for articulo_id in {d.division_articulo.articulo_id for d in divisiones}:
+        for dato in reconocimientos_consumo(articulo_id):
+            extras[dato['ubicacion_id']] += Decimal(dato['consumo_extra'])
+            compartidos[dato['ubicacion_id']] += Decimal(dato['cantidad'])
     membresias = set(DivisionUbicacion.objects.filter(ubicacion=departamento, activa=True)
                      .values_list('division_id', flat=True))
     # Incluye consumos históricos de divisiones inactivas: no se vuelven consumo directo.
@@ -101,8 +110,11 @@ def fuentes_departamento(departamento):
         da = source.division_articulo
         if not (source.activo and da.activo and da.division.activa and da.division_id in membresias):
             continue
-        fuentes.append(_fila(source, da.articulo, departamento, f'V:{source.pk}', 'División', da.division.nombre,
-                             source.cantidad_asignada, source.cantidad_reservada, source.cantidad_consumida))
+        fila = _fila(source, da.articulo, departamento, f'V:{source.pk}', 'División', da.division.nombre,
+                     source.cantidad_asignada, source.cantidad_reservada, source.cantidad_consumida + extras[source.pk])
+        if compartidos[source.pk]:
+            fila['consumo_historico_compartido'] = compartidos[source.pk]
+        fuentes.append(fila)
     return fuentes
 
 
@@ -170,6 +182,7 @@ def liberar_reservas_division(solicitud):
         source.save(update_fields=['cantidad_reservada', 'fecha_actualizacion'])
 
 
+@lectura_consumos
 def compromisos_articulo(articulo, propuesta=None):
     """Asignación histórica menos consumo, sin volver a restar las reservas.
 
@@ -179,6 +192,12 @@ def compromisos_articulo(articulo, propuesta=None):
     `propuesta` reemplaza la cantidad persistida al validar full_clean().
     """
     from .models import DivisionArticulo
+    from .consumo_historico_division import reconocimientos_consumo
+    reconocimientos = reconocimientos_consumo(articulo.pk)
+    extras = defaultdict(Decimal)
+    for dato in reconocimientos:
+        extras[dato['asignacion_division_id']] += Decimal(dato['consumo_extra'])
+    compartido = sum((Decimal(d['cantidad']) for d in reconocimientos), ZERO)
     divisiones = list(DivisionArticulo.objects.filter(articulo=articulo))
     if propuesta is not None:
         divisiones = [d for d in divisiones if d.pk != propuesta.pk]
@@ -190,7 +209,7 @@ def compromisos_articulo(articulo, propuesta=None):
         totales = division.asignaciones_ubicacion.aggregate(
             consumido=Sum('cantidad_consumida'), reservado=Sum('cantidad_reservada'),
             asignado=Sum('cantidad_asignada')) if division.pk else {}
-        gasto = totales.get('consumido') or ZERO
+        gasto = (totales.get('consumido') or ZERO) + extras[division.pk]
         reserva = totales.get('reservado') or ZERO
         neto = Decimal(division.cantidad_vigente) - gasto
         revision |= neto < reserva or (totales.get('asignado') or ZERO) > division.cantidad_vigente
@@ -213,12 +232,13 @@ def compromisos_articulo(articulo, propuesta=None):
                 if fila['requiere_revision']:
                     motivos_revision.append(f'La asignación directa del departamento {depto.nombre} tiene reservas o consumos sin cobertura verificable; requiere revisión.')
     return dict(comprometido=comprometido, reservado=reservado,
-                consumido=consumido, requiere_revision=revision,
+                consumido=consumido-compartido, consumo_historico_compartido=compartido, requiere_revision=revision,
                 comprometido_divisiones=comprometido_divisiones,
                 comprometido_directo=comprometido-comprometido_divisiones,
                 motivos_revision=list(dict.fromkeys(motivos_revision)))
 
 
+@lectura_consumos
 def resumen_global_articulo(articulo):
     """Separar el presupuesto sin asignar de la disponibilidad ya asignada."""
     from .models import DetalleFactura, DivisionArticulo, LiberacionStockDivision
@@ -240,6 +260,7 @@ def resumen_global_articulo(articulo):
                 reservado=compromisos['reservado'], consumido=compromisos['consumido'],
                 existencia_fisica=fisico, comprometido=compromisos['comprometido'],
                 liberado_divisiones=liberado, saldo_sin_asignar=sin_asignar,
+                consumo_historico_compartido=compromisos['consumo_historico_compartido'],
                 motivos_revision=motivos_revision,
                 requiere_revision_origenes=compromisos['requiere_revision'],
                 comprometido_divisiones=compromisos['comprometido_divisiones'],

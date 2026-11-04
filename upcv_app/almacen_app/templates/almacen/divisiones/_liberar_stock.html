@@ -17,7 +17,7 @@
             <div class="col-sm-6">Asignado acumulado: <strong>{{ a.liberacion_estado.asignado|cantidad_formato }}</strong></div>
             <div class="col-sm-6">Distribuido a ubicaciones: <strong>{{ a.liberacion_estado.distribuido|cantidad_formato }}</strong></div>
             <div class="col-sm-6">Reservado: <strong>{{ a.liberacion_estado.reservado|cantidad_formato }}</strong></div>
-            <div class="col-sm-6">Consumido: <strong>{{ a.liberacion_estado.consumido|cantidad_formato }}</strong></div>
+            <div class="col-sm-6">Consumido: <strong>{{ a.liberacion_estado.consumido|cantidad_formato }}</strong>{% if a.liberacion_estado.consumido_historico_reconocido %}<small class="d-block">Incluye {{ a.liberacion_estado.consumido_historico_reconocido|cantidad_formato }} ya despachadas y verificadas en Kardex.</small>{% endif %}</div>
             <div class="col-sm-6">Liberado anteriormente: <strong>{{ a.liberacion_estado.liberado|cantidad_formato }}</strong></div>
             <div class="col-sm-6">Compromiso vigente: <strong>{{ a.liberacion_estado.compromiso_vigente|cantidad_formato }}</strong></div>
             <div class="col-sm-6">Disponible en división: <strong>{{ a.liberacion_estado.disponible_division|cantidad_formato }}</strong></div>

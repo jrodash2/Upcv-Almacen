@@ -30,6 +30,8 @@ class Command(BaseCommand):
                      'existencia_general': m.existencia_general_articulo(articulo)}
             from almacen_app.disponibilidad import resumen_global_articulo
             datos['resumen'] = resumen_global_articulo(articulo)
+            from almacen_app.consumo_historico_division import reconocimientos_consumo
+            datos['consumos_historicos_reconocidos'] = reconocimientos_consumo(articulo.pk)
             from almacen_app.liberacion_division import estado_liberacion
             datos['liberacion_por_division'] = [dict(asignacion_id=a.pk, division_id=a.division_id,
                 **estado_liberacion(a)) for a in m.DivisionArticulo.objects.filter(articulo=articulo)]
