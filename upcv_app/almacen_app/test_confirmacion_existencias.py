@@ -148,7 +148,7 @@ class ConfirmacionExistenciasTests(Escenario, TestCase):
         self.confirmar(form, det, [(self.div, 500), (segunda, 700)])
         self.assertEqual(list(DivisionArticulo.objects.order_by('division_id').values_list('cantidad_asignada', flat=True)), [500, 700])
 
-    def test_consumo_sin_origen_no_libera_division_y_rollback(self):
+    def test_historia_inconsistente_no_bloquea_ingreso_ni_se_repara(self):
         da, source = self.historico()
         # Historia inconsistente: la salida existe pero el contador de origen no
         # acredita consumo. No atribuirle una salida por coincidir la cantidad.
@@ -156,10 +156,13 @@ class ConfirmacionExistenciasTests(Escenario, TestCase):
         form, det = self.ingreso(1200)
         self.confirmar(form, det)
         form.refresh_from_db(); da.refresh_from_db()
-        self.assertEqual(form.estado, 'borrador')
-        self.assertEqual(da.cantidad_asignada, 620)
-        self.assertFalse(det.asignaciones_division.exists())
+        self.assertEqual(form.estado, 'confirmado')
+        self.assertEqual(da.cantidad_asignada, 1820)
+        self.assertEqual(det.asignaciones_division.get().cantidad_asignada, 1200)
+        source.refresh_from_db()
+        self.assertEqual(source.cantidad_consumida, 0)
         self.assertEqual(Kardex.objects.count(), 3)
+        self.assertTrue(resumen_global_articulo(self.a)['requiere_revision'])
 
     def test_directo_y_division_no_comparten_presupuesto(self):
         self.ingreso(100, 'confirmado')
@@ -188,6 +191,21 @@ class ConfirmacionExistenciasTests(Escenario, TestCase):
         fila = next(f for f in construir_stock_list_administrador() if f['articulo_id'] == self.a.pk)
         self.assertEqual(fila['disponible'], 0)
 
+    def test_asignacion_directa_normal_conserva_disponibilidad(self):
+        from .form import AsignacionDetalleFacturaForm
+        from .models import UsuarioDepartamento
+        UsuarioDepartamento.objects.create(usuario=self.user, departamento=self.dept)
+        self.ingreso(100, 'confirmado')
+        form = AsignacionDetalleFacturaForm(data={'articulo': self.a.pk, 'destino': self.dept.pk,
+                                                  'cantidad_asignada': 40})
+        self.assertTrue(form.is_valid(), form.errors)
+        form.save()
+        DivisionArticulo.objects.create(division=self.div, articulo=self.a, cantidad_asignada=60)
+        exceso = AsignacionDetalleFacturaForm(data={'articulo': self.a.pk, 'destino': self.dept.pk,
+                                                    'cantidad_asignada': 1})
+        self.assertFalse(exceso.is_valid())
+        self.assertEqual(AsignacionDetalleFactura.objects.get().cantidad_asignada, 40)
+
     def test_ingreso_duplicado_no_se_confirma_ni_repara(self):
         form, det = self.ingreso(1200)
         Kardex.objects.create(articulo=self.a, tipo_movimiento='INGRESO', cantidad=1200, fuente_factura=det)
@@ -195,6 +213,70 @@ class ConfirmacionExistenciasTests(Escenario, TestCase):
         form.refresh_from_db(); self.assertEqual(form.estado, 'borrador')
         self.assertEqual(Kardex.objects.count(), 2)
         self.assertFalse(DetalleFacturaDivision.objects.exists())
+
+    def test_confirmacion_no_consulta_stock_historico(self):
+        self.historico()
+        form, det = self.ingreso(1200)
+        with patch('almacen_app.models.existencia_general_articulo', side_effect=AssertionError('Consulta histórica')), \
+             patch.object(DivisionArticulo, 'validar_stock_existente', side_effect=AssertionError('Stock existente')):
+            self.confirmar(form, det)
+        form.refresh_from_db(); self.assertEqual(form.estado, 'confirmado')
+
+    def test_varias_lineas_mismo_articulo_acumulan_una_vez(self):
+        form, det = self.ingreso(500)
+        otro = DetalleFactura.objects.create(form1h=form, articulo=self.a, cantidad=700,
+            precio_unitario=Decimal('2'), precio_total=Decimal('1400'), id_linea=2, renglon=243)
+        self.client.post(reverse('almacen:confirmar_form1h', args=[form.pk]), {
+            'detalle_id': [det.pk, otro.pk], 'division_id': [self.div.pk, self.div.pk],
+            'cantidad_asignada': ['500', '700'], 'cantidad_ingresada': ['9000', '9000']})
+        self.assertEqual(DivisionArticulo.objects.get().cantidad_asignada, 1200)
+        self.assertEqual(DetalleFacturaDivision.objects.count(), 2)
+        self.assertEqual(Kardex.objects.count(), 2)
+
+    def test_kardex_ausente_cantidad_o_articulo_incorrectos(self):
+        form, det = self.ingreso(1200)
+        ingreso = Kardex.objects.get(fuente_factura=det)
+        otro = Articulo.objects.create(codigo='OTRO', nombre='Otro')
+        for cambios in [{'cantidad': 1199}, {'cantidad': 1200, 'articulo_id': otro.pk}]:
+            Kardex.objects.filter(pk=ingreso.pk).update(**cambios)
+            self.confirmar(form, det)
+            form.refresh_from_db(); self.assertEqual(form.estado, 'borrador')
+            self.assertFalse(DetalleFacturaDivision.objects.exists())
+            self.assertFalse(DivisionArticulo.objects.exists())
+        ingreso.delete()
+        self.confirmar(form, det)
+        form.refresh_from_db(); self.assertEqual(form.estado, 'borrador')
+        self.assertFalse(Kardex.objects.exists())
+
+    def test_filas_invalidas_no_dejan_cambios(self):
+        form, det = self.ingreso(1200)
+        for data in [
+            {'detalle_id': [det.pk], 'division_id': [], 'cantidad_asignada': ['1200']},
+            {'detalle_id': [999999], 'division_id': [self.div.pk], 'cantidad_asignada': ['1200']},
+            *[{'detalle_id': [det.pk], 'division_id': [self.div.pk], 'cantidad_asignada': [q]}
+              for q in ['NaN', 'Infinity', '-1', '0', '1201']],
+        ]:
+            self.client.post(reverse('almacen:confirmar_form1h', args=[form.pk]), data)
+            form.refresh_from_db(); self.assertEqual(form.estado, 'borrador')
+            self.assertFalse(DetalleFacturaDivision.objects.exists())
+        self.div.activa = False; self.div.save()
+        self.confirmar(form, det)
+        form.refresh_from_db(); self.assertEqual(form.estado, 'borrador')
+
+    def test_rollback_despues_de_una_distribucion_persistida(self):
+        segunda = DivisionAlmacen.objects.create(nombre='Segunda')
+        form, det = self.ingreso(1200)
+        original = DetalleFacturaDivision.save
+        def guardar(instance, *args, **kwargs):
+            if instance.division_id == segunda.pk:
+                raise ValidationError('Fallo después de escribir')
+            return original(instance, *args, **kwargs)
+        with patch.object(DetalleFacturaDivision, 'save', guardar):
+            self.confirmar(form, det, [(self.div, 500), (segunda, 700)])
+        form.refresh_from_db(); self.assertEqual(form.estado, 'borrador')
+        self.assertFalse(DetalleFacturaDivision.objects.exists())
+        self.assertFalse(DivisionArticulo.objects.exists())
+        self.assertEqual(Kardex.objects.get().cantidad, 1200)
 
     def test_reversion_salida_no_se_resta_dos_veces(self):
         self.ingreso(100, 'confirmado')
@@ -254,6 +336,19 @@ class ConfirmacionConcurrenteTests(Escenario, TransactionTestCase):
         self.assertEqual(DetalleFacturaDivision.objects.count(), 2)
         self.assertEqual(DivisionArticulo.objects.get().cantidad_asignada, 1820)
         self.assertEqual(existencia_general_articulo(self.a), 1820)
+
+    def test_confirmacion_y_asignacion_manual_comparten_bloqueo(self):
+        self.ingreso(100, 'confirmado')
+        form, det = self.ingreso(1200)
+        def manual(client):
+            return client.post(reverse('almacen:asignar_articulo_division', args=[self.a.pk]),
+                               {'division': self.div.pk, 'cantidad': '80'})
+        resultados = self.paralelo([lambda c: self.confirmar(form, det, client=c), manual])
+        self.assertEqual([r.status_code for r in resultados], [302, 302])
+        self.assertEqual(DivisionArticulo.objects.get().cantidad_asignada, 1280)
+        self.assertEqual(DetalleFacturaDivision.objects.get().cantidad_asignada, 1200)
+        self.assertEqual(existencia_general_articulo(self.a), 1300)
+        self.assertEqual(resumen_global_articulo(self.a)['disponible_para_division'], 20)
 
     def test_sobreasignaciones_concurrentes(self):
         self.ingreso(100, 'confirmado')

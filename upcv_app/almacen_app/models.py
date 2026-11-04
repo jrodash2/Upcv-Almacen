@@ -215,8 +215,8 @@ class AsignacionDetalleFactura(models.Model):
 
     def clean(self):
         super().clean()
-        if self.articulo is None:
-            raise ValidationError("El campo artículo es obligatorio.")
+        if not self.articulo_id:
+            raise ValidationError({'articulo': 'El campo artículo es obligatorio.'})
 
     def __str__(self):
         return f"{self.cantidad_asignada} de {self.articulo.nombre} a {self.destino.nombre}"
@@ -650,6 +650,9 @@ class DivisionArticulo(models.Model):
     def clean(self):
         if self.cantidad_asignada is None or self.cantidad_asignada <= 0:
             raise ValidationError({'cantidad_asignada': 'La cantidad debe ser mayor a cero.'})
+
+    def validar_stock_existente(self):
+        """Límite para asignaciones normales; no autoriza ingresos de documentos."""
         from .disponibilidad import compromisos_articulo
         compromisos = compromisos_articulo(self.articulo, propuesta=self)
         if compromisos['requiere_revision']:
@@ -664,6 +667,7 @@ class DivisionArticulo(models.Model):
         with transaction.atomic():
             Articulo.objects.select_for_update().get(pk=self.articulo_id)
             self.full_clean()
+            self.validar_stock_existente()
             return super().save(*args, **kwargs)
 
 

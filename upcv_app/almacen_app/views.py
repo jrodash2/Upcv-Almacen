@@ -1953,99 +1953,22 @@ def serie_form_list(request, pk=None):
 @login_required
 @grupo_requerido('Administrador', 'Almacen')
 @require_POST
-@transaction.atomic
 def confirmar_form1h(request, form1h_id):
-    formulario = get_object_or_404(form1h.objects.select_for_update(), id=form1h_id)
-    if formulario.estado == 'confirmado':
-        messages.info(request, 'Este Formulario 1H ya fue confirmado.')
-        return redirect('almacen:agregar_detalle_factura', form1h_id=form1h_id)
-    if formulario.estado != 'borrador':
-        messages.warning(request, 'Este Formulario 1H no se puede confirmar en su estado actual.')
-        return redirect('almacen:agregar_detalle_factura', form1h_id=form1h_id)
-
-    # Serializa también formularios distintos que afectan al mismo artículo.
-    articulo_ids = formulario.detalles.values_list('articulo_id', flat=True)
-    list(Articulo.objects.select_for_update().filter(pk__in=articulo_ids).order_by('pk'))
-    detalles = list(formulario.detalles.select_related('articulo').select_for_update(of=('self',)))
-    if not detalles:
-        messages.error(request, 'No puede confirmar un Formulario 1H sin detalles.')
-        return redirect('almacen:agregar_detalle_factura', form1h_id=form1h_id)
-    divisiones = {str(d.pk): d for d in DivisionAlmacen.objects.filter(activa=True)}
-    if not divisiones:
-        messages.error(request, 'No existen divisiones activas para asignar los artículos del Formulario 1H.')
-        return redirect('almacen:agregar_detalle_factura', form1h_id=form1h_id)
-
+    from .confirmacion_1h import confirmar_ingreso_form1h
     campos = [request.POST.getlist(k) for k in ('detalle_id', 'division_id', 'cantidad_asignada')]
-    if len({len(c) for c in campos}) != 1 or set(campos[0]) != {str(d.pk) for d in detalles}:
-        messages.error(request, 'La distribución contiene filas inválidas o incompletas.')
-        return redirect('almacen:agregar_detalle_factura', form1h_id=form1h_id)
-    distribucion = defaultdict(lambda: defaultdict(Decimal))
-    for detalle_id, division_id, cantidad_texto in zip(
-        request.POST.getlist('detalle_id'),
-        request.POST.getlist('division_id'),
-        request.POST.getlist('cantidad_asignada'),
-    ):
-        try:
-            cantidad = Decimal(cantidad_texto)
-        except (TypeError, InvalidOperation):
-            cantidad = Decimal('0')
-        if not cantidad.is_finite() or cantidad <= 0 or division_id not in divisiones:
-            messages.error(request, 'Debe asignar todos los artículos del Formulario 1H a divisiones antes de confirmar.')
-            transaction.set_rollback(True)
-            return redirect('almacen:agregar_detalle_factura', form1h_id=form1h_id)
-        distribucion[detalle_id][division_id] += cantidad
-
-    for detalle in detalles:
-        asignaciones = distribucion.get(str(detalle.pk), {})
-        if not asignaciones:
-            messages.error(request, 'Debe asignar todos los artículos del Formulario 1H a divisiones antes de confirmar.')
-            transaction.set_rollback(True)
-            return redirect('almacen:agregar_detalle_factura', form1h_id=form1h_id)
-        if sum(asignaciones.values(), Decimal('0')) != Decimal(detalle.cantidad):
-            messages.error(
-                request,
-                f'La cantidad asignada a divisiones para {detalle.articulo.codigo} debe ser igual a la cantidad ingresada en el Formulario 1H.',
-            )
-            transaction.set_rollback(True)
-            return redirect('almacen:agregar_detalle_factura', form1h_id=form1h_id)
-
     try:
-        with transaction.atomic():
-            # Confirmar primero hace que la validación de existencia de DivisionArticulo
-            # incluya este ingreso, sin exponer un estado parcial gracias a atomic().
-            for detalle in detalles:
-                if detalle.asignaciones_division.exists():
-                    raise ValidationError('El borrador ya tiene una distribución histórica; requiere revisión.')
-                ingresos = Kardex.objects.filter(fuente_factura=detalle, tipo_movimiento='INGRESO', estado='activo')
-                if ingresos.count() != 1 or ingresos.first().cantidad != detalle.cantidad:
-                    raise ValidationError('El ingreso Kardex del detalle requiere revisión: ausente, duplicado o con cantidad diferente.')
-            formulario.estado = 'confirmado'
-            formulario.save(update_fields=['estado', 'fecha_actualizacion'])
-            for detalle in detalles:
-                for division_id, cantidad in distribucion[str(detalle.pk)].items():
-                    DetalleFacturaDivision.objects.create(
-                        detalle_factura=detalle,
-                        division=divisiones[division_id],
-                        cantidad_asignada=cantidad,
-                        creado_por=request.user,
-                    )
-                    asignacion, creada = DivisionArticulo.objects.select_for_update().get_or_create(
-                        division=divisiones[division_id],
-                        articulo=detalle.articulo,
-                        defaults={'cantidad_asignada': cantidad, 'asignado_por': request.user, 'activo': True},
-                    )
-                    if not creada:
-                        asignacion.cantidad_asignada += cantidad
-                        asignacion.activo = True
-                        asignacion.asignado_por = request.user
-                        asignacion.save()
-
+        if len({len(c) for c in campos}) != 1:
+            raise ValidationError('La distribución contiene filas inválidas o incompletas.')
+        confirmado = confirmar_ingreso_form1h(form1h_id, zip(*campos), request.user)
+    except form1h.DoesNotExist:
+        raise Http404('Formulario 1H inexistente.')
     except ValidationError as exc:
         messages.error(request, '; '.join(exc.messages))
-        return redirect('almacen:agregar_detalle_factura', form1h_id=form1h_id)
-
-    messages.success(request, 'Formulario 1H confirmado y artículos asignados a divisiones correctamente.')
-
+    else:
+        if confirmado:
+            messages.success(request, 'Formulario 1H confirmado y artículos asignados a divisiones correctamente.')
+        else:
+            messages.info(request, 'Este Formulario 1H ya fue confirmado.')
     return redirect('almacen:agregar_detalle_factura', form1h_id=form1h_id)
 
 @login_required
