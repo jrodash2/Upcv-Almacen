@@ -145,9 +145,25 @@ class AsignacionDetalleFacturaForm(forms.ModelForm):
         ids = [a.pk for a in Articulo.objects.filter(detalles_factura__form1h__estado='confirmado').distinct()
                if resumen_global_articulo(a)['disponible_para_division'] > 0]
         self.fields['articulo'].queryset = Articulo.objects.filter(pk__in=ids)
+        self.fields['cantidad_asignada'].min_value = 1
+        self.fields['cantidad_asignada'].widget.attrs.update({'min': 1, 'step': 1})
 
         for field in self.fields.values():
             field.widget.attrs.update({'class': 'form-control'})
+
+    def clean(self):
+        from .disponibilidad import resumen_global_articulo
+        cleaned = super().clean()
+        articulo = cleaned.get('articulo')
+        cantidad = cleaned.get('cantidad_asignada')
+        if cantidad is not None and cantidad <= 0:
+            self.add_error('cantidad_asignada', 'La cantidad debe ser mayor a cero.')
+        elif articulo and cantidad is not None:
+            saldo = resumen_global_articulo(articulo)['disponible_para_division']
+            if cantidad > saldo:
+                self.add_error('cantidad_asignada',
+                    f'No puede asignar más de la existencia disponible ({cantidad_formato(saldo)}).')
+        return cleaned
 
     def save(self, commit=True):
         from django.db import transaction
@@ -156,7 +172,7 @@ class AsignacionDetalleFacturaForm(forms.ModelForm):
         with transaction.atomic():
             Articulo.objects.select_for_update().get(pk=self.instance.articulo_id)
             saldo = resumen_global_articulo(self.instance.articulo)['disponible_para_division']
-            if self.instance.cantidad_asignada > saldo:
+            if self.instance.cantidad_asignada <= 0 or self.instance.cantidad_asignada > saldo:
                 raise ValidationError('No puede asignar más de la existencia disponible del artículo.')
             return super().save(commit=commit)
 

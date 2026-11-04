@@ -1791,32 +1791,18 @@ def crear_asignacion_detalle(request):
                 form.save()
                 messages.success(request, "Asignación creada correctamente.")
                 return redirect('almacen:crear_asignacion_detalle')
-            except Exception as e:
-                messages.error(request, f"Error al asignar: {e}")
+            except ValidationError as exc:
+                form.add_error(None, exc)
     else:
         form = AsignacionDetalleFacturaForm()
 
-    # 👇 Estas líneas deben estar bien indentadas dentro de la función
-    stock_por_articulo = DetalleFactura.objects.filter(
-        form1h__estado='confirmado'
-    ).values('articulo').annotate(stock_total=Sum('cantidad'))
-
-    asignado_por_articulo = AsignacionDetalleFactura.objects.values('articulo').annotate(
-        asignado_total=Sum('cantidad_asignada'))
-
-    stock_dict = {}
-    for item in stock_por_articulo:
-        articulo_id = item['articulo']
-        total_stock = item['stock_total'] or 0
-        total_asignado = next((a['asignado_total'] for a in asignado_por_articulo if a['articulo'] == articulo_id), 0)
-        stock_disponible = resumen_global_articulo(Articulo.objects.get(pk=articulo_id))['disponible_para_division']
-        stock_dict[articulo_id] = stock_disponible
+    articulo_seleccionado = form.cleaned_data.get('articulo') if form.is_bound else None
 
     ultima_asignacion = AsignacionDetalleFactura.objects.order_by('-fecha_asignacion').first()
 
     return render(request, 'almacen/crear_asignacion_detalle.html', {
         'form': form,
-        'stock_dict': stock_dict,
+        'articulo_seleccionado': datos_articulo_asignacion(articulo_seleccionado) if articulo_seleccionado else None,
         'ultima_asignacion': ultima_asignacion,
     })
 
@@ -1912,9 +1898,26 @@ def crear_asignacion_detalle_articulo(request):
 
 
     
+def datos_articulo_asignacion(articulo):
+    # Mantener código comercial e identificador interno separados. Los Decimal
+    # se serializan con DjangoJSONEncoder, nunca como código JavaScript.
+    return {
+        'id': articulo.pk, 'codigo': articulo.codigo, 'nombre': articulo.nombre,
+        'categoria': articulo.categoria.nombre if articulo.categoria else 'S/C',
+        'renglon_presupuestario': articulo.renglon_presupuestario,
+        'existencias': resumen_global_articulo(articulo),
+    }
+
+
 def buscar_articulos(request):
+    incluir_existencias = request.GET.get('asignacion_directa') == '1'
+    # El catálogo compartido conserva su contrato; los saldos solo se consultan
+    # con los mismos permisos que la pantalla de asignación directa.
+    if incluir_existencias and not (request.user.is_authenticated and (
+            request.user.is_superuser or request.user.groups.filter(name__in=['Administrador', 'Almacen']).exists())):
+        return JsonResponse({'error': 'No tiene permiso para consultar la asignación directa.'}, status=403)
     term = request.GET.get('q', '')
-    articulos = Articulo.objects.filter(Q(codigo__icontains=term) | Q(nombre__icontains=term))[:10]
+    articulos = Articulo.objects.select_related('categoria').filter(Q(codigo__icontains=term) | Q(nombre__icontains=term))[:10]
     results = [
         {
             'id': art.id,
@@ -1926,6 +1929,9 @@ def buscar_articulos(request):
         }
         for art in articulos
     ]
+    if incluir_existencias:
+        for item, articulo in zip(results, articulos):
+            item.update(datos_articulo_asignacion(articulo))
     return JsonResponse(results, safe=False)
     
 @login_required

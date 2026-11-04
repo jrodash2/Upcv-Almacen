@@ -38,17 +38,28 @@
       <div class="col-xl-9">
         <div class="card">
           <div class="card-body">
-            <form method="post" id="asignacion-form">
+            <form method="post" id="asignacion-form" data-busqueda-url="{% url 'almacen:buscar_articulos' %}">
               {% csrf_token %}
 
+              {% if form.errors %}
+              <div class="alert alert-danger" role="alert">{{ form.non_field_errors }}
+                {% for field in form %}{% for error in field.errors %}<div>{{ field.label }}: {{ error }}</div>{% endfor %}{% endfor %}
+              </div>
+              {% endif %}
               <!-- Buscar artículo -->
               <div class="mb-3">
                 <label for="busqueda-articulo" class="form-label">Buscar artículo</label>
-                <input type="text" id="busqueda-articulo" class="form-control" placeholder="Escribe el nombre del artículo..." autocomplete="off">
-                <input type="hidden" name="articulo" id="id_articulo">
+                <input type="text" id="busqueda-articulo" class="form-control" placeholder="Escribe el código o nombre del artículo..." autocomplete="off">
+                <input type="hidden" name="articulo" id="id_articulo" value="{{ form.articulo.value|default_if_none:'' }}">
                 <div id="sugerencias-articulo" class="border rounded p-2 bg-white mt-1" style="display: none; max-height: 200px; overflow-y: auto;"></div>
               </div>
 
+              <div id="informacion-articulo" class="mb-3" hidden>
+                <div><strong>Código:</strong> <span id="articulo-codigo"></span></div>
+                <div><strong>Descripción:</strong> <span id="articulo-descripcion"></span></div>
+                <div><strong>Categoría:</strong> <span id="articulo-categoria"></span></div>
+                <div><strong>Renglón:</strong> <span id="articulo-renglon"></span></div>
+              </div>
               <!-- Departamento destino -->
               <div class="mb-3">
                 <label for="{{ form.destino.id_for_label }}" class="form-label">Departamento</label>
@@ -63,13 +74,15 @@
 
               <!-- Stock -->
               <div class="mb-3">
-                <label class="form-label d-block">Cantidad en stock:</label>
-                <span id="stock-cantidad" class="fw-bold"></span>
+                <label class="form-label d-block">Cantidad en stock (existencia física):</label>
+                <span id="stock-cantidad" class="fw-bold">—</span>
+                <div>Disponible para asignación directa: <strong id="disponible-cantidad">—</strong></div>
+                <div id="estado-articulo" class="mt-2" role="status" aria-live="polite">Seleccione un artículo.</div>
               </div>
 
               <!-- Botón -->
               <div class="form-footer text-end mt-4">
-                <button type="submit" class="btn btn-primary">Asignar</button>
+                <button type="submit" id="guardar-asignacion" class="btn btn-primary" disabled>Asignar</button>
               </div>
             </form>
           </div>
@@ -105,40 +118,7 @@
   </div>
 </div>
 
-<!-- Script de búsqueda dinámica -->
-<script>
-  const stockPorArticulo = {{ stock_dict|safe }};
-  const inputBusqueda = document.getElementById("busqueda-articulo");
-  const sugerenciasDiv = document.getElementById("sugerencias-articulo");
-  const inputArticuloId = document.getElementById("id_articulo");
-  const stockCantidadSpan = document.getElementById("stock-cantidad");
-
-  inputBusqueda.addEventListener("input", function () {
-    const query = this.value;
-    if (query.length >= 2) {
-      fetch(`/almacen/buscar-articulos/?q=${encodeURIComponent(query)}`)
-        .then(response => response.json())
-        .then(data => {
-          sugerenciasDiv.innerHTML = "";
-          data.forEach(item => {
-            const option = document.createElement("div");
-            option.textContent = item.text || item.nombre;
-            option.className = "dropdown-item";
-            option.style.cursor = "pointer";
-            option.onclick = () => {
-              inputBusqueda.value = item.nombre;
-              inputArticuloId.value = item.id;
-              sugerenciasDiv.style.display = "none";
-              stockCantidadSpan.textContent = formatoCantidad(stockPorArticulo[item.id] || '0');
-            };
-            sugerenciasDiv.appendChild(option);
-          });
-          sugerenciasDiv.style.display = data.length ? "block" : "none";
-        });
-    } else {
-      sugerenciasDiv.style.display = "none";
-    }
-  });
-</script>
+{{ articulo_seleccionado|json_script:"articulo-seleccionado" }}
+<script src="{% static 'almacen_app/js/asignacion_directa.js' %}?v=20261104.1"></script>
 
 {% endblock %}

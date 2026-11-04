@@ -64,7 +64,8 @@ def notificar_asignacion(sender, instance, created, **kwargs):
         
         articulo = instance.articulo
         departamento = instance.destino
-        usuario = UsuarioDepartamento.objects.filter(departamento=departamento).first().usuario
+        vinculo = UsuarioDepartamento.objects.select_related('usuario').filter(departamento=departamento).first()
+        usuario = vinculo.usuario if vinculo else None
 
         if usuario and usuario.email:
             # Asegúrate de que el correo está siendo enviado
