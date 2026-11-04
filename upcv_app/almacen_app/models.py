@@ -570,8 +570,17 @@ def guardar_perfil_usuario(sender, instance, **kwargs):
 
 def existencia_general_articulo(articulo):
     ingresos = DetalleFactura.objects.filter(articulo=articulo, form1h__estado='confirmado').aggregate(total=Sum('cantidad'))['total'] or 0
+    # El ingreso de la señal en borrador no se cuenta de nuevo al confirmar.
+    # Una reversión de salida sí devuelve unidades físicas (sin reescribirla).
+    devoluciones = Kardex.objects.filter(articulo=articulo, tipo_movimiento='INGRESO', estado='reversion').aggregate(total=Sum('cantidad'))['total'] or 0
     salidas = Kardex.objects.filter(articulo=articulo, tipo_movimiento='SALIDA').aggregate(total=Sum('cantidad'))['total'] or 0
-    return ingresos - salidas
+    # Los despachos parciales aún no disparan crear_kardex_salida_despacho.
+    # Contar solo lo no reflejado en Kardex, nunca restar dos veces el despacho.
+    from django.db.models import Q
+    pendientes_kardex = sum(max(0, d.cantidad_despachada - (d.registrado or 0))
+        for d in DetalleRequerimiento.objects.filter(articulo=articulo).annotate(
+            registrado=Sum('kardex__cantidad', filter=Q(kardex__tipo_movimiento='SALIDA'))))
+    return ingresos + devoluciones - salidas - pendientes_kardex
 
 
 class DivisionAlmacen(models.Model):
@@ -623,11 +632,11 @@ class DivisionArticulo(models.Model):
 
     @property
     def total_asignado_ubicaciones(self):
-        return self.asignaciones_ubicacion.filter(activo=True).aggregate(total=Sum('cantidad_asignada'))['total'] or 0
+        return self.asignaciones_ubicacion.aggregate(total=Sum('cantidad_asignada'))['total'] or 0
 
     @property
     def total_reservado(self):
-        return self.asignaciones_ubicacion.filter(activo=True).aggregate(total=Sum('cantidad_reservada'))['total'] or 0
+        return self.asignaciones_ubicacion.aggregate(total=Sum('cantidad_reservada'))['total'] or 0
 
     @property
     def disponible_division(self):
@@ -635,20 +644,27 @@ class DivisionArticulo(models.Model):
 
     @property
     def disponible_para_solicitud(self):
-        return self.cantidad_asignada - self.total_reservado
+        consumido = self.asignaciones_ubicacion.aggregate(total=Sum('cantidad_consumida'))['total'] or 0
+        return self.cantidad_asignada - self.total_reservado - consumido
 
     def clean(self):
         if self.cantidad_asignada is None or self.cantidad_asignada <= 0:
             raise ValidationError({'cantidad_asignada': 'La cantidad debe ser mayor a cero.'})
-        total_otras = DivisionArticulo.objects.filter(articulo=self.articulo, activo=True).exclude(pk=self.pk).aggregate(total=Sum('cantidad_asignada'))['total'] or 0
-        if total_otras + self.cantidad_asignada > self.existencia_total:
+        from .disponibilidad import compromisos_articulo
+        compromisos = compromisos_articulo(self.articulo, propuesta=self)
+        if compromisos['requiere_revision']:
+            raise ValidationError({'cantidad_asignada': 'Los compromisos históricos requieren revisión; no se modificaron saldos.'})
+        if compromisos['comprometido'] > self.existencia_total:
             raise ValidationError({'cantidad_asignada': 'No puede asignar más de la existencia disponible del artículo.'})
         if self.pk and self.cantidad_asignada < self.total_asignado_ubicaciones:
             raise ValidationError({'cantidad_asignada': 'No puede ser menor a lo ya asignado a ubicaciones.'})
 
     def save(self, *args, **kwargs):
-        self.full_clean()
-        return super().save(*args, **kwargs)
+        from django.db import transaction
+        with transaction.atomic():
+            Articulo.objects.select_for_update().get(pk=self.articulo_id)
+            self.full_clean()
+            return super().save(*args, **kwargs)
 
 
 class DetalleFacturaDivision(models.Model):
@@ -706,7 +722,7 @@ class DivisionArticuloUbicacion(models.Model):
         pertenece = DivisionUbicacion.objects.filter(division=self.division_articulo.division, ubicacion=self.ubicacion, activa=True).exists()
         if not pertenece:
             raise ValidationError({'ubicacion': 'La ubicación no pertenece a esta división.'})
-        total_otras = DivisionArticuloUbicacion.objects.filter(division_articulo=self.division_articulo, activo=True).exclude(pk=self.pk).aggregate(total=Sum('cantidad_asignada'))['total'] or 0
+        total_otras = DivisionArticuloUbicacion.objects.filter(division_articulo=self.division_articulo).exclude(pk=self.pk).aggregate(total=Sum('cantidad_asignada'))['total'] or 0
         if total_otras + self.cantidad_asignada > self.division_articulo.cantidad_asignada:
             raise ValidationError({'cantidad_asignada': 'No puede asignarse más de la cantidad disponible en la división.'})
 

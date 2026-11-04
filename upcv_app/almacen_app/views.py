@@ -1,6 +1,6 @@
 from .formatos_cantidades import cantidad_formato, formato_excel_cantidad
 from .categorias_solicitud import filtrar_por_tipos, tipo_categoria
-from .disponibilidad import (fuentes_departamento, totales_departamento, bloquear_departamento, validar_y_reservar, liberar_reservas_division, resumen_global_articulo, saldo_global_sin_asignar)
+from .disponibilidad import (fuentes_departamento, totales_departamento, bloquear_departamento, validar_y_reservar, liberar_reservas_division, resumen_global_articulo)
 from datetime import datetime, timezone
 from venv import logger
 from django.forms import IntegerField
@@ -1161,7 +1161,9 @@ def es_movimiento_salida(tipo):
 
 def _procesar_movimientos_kardex(articulo):
     movimientos = list(
-        Kardex.objects.filter(articulo=articulo)
+        Kardex.objects.filter(articulo=articulo).exclude(
+            Q(tipo_movimiento='INGRESO', fuente_factura__isnull=False)
+            & ~Q(fuente_factura__form1h__estado='confirmado') & ~Q(estado='reversion'))
         .select_related('fuente_factura')
         .order_by('fecha', 'id')
     )
@@ -1460,9 +1462,14 @@ def construir_stock_list_administrador():
         reservado_total = reservado_dict.get(articulo_id, Decimal('0'))
         consumido_total = consumido_dict.get(articulo_id, Decimal('0'))
         asignado_total = asignado_directo + asignado_divisiones
-        disponible_real = saldo_global_sin_asignar(total_ingresado, asignado_directo, asignado_divisiones)
-        requiere_revision = disponible_real < 0
-        disponible_general = max(0, disponible_real)
+        globales = resumen_global_articulo(Articulo.objects.get(pk=articulo_id))
+        requiere_revision = globales['requiere_revision']
+        disponible_general = globales['disponible_para_division']
+        asignado_directo = globales['asignado_directo']
+        asignado_divisiones = globales['asignado_divisiones']
+        asignado_total = asignado_directo + asignado_divisiones
+        reservado_total = globales['reservado']
+        consumido_total = globales['consumido']
         departamentos = ", ".join(asignaciones_dept_dict.get(articulo_id, [])) or "Sin asignar"
         divisiones = ", ".join(divisiones_dict.get(articulo_id, [])) or "Sin división"
 
@@ -1673,6 +1680,7 @@ def asignar_articulo_division(request, articulo_id):
         else:
             try:
                 with transaction.atomic():
+                    Articulo.objects.select_for_update().get(pk=articulo.pk)
                     division_articulo = DivisionArticulo.objects.select_for_update().filter(
                         division=division,
                         articulo=articulo,
@@ -1801,7 +1809,7 @@ def crear_asignacion_detalle(request):
         articulo_id = item['articulo']
         total_stock = item['stock_total'] or 0
         total_asignado = next((a['asignado_total'] for a in asignado_por_articulo if a['articulo'] == articulo_id), 0)
-        stock_disponible = total_stock - (total_asignado or 0)
+        stock_disponible = resumen_global_articulo(Articulo.objects.get(pk=articulo_id))['disponible_para_division']
         stock_dict[articulo_id] = stock_disponible
 
     ultima_asignacion = AsignacionDetalleFactura.objects.order_by('-fecha_asignacion').first()
@@ -1878,7 +1886,7 @@ def crear_asignacion_detalle_articulo(request):
     for item in ingreso_dict.values():
         total_ingresado = item.get('total_ingresado') or 0
         total_asignado = item.get('total_asignado') or 0
-        disponible = total_ingresado - total_asignado
+        disponible = resumen_global_articulo(Articulo.objects.get(pk=item['articulo__id']))['disponible_para_division']
         departamentos = ", ".join(asignaciones_dept_dict.get(item['articulo__id'], [])) or "Sin asignar"
 
         stock_list.append({
@@ -1955,7 +1963,10 @@ def confirmar_form1h(request, form1h_id):
         messages.warning(request, 'Este Formulario 1H no se puede confirmar en su estado actual.')
         return redirect('almacen:agregar_detalle_factura', form1h_id=form1h_id)
 
-    detalles = list(formulario.detalles.select_related('articulo').select_for_update())
+    # Serializa también formularios distintos que afectan al mismo artículo.
+    articulo_ids = formulario.detalles.values_list('articulo_id', flat=True)
+    list(Articulo.objects.select_for_update().filter(pk__in=articulo_ids).order_by('pk'))
+    detalles = list(formulario.detalles.select_related('articulo').select_for_update(of=('self',)))
     if not detalles:
         messages.error(request, 'No puede confirmar un Formulario 1H sin detalles.')
         return redirect('almacen:agregar_detalle_factura', form1h_id=form1h_id)
@@ -1964,6 +1975,10 @@ def confirmar_form1h(request, form1h_id):
         messages.error(request, 'No existen divisiones activas para asignar los artículos del Formulario 1H.')
         return redirect('almacen:agregar_detalle_factura', form1h_id=form1h_id)
 
+    campos = [request.POST.getlist(k) for k in ('detalle_id', 'division_id', 'cantidad_asignada')]
+    if len({len(c) for c in campos}) != 1 or set(campos[0]) != {str(d.pk) for d in detalles}:
+        messages.error(request, 'La distribución contiene filas inválidas o incompletas.')
+        return redirect('almacen:agregar_detalle_factura', form1h_id=form1h_id)
     distribucion = defaultdict(lambda: defaultdict(Decimal))
     for detalle_id, division_id, cantidad_texto in zip(
         request.POST.getlist('detalle_id'),
@@ -1974,7 +1989,7 @@ def confirmar_form1h(request, form1h_id):
             cantidad = Decimal(cantidad_texto)
         except (TypeError, InvalidOperation):
             cantidad = Decimal('0')
-        if cantidad <= 0 or division_id not in divisiones:
+        if not cantidad.is_finite() or cantidad <= 0 or division_id not in divisiones:
             messages.error(request, 'Debe asignar todos los artículos del Formulario 1H a divisiones antes de confirmar.')
             transaction.set_rollback(True)
             return redirect('almacen:agregar_detalle_factura', form1h_id=form1h_id)
@@ -1994,28 +2009,40 @@ def confirmar_form1h(request, form1h_id):
             transaction.set_rollback(True)
             return redirect('almacen:agregar_detalle_factura', form1h_id=form1h_id)
 
-    # Confirmar primero hace que la validación de existencia de DivisionArticulo
-    # incluya este ingreso, sin exponer un estado parcial gracias a atomic().
-    formulario.estado = 'confirmado'
-    formulario.save(update_fields=['estado', 'fecha_actualizacion'])
-    for detalle in detalles:
-        for division_id, cantidad in distribucion[str(detalle.pk)].items():
-            DetalleFacturaDivision.objects.create(
-                detalle_factura=detalle,
-                division=divisiones[division_id],
-                cantidad_asignada=cantidad,
-                creado_por=request.user,
-            )
-            asignacion, creada = DivisionArticulo.objects.select_for_update().get_or_create(
-                division=divisiones[division_id],
-                articulo=detalle.articulo,
-                defaults={'cantidad_asignada': cantidad, 'asignado_por': request.user, 'activo': True},
-            )
-            if not creada:
-                asignacion.cantidad_asignada += cantidad
-                asignacion.activo = True
-                asignacion.asignado_por = request.user
-                asignacion.save()
+    try:
+        with transaction.atomic():
+            # Confirmar primero hace que la validación de existencia de DivisionArticulo
+            # incluya este ingreso, sin exponer un estado parcial gracias a atomic().
+            for detalle in detalles:
+                if detalle.asignaciones_division.exists():
+                    raise ValidationError('El borrador ya tiene una distribución histórica; requiere revisión.')
+                ingresos = Kardex.objects.filter(fuente_factura=detalle, tipo_movimiento='INGRESO', estado='activo')
+                if ingresos.count() != 1 or ingresos.first().cantidad != detalle.cantidad:
+                    raise ValidationError('El ingreso Kardex del detalle requiere revisión: ausente, duplicado o con cantidad diferente.')
+            formulario.estado = 'confirmado'
+            formulario.save(update_fields=['estado', 'fecha_actualizacion'])
+            for detalle in detalles:
+                for division_id, cantidad in distribucion[str(detalle.pk)].items():
+                    DetalleFacturaDivision.objects.create(
+                        detalle_factura=detalle,
+                        division=divisiones[division_id],
+                        cantidad_asignada=cantidad,
+                        creado_por=request.user,
+                    )
+                    asignacion, creada = DivisionArticulo.objects.select_for_update().get_or_create(
+                        division=divisiones[division_id],
+                        articulo=detalle.articulo,
+                        defaults={'cantidad_asignada': cantidad, 'asignado_por': request.user, 'activo': True},
+                    )
+                    if not creada:
+                        asignacion.cantidad_asignada += cantidad
+                        asignacion.activo = True
+                        asignacion.asignado_por = request.user
+                        asignacion.save()
+
+    except ValidationError as exc:
+        messages.error(request, '; '.join(exc.messages))
+        return redirect('almacen:agregar_detalle_factura', form1h_id=form1h_id)
 
     messages.success(request, 'Formulario 1H confirmado y artículos asignados a divisiones correctamente.')
 
@@ -2833,7 +2860,9 @@ def _calcular_movimientos_valorizados(articulo, departamento_ids, fecha_inicio=N
         'tuvo_movimientos': False,
     }
 
-    movimientos = Kardex.objects.filter(articulo=articulo).select_related(
+    movimientos = Kardex.objects.filter(articulo=articulo).exclude(
+        Q(tipo_movimiento='INGRESO', fuente_factura__isnull=False)
+        & ~Q(fuente_factura__form1h__estado='confirmado') & ~Q(estado='reversion')).select_related(
         'fuente_factura', 'fuente_asignacion__destino', 'fuente_despacho__requerimiento__departamento'
     ).order_by('fecha', 'id')
 

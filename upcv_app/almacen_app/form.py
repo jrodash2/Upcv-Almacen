@@ -141,34 +141,24 @@ class AsignacionDetalleFacturaForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Obtener artículos con stock total > 0 (considerando lo asignado)
-        # 1. Sumar cantidades en DetalleFactura
-        stock_por_articulo = DetalleFactura.objects.values('articulo').annotate(
-            total_stock=Coalesce(Sum('cantidad'), 0)
-        )
+        from .disponibilidad import resumen_global_articulo
+        ids = [a.pk for a in Articulo.objects.filter(detalles_factura__form1h__estado='confirmado').distinct()
+               if resumen_global_articulo(a)['disponible_para_division'] > 0]
+        self.fields['articulo'].queryset = Articulo.objects.filter(pk__in=ids)
 
-        # 2. Sumar cantidades asignadas
-        asignado_por_articulo = AsignacionDetalleFactura.objects.values('articulo').annotate(
-            total_asignado=Coalesce(Sum('cantidad_asignada'), 0)
-        )
-
-        # 3. Construir diccionario de stock disponible por artículo
-        stock_disponible = {}
-        for item in stock_por_articulo:
-            articulo_id = item['articulo']
-            total_stock = item['total_stock']
-            total_asignado = next((a['total_asignado'] for a in asignado_por_articulo if a['articulo'] == articulo_id), 0)
-            disponible = total_stock - total_asignado
-            if disponible > 0:
-                stock_disponible[articulo_id] = disponible
-
-        # 4. Filtrar artículos cuyo id está en stock_disponible (es decir, con stock > 0)
-        queryset_filtrado = Articulo.objects.filter(id__in=stock_disponible.keys())
-
-        self.fields['articulo'].queryset = queryset_filtrado
-        
         for field in self.fields.values():
             field.widget.attrs.update({'class': 'form-control'})
+
+    def save(self, commit=True):
+        from django.db import transaction
+        from .disponibilidad import resumen_global_articulo
+        # La validación del navegador no protege de una confirmación concurrente.
+        with transaction.atomic():
+            Articulo.objects.select_for_update().get(pk=self.instance.articulo_id)
+            saldo = resumen_global_articulo(self.instance.articulo)['disponible_para_division']
+            if self.instance.cantidad_asignada > saldo:
+                raise ValidationError('No puede asignar más de la existencia disponible del artículo.')
+            return super().save(commit=commit)
 
 class DetalleFacturaForm(forms.ModelForm):
     class Meta:

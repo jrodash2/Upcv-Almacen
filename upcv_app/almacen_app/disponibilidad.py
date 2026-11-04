@@ -170,8 +170,42 @@ def liberar_reservas_division(solicitud):
         source.save(update_fields=['cantidad_reservada', 'fecha_actualizacion'])
 
 
-def saldo_global_sin_asignar(ingresado, directo, divisiones):
-    return Decimal(ingresado) - Decimal(directo) - Decimal(divisiones)
+def compromisos_articulo(articulo, propuesta=None):
+    """Asignación histórica menos consumo, sin volver a restar las reservas.
+
+    Las ubicaciones son un desglose del presupuesto de división, no otro
+    compromiso. Un consumo sin origen conocido nunca libera una división.
+    Incluye orígenes inactivos: desactivar no borra compromisos ni consumos.
+    `propuesta` reemplaza la cantidad persistida al validar full_clean().
+    """
+    from .models import DivisionArticulo
+    divisiones = list(DivisionArticulo.objects.filter(articulo=articulo))
+    if propuesta is not None:
+        divisiones = [d for d in divisiones if d.pk != propuesta.pk]
+        divisiones.append(propuesta)
+    comprometido = reservado = consumido = ZERO
+    revision = False
+    for division in divisiones:
+        totales = division.asignaciones_ubicacion.aggregate(
+            consumido=Sum('cantidad_consumida'), reservado=Sum('cantidad_reservada'),
+            asignado=Sum('cantidad_asignada')) if division.pk else {}
+        gasto = totales.get('consumido') or ZERO
+        reserva = totales.get('reservado') or ZERO
+        neto = Decimal(division.cantidad_asignada) - gasto
+        revision |= neto < reserva or (totales.get('asignado') or ZERO) > division.cantidad_asignada
+        comprometido += max(ZERO, neto)
+        reservado += reserva
+        consumido += gasto
+    deptos = Departamento.objects.filter(asignaciondetallefactura__articulo=articulo).distinct()
+    for depto in deptos:
+        for fila in fuentes_departamento(depto):
+            if fila['origen'] == 'Directo' and fila['articulo'].pk == articulo.pk:
+                comprometido += max(ZERO, fila['cantidad_asignada'] - fila['consumido'])
+                reservado += fila['reservado']
+                consumido += fila['consumido']
+                revision |= fila['requiere_revision']
+    return dict(comprometido=comprometido, reservado=reservado,
+                consumido=consumido, requiere_revision=revision)
 
 
 def resumen_global_articulo(articulo):
@@ -181,20 +215,14 @@ def resumen_global_articulo(articulo):
                         .aggregate(total=Sum('cantidad'))['total'] or 0)
     directo = Decimal(AsignacionDetalleFactura.objects.filter(articulo=articulo)
                       .aggregate(total=Sum('cantidad_asignada'))['total'] or 0)
-    divisiones = DivisionArticulo.objects.filter(articulo=articulo, activo=True)
+    divisiones = DivisionArticulo.objects.filter(articulo=articulo)
     asignado_divisiones = divisiones.aggregate(total=Sum('cantidad_asignada'))['total'] or ZERO
-    reservado_directo = consumido_directo = ZERO
-    deptos = Departamento.objects.filter(asignaciondetallefactura__articulo=articulo).distinct()
-    for departamento in deptos:
-        for fila in fuentes_departamento(departamento):
-            if fila['articulo'].pk == articulo.pk and fila['origen'] == 'Directo':
-                reservado_directo += fila['reservado']
-                consumido_directo += fila['consumido']
-    ubicaciones = DivisionArticuloUbicacion.objects.filter(division_articulo__articulo=articulo, activo=True)
-    reservado_division = ubicaciones.aggregate(total=Sum('cantidad_reservada'))['total'] or ZERO
-    consumido_division = ubicaciones.aggregate(total=Sum('cantidad_consumida'))['total'] or ZERO
-    sin_asignar = saldo_global_sin_asignar(ingresado, directo, asignado_divisiones)
+    from .models import existencia_general_articulo
+    compromisos = compromisos_articulo(articulo)
+    fisico = Decimal(existencia_general_articulo(articulo))
+    sin_asignar = fisico - compromisos['comprometido']
     return dict(total_ingresado=ingresado, asignado_directo=directo, asignado_divisiones=asignado_divisiones,
-                reservado=reservado_directo + reservado_division,
-                consumido=consumido_directo + consumido_division,
-                disponible_para_division=max(ZERO, sin_asignar), requiere_revision=sin_asignar < 0)
+                reservado=compromisos['reservado'], consumido=compromisos['consumido'],
+                existencia_fisica=fisico, comprometido=compromisos['comprometido'],
+                disponible_para_division=ZERO if compromisos['requiere_revision'] else max(ZERO, sin_asignar),
+                requiere_revision=sin_asignar < 0 or compromisos['requiere_revision'])
