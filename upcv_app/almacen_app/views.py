@@ -1,3 +1,5 @@
+import uuid
+
 from .formatos_cantidades import cantidad_formato, formato_excel_cantidad
 from .categorias_solicitud import filtrar_por_tipos, tipo_categoria
 from .disponibilidad import (fuentes_departamento, totales_departamento, bloquear_departamento, validar_y_reservar, liberar_reservas_division, resumen_global_articulo)
@@ -1480,6 +1482,11 @@ def construir_stock_list_administrador():
             'categoria': item.get('articulo__categoria__nombre'),
             'articulo': item['articulo__nombre'],
             'ingresado': total_ingresado,
+            'existencia_fisica': globales['existencia_fisica'],
+            'liberado_divisiones': globales['liberado_divisiones'],
+            'comprometido_directo': globales['comprometido_directo'],
+            'comprometido_divisiones': globales['comprometido_divisiones'],
+            'comprometido_vigente': globales['comprometido'],
             'asignado': asignado_total,
             'asignado_directo': asignado_directo,
             'asignado_divisiones': asignado_divisiones,
@@ -3065,6 +3072,8 @@ def articulo_disponibilidad_json(request, articulo_id):
         'asignado_directo': str(globales['asignado_directo']),
         'consumido': str(globales['consumido']),
         'asignado_divisiones': str(asignado_divisiones),
+        'comprometido_divisiones': str(globales['comprometido_divisiones']),
+        'liberado_divisiones': str(globales['liberado_divisiones']),
         'asignado_ubicaciones': str(asignado_ubicaciones),
         'reservado': str(reservado),
         'disponible_sin_reservar': str(disponible_sin_reservar),
@@ -3099,6 +3108,26 @@ def desasignar_articulo_ubicacion(request, asignacion_id):
     asignacion.save(update_fields=['cantidad_asignada', 'activo', 'fecha_actualizacion'])
     messages.success(request, f'Se desasignaron {cantidad_formato(cantidad)} unidades correctamente.')
     return redirect(redirect_to)
+
+@login_required
+@grupo_requerido('Administrador')
+@require_POST
+def liberar_stock_division_view(request, asignacion_id):
+    from .liberacion_division import liberar_stock_division
+    asignacion = get_object_or_404(DivisionArticulo, pk=asignacion_id)
+    try:
+        registro, creado = liberar_stock_division(asignacion.pk,
+            request.POST.get('cantidad'), request.POST.get('justificacion'),
+            request.user, request.POST.get('operacion'))
+    except ValidationError as exc:
+        messages.error(request, '; '.join(exc.messages))
+    except IntegrityError:
+        messages.error(request, 'La operación no se registró. Recargue y compruebe el historial antes de reintentar.')
+    else:
+        messages.success(request, f'Se liberaron {cantidad_formato(registro.cantidad)} unidades.' if creado
+                         else 'Esta liberación ya estaba registrada; no se duplicó.')
+    return redirect('almacen:division_detail', pk=asignacion.division_id)
+
 
 @login_required
 @grupo_requerido('Administrador', 'Almacen')
@@ -3184,7 +3213,16 @@ def division_detail(request, pk):
             messages.error(request, e.message_dict if hasattr(e, 'message_dict') else e.messages)
         return redirect('almacen:division_detail', pk=division.pk)
     ubicaciones = division.ubicaciones.select_related('ubicacion').order_by('ubicacion__nombre')
-    return render(request, 'almacen/divisiones/detail.html', {'division': division, 'ubicacion_form': ubicacion_form, 'articulo_form': articulo_form, 'ubicaciones': ubicaciones})
+    from .liberacion_division import estado_liberacion
+    articulos = list(division.articulos.select_related('articulo__categoria'))
+    for articulo in articulos:
+        articulo.liberacion_estado = estado_liberacion(articulo)
+        articulo.operacion_liberacion = uuid.uuid4()
+    es_administrador = request.user.is_superuser or request.user.groups.filter(name='Administrador').exists()
+    return render(request, 'almacen/divisiones/detail.html', {
+        'division': division, 'ubicacion_form': ubicacion_form, 'articulo_form': articulo_form,
+        'ubicaciones': ubicaciones, 'articulos_division': articulos, 'es_administrador': es_administrador,
+        'liberaciones': division.liberaciones.select_related('articulo', 'usuario', 'division', 'asignacion')})
 
 @login_required
 @grupo_requerido('Administrador', 'Almacen')
@@ -3229,9 +3267,21 @@ def division_ubicacion_eliminar(request, pk):
 @login_required
 @grupo_requerido('Administrador', 'Almacen')
 def division_control(request):
-    articulos = DivisionArticulo.objects.select_related('division','articulo','articulo__categoria').filter(activo=True).order_by('division__nombre','articulo__nombre')
+    articulos = DivisionArticulo.objects.select_related('division','articulo','articulo__categoria').order_by('division__nombre','articulo__nombre')
     asignaciones = DivisionArticuloUbicacion.objects.filter(activo=True).select_related('division_articulo__division', 'division_articulo__articulo', 'ubicacion').order_by('division_articulo__division__nombre', 'ubicacion__nombre', 'division_articulo__articulo__nombre')
-    return render(request, 'almacen/divisiones/control.html', {'articulos': articulos, 'asignaciones': asignaciones})
+    totales = {}
+    for articulo in articulos:
+        fila = totales.setdefault(articulo.division_id, dict(division=articulo.division,
+            historico=Decimal('0'), liberado=Decimal('0'), consumido=Decimal('0'),
+            reservado=Decimal('0'), comprometido=Decimal('0'), disponible=Decimal('0')))
+        fila['historico'] += articulo.cantidad_asignada
+        fila['liberado'] += articulo.total_liberado
+        fila['consumido'] += articulo.total_consumido
+        fila['reservado'] += articulo.total_reservado
+        fila['comprometido'] += articulo.compromiso_vigente
+        fila['disponible'] += articulo.disponible_division
+    return render(request, 'almacen/divisiones/control.html', {
+        'articulos': articulos, 'asignaciones': asignaciones, 'totales_division': totales.values()})
 
 @login_required
 @grupo_requerido('Gestor', 'Departamento')
@@ -3251,6 +3301,7 @@ def autoasignar_division_articulo(request, pk):
     if not depto:
         messages.error(request, 'No pertenece a esta división.'); return redirect('almacen:mis_divisiones')
     if request.method == 'POST':
+        Articulo.objects.select_for_update().get(pk=da.articulo_id)
         bloquear_departamento(depto.departamento)
         da = DivisionArticulo.objects.select_for_update().get(pk=da.pk)
         try:

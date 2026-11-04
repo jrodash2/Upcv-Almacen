@@ -162,6 +162,7 @@ urlpatterns = [
     path('almacen/mis-divisiones/', views.mis_divisiones, name='mis_divisiones'),
     path('almacen/divisiones/articulo/<int:pk>/autoasignar/', views.autoasignar_division_articulo, name='autoasignar_division_articulo'),
     path('almacen/mis-articulos-asignados/', views.mis_articulos_asignados, name='mis_articulos_asignados'),
+    path('almacen/divisiones/articulo/<int:asignacion_id>/liberar/', views.liberar_stock_division_view, name='liberar_stock_division'),
     path('almacen/divisiones/asignacion/<int:asignacion_id>/desasignar/', views.desasignar_articulo_ubicacion, name='desasignar_articulo_ubicacion'),
 
 ]

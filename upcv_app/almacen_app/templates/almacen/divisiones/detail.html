@@ -160,7 +160,7 @@
                     <div class="mb-2"><span class="badge badge-light-primary" id="articulo-codigo">-</span> <strong id="articulo-nombre">Seleccione un artículo</strong></div>
                     <div class="row g-3">
                       <div class="col-md-3"><small class="text-muted">Existencia total</small><h5 id="existencia-total">0</h5></div>
-                      <div class="col-md-3"><small class="text-muted">Asignado</small><h5 id="asignado-total">0</h5></div>
+                      <div class="col-md-3"><small class="text-muted">Compromiso divisiones</small><h5 id="asignado-total">0</h5></div>
                       <div class="col-md-3"><small class="text-muted">Reservado</small><h5 id="reservado-total">0</h5></div>
                       <div class="col-md-3"><small class="text-muted">Disponible</small><h5 id="disponible-total" class="text-success">0</h5></div>
                     </div>
@@ -174,10 +174,10 @@
             <div class="dt-ext table-responsive custom-scrollbar">
               <table class="display datatables" id="tabla-division-articulos">
                 <thead>
-                  <tr><th>Código</th><th>Renglón</th><th>Artículo</th><th>Asignado</th><th>Ubicaciones</th><th>Reservado</th><th>Disponible</th></tr>
+                  <tr><th>Código</th><th>Renglón</th><th>Artículo</th><th>Asignado histórico</th><th>Ubicaciones</th><th>Reservado</th><th>Consumido</th><th>Liberado</th><th>Compromiso vigente</th><th>Disponible</th><th>Acciones</th></tr>
                 </thead>
                 <tbody>
-                  {% for a in division.articulos.all %}
+                  {% for a in articulos_division %}
                   <tr>
                     <td><span class="badge badge-light-primary">{{ a.articulo.codigo }}</span></td>
                     <td>{{ a.articulo.renglon_presupuestario|default:'S/R' }}</td>
@@ -185,9 +185,22 @@
                     <td>{{ a.cantidad_asignada|cantidad_formato }}</td>
                     <td>{{ a.total_asignado_ubicaciones|cantidad_formato }}</td>
                     <td>{{ a.total_reservado|cantidad_formato }}</td>
+                    <td>{{ a.liberacion_estado.consumido|cantidad_formato }}</td>
+                    <td>{{ a.liberacion_estado.liberado|cantidad_formato }}</td>
+                    <td>{{ a.liberacion_estado.compromiso_vigente|cantidad_formato }}</td>
                     <td><span class="badge badge-light-info">{{ a.disponible_division|cantidad_formato }}</span></td>
+                    <td>
+                      {% if es_administrador %}
+                        {% if a.liberacion_estado.maximo_liberable > 0 %}
+                        <button type="button" class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#liberarStock{{ a.pk }}"><i data-feather="unlock"></i> Liberar stock</button>
+                        {% else %}
+                        <button type="button" class="btn btn-outline-secondary btn-sm" disabled>Liberar stock</button>
+                        <small class="d-block text-muted">{{ a.liberacion_estado.motivo }}</small>
+                        {% endif %}
+                      {% endif %}
+                    </td>
                   </tr>
-                  {% empty %}<tr><td colspan="7" class="text-center text-muted">Sin artículos asignados.</td></tr>{% endfor %}
+                  {% empty %}<tr><td colspan="12" class="text-center text-muted">Sin artículos asignados.</td></tr>{% endfor %}
                 </tbody>
               </table>
             </div>
@@ -203,7 +216,7 @@
           <table class="display datatables" id="tabla-division-asignaciones">
             <thead><tr><th>Código</th><th>Renglón</th><th>Artículo</th><th>Ubicación</th><th>Asignado</th><th>Reservado</th><th>Consumido</th><th>Disponible</th><th class="text-center">Acciones</th></tr></thead>
             <tbody>
-              {% for a in division.articulos.all %}{% for x in a.asignaciones_ubicacion.all %}
+              {% for a in articulos_division %}{% for x in a.asignaciones_ubicacion.all %}
               <tr>
                 <td><span class="badge badge-light-primary">{{ a.articulo.codigo }}</span></td>
                 <td>{{ a.articulo.renglon_presupuestario|default:'S/R' }}</td>
@@ -221,10 +234,23 @@
         </div>
       </div>
     </div>
+<div class="card">
+  <div class="card-header pb-0 card-no-border"><h5>Historial de Liberaciones</h5></div>
+  <div class="card-body"><div class="dt-ext table-responsive custom-scrollbar">
+    <table class="display datatables" id="tabla-liberaciones-division">
+      <thead><tr><th>Fecha</th><th>Código</th><th>Artículo</th><th>Cantidad liberada</th><th>Justificación</th><th>Usuario</th><th>División</th><th>Asignación</th><th>Tipo</th><th>Operación</th></tr></thead>
+      <tbody>{% for registro in liberaciones %}<tr>
+        <td>{{ registro.fecha|date:"d/m/Y H:i:s" }}</td><td>{{ registro.articulo.codigo }}</td><td>{{ registro.articulo.nombre }}</td>
+        <td>{{ registro.cantidad|cantidad_formato }}</td><td>{{ registro.justificacion }}</td><td>{{ registro.usuario }}</td><td>{{ registro.division }}</td>
+        <td>#{{ registro.asignacion_id }}</td><td>{{ registro.get_tipo_display }}</td><td>{{ registro.operacion }}</td>
+      </tr>{% empty %}<tr><td colspan="10" class="text-center text-muted">Sin liberaciones registradas.</td></tr>{% endfor %}</tbody>
+    </table>
+  </div></div>
+</div>
   </div>
 </div>
 
-{% for a in division.articulos.all %}
+{% for a in articulos_division %}
   {% for x in a.asignaciones_ubicacion.all %}
   <div class="modal fade" id="desasignarDetalle{{ x.id }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -261,6 +287,11 @@
   </div>
   {% endfor %}
 {% endfor %}
+
+{% if es_administrador %}{% for a in articulos_division %}{% if a.liberacion_estado.maximo_liberable > 0 %}
+  {% include 'almacen/divisiones/_liberar_stock.html' %}
+{% endif %}{% endfor %}{% endif %}
+<script src="{% static 'almacen_app/js/liberacion_division.js' %}?v=20261104.1"></script>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
@@ -305,7 +336,7 @@ document.addEventListener("DOMContentLoaded", function () {
     fields.codigo.textContent = data.codigo;
     fields.nombre.textContent = data.nombre;
     fields.existencia.textContent = formatoCantidad(data.existencia_total);
-    fields.asignado.textContent = formatoCantidad(data.asignado_divisiones);
+    fields.asignado.textContent = formatoCantidad(data.comprometido_divisiones);
     fields.reservado.textContent = formatoCantidad(data.reservado);
     fields.disponible.textContent = formatoCantidad(data.disponible_para_division);
     fields.disponible.classList.toggle("text-danger", data.revisar);

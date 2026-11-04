@@ -1,0 +1,39 @@
+{% load cantidad_filters l10n %}
+<div class="modal fade" id="liberarStock{{ a.pk }}" tabindex="-1" aria-labelledby="tituloLiberar{{ a.pk }}" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <form method="post" action="{% url 'almacen:liberar_stock_division' a.pk %}" class="form-liberar-stock">
+        {% csrf_token %}
+        <input type="hidden" name="operacion" value="{{ a.operacion_liberacion }}">
+        <div class="modal-header">
+          <h5 class="modal-title" id="tituloLiberar{{ a.pk }}">Liberar stock de división</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <p><strong>{{ a.articulo.codigo }} — {{ a.articulo.nombre }}</strong></p>
+          <p>Categoría: {{ a.articulo.categoria.nombre|default:'S/C' }} · Renglón: {{ a.articulo.renglon_presupuestario|default:'S/R' }}</p>
+          <p>División de origen: {{ division.nombre }} · Asignación #{{ a.pk }}</p>
+          <div class="row g-3">
+            <div class="col-sm-6">Asignado acumulado: <strong>{{ a.liberacion_estado.asignado|cantidad_formato }}</strong></div>
+            <div class="col-sm-6">Distribuido a ubicaciones: <strong>{{ a.liberacion_estado.distribuido|cantidad_formato }}</strong></div>
+            <div class="col-sm-6">Reservado: <strong>{{ a.liberacion_estado.reservado|cantidad_formato }}</strong></div>
+            <div class="col-sm-6">Consumido: <strong>{{ a.liberacion_estado.consumido|cantidad_formato }}</strong></div>
+            <div class="col-sm-6">Liberado anteriormente: <strong>{{ a.liberacion_estado.liberado|cantidad_formato }}</strong></div>
+            <div class="col-sm-6">Compromiso vigente: <strong>{{ a.liberacion_estado.compromiso_vigente|cantidad_formato }}</strong></div>
+            <div class="col-sm-6">Disponible en división: <strong>{{ a.liberacion_estado.disponible_division|cantidad_formato }}</strong></div>
+            <div class="col-sm-6">Máximo realmente liberable: <strong class="text-success">{{ a.liberacion_estado.maximo_liberable|cantidad_formato }}</strong></div>
+          </div>
+          <div class="alert alert-info mt-3">La liberación devuelve disponibilidad al almacén. No cambia la existencia física ni genera movimientos Kardex. Las ubicaciones conservan sus cantidades, reservas y consumos.</div>
+          <label class="form-label" for="cantidadLiberar{{ a.pk }}">Cantidad a liberar *</label>
+          <input type="number" id="cantidadLiberar{{ a.pk }}" name="cantidad" class="form-control" min="0.01" step="0.01" max="{{ a.liberacion_estado.maximo_liberable|unlocalize }}" value="{{ a.liberacion_estado.maximo_liberable|unlocalize }}" required>
+          <label class="form-label mt-3" for="justificacionLiberar{{ a.pk }}">Justificación *</label>
+          <textarea id="justificacionLiberar{{ a.pk }}" name="justificacion" class="form-control" rows="3" maxlength="2000" placeholder="Explique el motivo de la liberación" required></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-outline-warning">Confirmar liberación</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

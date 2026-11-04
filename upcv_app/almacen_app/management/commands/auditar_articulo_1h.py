@@ -26,7 +26,11 @@ class Command(BaseCommand):
                      'existencia_general': m.existencia_general_articulo(articulo)}
             from almacen_app.disponibilidad import resumen_global_articulo
             datos['resumen'] = resumen_global_articulo(articulo)
+            from almacen_app.liberacion_division import estado_liberacion
+            datos['liberacion_por_division'] = [dict(asignacion_id=a.pk, division_id=a.division_id,
+                **estado_liberacion(a)) for a in m.DivisionArticulo.objects.filter(articulo=articulo)]
             consultas = {
+                'liberaciones_division': m.LiberacionStockDivision.objects.filter(articulo=articulo).values(),
                 'ingresos': m.DetalleFactura.objects.filter(articulo=articulo).values(
                     'id', 'form1h_id', 'form1h__estado', 'form1h__numero_serie', 'cantidad'),
                 'kardex': m.Kardex.objects.filter(articulo=articulo).values(

@@ -22,6 +22,31 @@
 
   <div class="container-fluid">
     <div class="card">
+      <div class="card-header pb-0 card-no-border"><h5>Totales por división</h5></div>
+      <div class="card-body"><div class="dt-ext table-responsive custom-scrollbar">
+        <table class="display datatables" id="tabla-control-totales">
+          <thead><tr><th>División</th><th>Asignado histórico</th><th>Liberado</th><th>Consumido</th><th>Reservado</th><th>Compromiso vigente</th><th>Disponible sin distribuir</th></tr></thead>
+          <tbody>{% for total in totales_division %}<tr>
+            <td>{{ total.division }}</td><td>{{ total.historico|cantidad_formato }}</td><td>{{ total.liberado|cantidad_formato }}</td>
+            <td>{{ total.consumido|cantidad_formato }}</td><td>{{ total.reservado|cantidad_formato }}</td><td>{{ total.comprometido|cantidad_formato }}</td><td>{{ total.disponible|cantidad_formato }}</td>
+          </tr>{% empty %}<tr><td colspan="7" class="text-center text-muted">Sin artículos asignados.</td></tr>{% endfor %}</tbody>
+        </table>
+      </div></div>
+    </div>
+    <div class="card">
+      <div class="card-header pb-0 card-no-border"><h5>Compromisos por división</h5></div>
+      <div class="card-body"><div class="dt-ext table-responsive custom-scrollbar">
+        <table class="display datatables" id="tabla-control-compromisos">
+          <thead><tr><th>División</th><th>Código</th><th>Artículo</th><th>Asignado histórico</th><th>Liberado</th><th>Consumido</th><th>Reservado</th><th>Compromiso vigente</th><th>Disponible sin distribuir</th></tr></thead>
+          <tbody>{% for a in articulos %}<tr>
+            <td>{{ a.division }}{% if not a.activo %}<small class="d-block text-muted">Asignación inactiva con historial conservado</small>{% endif %}</td><td>{{ a.articulo.codigo }}</td><td>{{ a.articulo.nombre }}</td>
+            <td>{{ a.cantidad_asignada|cantidad_formato }}</td><td>{{ a.total_liberado|cantidad_formato }}</td><td>{{ a.total_consumido|cantidad_formato }}</td>
+            <td>{{ a.total_reservado|cantidad_formato }}</td><td>{{ a.compromiso_vigente|cantidad_formato }}</td><td>{{ a.disponible_division|cantidad_formato }}</td>
+          </tr>{% empty %}<tr><td colspan="9" class="text-center text-muted">Sin artículos asignados.</td></tr>{% endfor %}</tbody>
+        </table>
+      </div></div>
+    </div>
+    <div class="card">
       <div class="card-header pb-0 card-no-border">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
           <div>

@@ -1,3 +1,5 @@
+import uuid
+
 from asyncio import open_connection
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -627,6 +629,25 @@ class DivisionArticulo(models.Model):
         return f"{self.division} - {self.articulo}"
 
     @property
+    def total_liberado(self):
+        if not self.pk:
+            return 0
+        return self.liberaciones.aggregate(total=Sum('cantidad'))['total'] or 0
+
+    @property
+    def cantidad_vigente(self):
+        # La asignación acumulada no se reescribe al liberar.
+        return self.cantidad_asignada - self.total_liberado
+
+    @property
+    def total_consumido(self):
+        return self.asignaciones_ubicacion.aggregate(total=Sum('cantidad_consumida'))['total'] or 0
+
+    @property
+    def compromiso_vigente(self):
+        return self.cantidad_vigente - self.total_consumido
+
+    @property
     def existencia_total(self):
         return existencia_general_articulo(self.articulo)
 
@@ -640,12 +661,12 @@ class DivisionArticulo(models.Model):
 
     @property
     def disponible_division(self):
-        return self.cantidad_asignada - self.total_asignado_ubicaciones
+        return self.cantidad_vigente - self.total_asignado_ubicaciones
 
     @property
     def disponible_para_solicitud(self):
         consumido = self.asignaciones_ubicacion.aggregate(total=Sum('cantidad_consumida'))['total'] or 0
-        return self.cantidad_asignada - self.total_reservado - consumido
+        return self.cantidad_vigente - self.total_reservado - consumido
 
     def clean(self):
         if self.cantidad_asignada is None or self.cantidad_asignada <= 0:
@@ -659,7 +680,7 @@ class DivisionArticulo(models.Model):
             raise ValidationError({'cantidad_asignada': 'Los compromisos históricos requieren revisión; no se modificaron saldos.'})
         if compromisos['comprometido'] > self.existencia_total:
             raise ValidationError({'cantidad_asignada': 'No puede asignar más de la existencia disponible del artículo.'})
-        if self.pk and self.cantidad_asignada < self.total_asignado_ubicaciones:
+        if self.pk and self.cantidad_vigente < self.total_asignado_ubicaciones:
             raise ValidationError({'cantidad_asignada': 'No puede ser menor a lo ya asignado a ubicaciones.'})
 
     def save(self, *args, **kwargs):
@@ -669,6 +690,38 @@ class DivisionArticulo(models.Model):
             self.full_clean()
             self.validar_stock_existente()
             return super().save(*args, **kwargs)
+
+
+class LiberacionStockDivision(models.Model):
+    """Bitácora administrativa: no modifica ingresos, asignaciones ni Kardex."""
+    operacion = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    asignacion = models.ForeignKey(DivisionArticulo, on_delete=models.PROTECT, related_name='liberaciones')
+    division = models.ForeignKey(DivisionAlmacen, on_delete=models.PROTECT, related_name='liberaciones')
+    articulo = models.ForeignKey(Articulo, on_delete=models.PROTECT, related_name='liberaciones_division')
+    cantidad = models.DecimalField(max_digits=12, decimal_places=2)
+    justificacion = models.TextField()
+    usuario = models.ForeignKey(User, on_delete=models.PROTECT, related_name='liberaciones_stock')
+    fecha = models.DateTimeField(auto_now_add=True)
+    tipo = models.CharField(max_length=7, choices=[('parcial', 'Parcial'), ('total', 'Total')])
+    disponible_antes = models.DecimalField(max_digits=12, decimal_places=2)
+    disponible_despues = models.DecimalField(max_digits=12, decimal_places=2)
+    procedencias = models.JSONField(default=list, blank=True)
+
+    class Meta:
+        ordering = ['-fecha', '-pk']
+        constraints = [
+            models.CheckConstraint(condition=models.Q(cantidad__gt=0), name='liberacion_cantidad_positiva'),
+            models.CheckConstraint(condition=models.Q(disponible_despues__gte=0), name='liberacion_saldo_no_negativo'),
+            models.CheckConstraint(condition=models.Q(disponible_antes=models.F('disponible_despues') + models.F('cantidad')), name='liberacion_saldos_coherentes'),
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError('Las liberaciones registradas son de solo lectura.')
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError('Las liberaciones registradas son de solo lectura.')
 
 
 class DetalleFacturaDivision(models.Model):
@@ -727,7 +780,7 @@ class DivisionArticuloUbicacion(models.Model):
         if not pertenece:
             raise ValidationError({'ubicacion': 'La ubicación no pertenece a esta división.'})
         total_otras = DivisionArticuloUbicacion.objects.filter(division_articulo=self.division_articulo).exclude(pk=self.pk).aggregate(total=Sum('cantidad_asignada'))['total'] or 0
-        if total_otras + self.cantidad_asignada > self.division_articulo.cantidad_asignada:
+        if total_otras + self.cantidad_asignada > self.division_articulo.cantidad_vigente:
             raise ValidationError({'cantidad_asignada': 'No puede asignarse más de la cantidad disponible en la división.'})
 
     def save(self, *args, **kwargs):

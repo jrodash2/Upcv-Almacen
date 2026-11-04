@@ -191,11 +191,12 @@ def compromisos_articulo(articulo, propuesta=None):
             asignado=Sum('cantidad_asignada')) if division.pk else {}
         gasto = totales.get('consumido') or ZERO
         reserva = totales.get('reservado') or ZERO
-        neto = Decimal(division.cantidad_asignada) - gasto
-        revision |= neto < reserva or (totales.get('asignado') or ZERO) > division.cantidad_asignada
+        neto = Decimal(division.cantidad_vigente) - gasto
+        revision |= neto < reserva or (totales.get('asignado') or ZERO) > division.cantidad_vigente
         comprometido += max(ZERO, neto)
         reservado += reserva
         consumido += gasto
+    comprometido_divisiones = comprometido
     deptos = Departamento.objects.filter(asignaciondetallefactura__articulo=articulo).distinct()
     for depto in deptos:
         for fila in fuentes_departamento(depto):
@@ -205,18 +206,21 @@ def compromisos_articulo(articulo, propuesta=None):
                 consumido += fila['consumido']
                 revision |= fila['requiere_revision']
     return dict(comprometido=comprometido, reservado=reservado,
-                consumido=consumido, requiere_revision=revision)
+                consumido=consumido, requiere_revision=revision,
+                comprometido_divisiones=comprometido_divisiones,
+                comprometido_directo=comprometido-comprometido_divisiones)
 
 
 def resumen_global_articulo(articulo):
     """Separar el presupuesto sin asignar de la disponibilidad ya asignada."""
-    from .models import DetalleFactura, DivisionArticulo
+    from .models import DetalleFactura, DivisionArticulo, LiberacionStockDivision
     ingresado = Decimal(DetalleFactura.objects.filter(articulo=articulo, form1h__estado='confirmado')
                         .aggregate(total=Sum('cantidad'))['total'] or 0)
     directo = Decimal(AsignacionDetalleFactura.objects.filter(articulo=articulo)
                       .aggregate(total=Sum('cantidad_asignada'))['total'] or 0)
     divisiones = DivisionArticulo.objects.filter(articulo=articulo)
     asignado_divisiones = divisiones.aggregate(total=Sum('cantidad_asignada'))['total'] or ZERO
+    liberado = LiberacionStockDivision.objects.filter(articulo=articulo).aggregate(total=Sum('cantidad'))['total'] or ZERO
     from .models import existencia_general_articulo
     compromisos = compromisos_articulo(articulo)
     fisico = Decimal(existencia_general_articulo(articulo))
@@ -224,5 +228,8 @@ def resumen_global_articulo(articulo):
     return dict(total_ingresado=ingresado, asignado_directo=directo, asignado_divisiones=asignado_divisiones,
                 reservado=compromisos['reservado'], consumido=compromisos['consumido'],
                 existencia_fisica=fisico, comprometido=compromisos['comprometido'],
+                liberado_divisiones=liberado,
+                comprometido_divisiones=compromisos['comprometido_divisiones'],
+                comprometido_directo=compromisos['comprometido_directo'],
                 disponible_para_division=ZERO if compromisos['requiere_revision'] else max(ZERO, sin_asignar),
                 requiere_revision=sin_asignar < 0 or compromisos['requiere_revision'])

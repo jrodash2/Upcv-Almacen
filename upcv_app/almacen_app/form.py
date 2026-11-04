@@ -874,3 +874,9 @@ class AutoAsignacionDivisionForm(forms.Form):
         min_value=Decimal('0.01'),
         widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0.01', 'step': '0.01'})
     )
+
+
+class LiberarStockDivisionForm(forms.Form):
+    cantidad = forms.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal('0.01'))
+    justificacion = forms.CharField(max_length=2000, strip=True)
+    operacion = forms.UUIDField()

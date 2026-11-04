@@ -62,7 +62,7 @@
       <th>Artículo</th>
       <th>Categoría</th>
       <th>Ingresado</th>
-      <th>Asignado</th>
+      <th>Compromiso vigente / histórico</th>
       <th>Reservado</th>
       <th>Departamento(s) / División(es)</th>
       <th>Disponible sin asignar</th>
@@ -90,10 +90,13 @@
           <span class="text-muted">S/C</span>
         {% endif %}
       </td>
-      <td><span class="badge badge-light-primary">{{ item.ingresado|cantidad_formato }}</span></td>
+      <td><span class="badge badge-light-primary">{{ item.ingresado|cantidad_formato }}</span><small class="d-block text-muted">Existencia física: {{ item.existencia_fisica|cantidad_formato }}</small></td>
       <td>
-        <span class="badge badge-light-info">{{ item.asignado|cantidad_formato }}</span>
-        <small class="d-block text-muted">Directo: {{ item.asignado_directo|cantidad_formato }} | Divisiones: {{ item.asignado_divisiones|cantidad_formato }}</small>
+        <span class="badge badge-light-info">{{ item.comprometido_vigente|cantidad_formato }}</span>
+        <small class="d-block">Vigente directo: {{ item.comprometido_directo|cantidad_formato }} | Divisiones: {{ item.comprometido_divisiones|cantidad_formato }}</small>
+        <small class="d-block text-muted">Asignado histórico total: {{ item.asignado|cantidad_formato }}</small>
+        <small class="d-block text-muted">Liberado de divisiones: {{ item.liberado_divisiones|cantidad_formato }}</small>
+        <small class="d-block text-muted">Histórico directo: {{ item.asignado_directo|cantidad_formato }} | Divisiones: {{ item.asignado_divisiones|cantidad_formato }}</small>
         <small class="d-block text-muted">Ubicaciones división: {{ item.asignado_ubicaciones_division|cantidad_formato }}</small>
       </td>
       <td>
