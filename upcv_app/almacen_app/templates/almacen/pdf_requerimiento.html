@@ -344,42 +344,14 @@
   <div>_______________________________<br><strong>RECIBIDO POR</strong></div>
 </div>
 
-<!-- Tercera línea de firmas -->
-<div class="firmas" style="text-align: center; padding-bottom: 5px; font-size: 13px; position: fixed; bottom: 1px; width: 100%; left: 0;">
+Tercera línea de firmas
+<!-- <div class="firmas" style="text-align: center; padding-bottom: 5px; font-size: 13px; position: fixed; bottom: 1px; width: 100%; left: 0;">
   <div>_______________________________<br><strong>Departamento Financiero</strong></div>
   <div style="margin-top: -15px;">_________________________<br><strong>Vo. Bo. Coordinación</strong></div>
   <div>_________________________<br><strong>Entrega Sección de Almacén</strong></div>
-</div>
+</div> -->
 
 
  
-<!-- Información de la institución abajo -->
-<div class="institucion-info" style="display: flex; justify-content: space-between; align-items: center; width: 100%; border-top: 5px solid transparent; padding: 0.5px; position: fixed; bottom: 0; background-color: white; padding-top: 10px;">
-  
-  <!-- Línea de colores azul, blanco y azul (menos degradado) -->
-  <div style="position: absolute; top: -10px; left: 0; width: 100%; height: 5px; 
-    background: linear-gradient(to right, #0b2a4a 33%, #ffffff 33%, #ffffff 66%, #0b2a4a 66%);
-    border: 0.3px solid #000;">
-  </div>
-  
-  <div style="display: flex; align-items: center; flex: 1;">
-    <!-- Reemplaza con tu imagen de página web en formato JPG -->
-    <img src="{% static 'assets/images/globo.png' %}" style="margin-right: 8px; width: 20px; height: 20px;">
-    <span style="; font-size: 11px; font-weight: bold;">{% if institucion.pagina_web %}{{ institucion.pagina_web|slice:"7:" }}{% endif %}</span>
-  </div>
-  
-  <div style="display: flex; align-items: center; flex: 1;">
-    <!-- Reemplaza con tu imagen de teléfono antiguo en formato JPG -->
-    <img src="{% static 'assets/images/telefono.png' %}" alt="Teléfono" style="margin-right: 8px; width: 20px; height: 20px;">
-    <span style="font-size: 11px; font-weight: bold;">{{ institucion.telefono }}</span>
-  </div>
-  
-  <div style="display: flex; align-items: center; flex: 1;">
-    <!-- Reemplaza con tu imagen font-size: 13pxde ubicación en formato JPG -->
-    <img src="{% static 'assets/images/posicion.png' %}" alt="Ubicación" style="margin-right: 8px; width: 20px; height: 20px;">
-    <span style="font-size: 11px; font-weight: bold;">{{ institucion.direccion }}</span>
-  </div>
-  
-</div> 
 </body>
 </html>
