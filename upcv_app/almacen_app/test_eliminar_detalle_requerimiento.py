@@ -31,6 +31,7 @@ class EliminarDetalleRequerimientoTests(TestCase):
         return DetalleRequerimiento.objects.create(requerimiento=req, articulo=self.a, cantidad=3, **kwargs)
 
     def eliminar(self, detalle, **data):
+        data.setdefault('motivo', 'Detalle solicitado por error')
         return self.client.post(reverse('almacen:eliminar_detalle_requerimiento', args=[detalle.pk]), data)
 
     def test_pendiente_libera_reserva_directa_implicita_una_vez(self):
@@ -50,7 +51,7 @@ class EliminarDetalleRequerimientoTests(TestCase):
         self.assertEqual(self.directa.cantidad_asignada, 10)
         self.assertEqual(list(Kardex.objects.values()), kardex)
 
-    def test_origen_convertido_directo_o_division_se_conserva_y_explica(self):
+    def test_origen_convertido_directo_o_division_libera_solo_su_reserva(self):
         division = self.division()
         self.assertEqual(self.crear([(self.a, 3, False), (self.a, 2, False)],
             [f'D:{self.directa.pk}', f'V:{division.pk}']).status_code, 201)
@@ -58,11 +59,10 @@ class EliminarDetalleRequerimientoTests(TestCase):
         origenes = list(DetalleSolicitudRequerimiento.objects.order_by('pk').values())
         for detalle in req.detalles.all():
             response = self.eliminar(detalle)
-            self.assertEqual(response.status_code, 400)
-            self.assertIn('Anule el requerimiento', response.json()['error'])
-        self.assertEqual(req.detalles.count(), 2)
-        self.assertEqual(self.saldo(f'D:{self.directa.pk}')['reservado'], 3)
-        self.assertEqual(self.saldo(f'V:{division.pk}')['reservado'], 2)
+            self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(req.detalles.count(), 0)
+        self.assertEqual(self.saldo(f'D:{self.directa.pk}')['reservado'], 0)
+        self.assertEqual(self.saldo(f'V:{division.pk}')['reservado'], 0)
         self.assertEqual(list(DetalleSolicitudRequerimiento.objects.order_by('pk').values()), origenes)
 
     def test_no_elimina_estados_no_permitidos(self):
@@ -120,11 +120,11 @@ class EliminarDetalleRequerimientoTests(TestCase):
 
     def test_rollback_si_falla_despues_de_borrar(self):
         detalle = self.detalle()
-        original = DetalleRequerimiento.delete
+        original = DetalleRequerimiento.save
         def falla(instance, *args, **kwargs):
             original(instance, *args, **kwargs)
             raise RuntimeError('Fallo simulado, no exponer al cliente')
-        with patch.object(DetalleRequerimiento, 'delete', falla):
+        with patch.object(DetalleRequerimiento, 'save', falla):
             with self.assertLogs(level='ERROR'):
                 response = self.eliminar(detalle)
         self.assertEqual(response.status_code, 500)

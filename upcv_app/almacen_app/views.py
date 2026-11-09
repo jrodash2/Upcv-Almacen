@@ -1074,6 +1074,10 @@ def detalle_requerimiento(request, requerimiento_id):
         'requerimiento': requerimiento,
         'articulos': articulos,
         'detalles_requerimiento': detalles_requerimiento,
+        'detalles_cancelados': DetalleRequerimiento.all_objects.filter(
+            requerimiento=requerimiento, cancelado_en__isnull=False).select_related(
+                'articulo', 'cancelado_por', 'detalle_solicitud_origen__asignacion_directa',
+                'detalle_solicitud_origen__division_articulo_ubicacion__division_articulo__division'),
         'stock_disponible': stock_disponible,
         'es_admin': es_admin,
         'es_almacen': es_almacen,
@@ -2193,37 +2197,19 @@ def agregar_detalle_factura(request, form1h_id):
 def eliminar_detalle_requerimiento(request, pk):
     if request.user.groups.filter(name='Gestor').exists():
         return JsonResponse({'error': 'No tiene permiso para eliminar detalles.'}, status=403)
+    from .cancelacion_detalle import cancelar_detalle_pendiente
+    from django.core.exceptions import PermissionDenied
     try:
-        # Un savepoint permite devolver JSON y revertir todo si delete() falla.
-        with transaction.atomic():
-            detalle = DetalleRequerimiento.objects.get(pk=pk)
-            requerimiento = detalle.requerimiento
-            esperado = request.POST.get('requerimiento_id')
-            if esperado is not None and str(requerimiento.pk) != esperado:
-                return JsonResponse({'error': 'Detalle no encontrado en este requerimiento.'}, status=404)
-            es_administrador = request.user.is_superuser or request.user.groups.filter(
-                name__in=['Administrador', 'Almacen']).exists()
-            if not es_administrador and not UsuarioDepartamento.objects.filter(
-                    usuario=request.user, departamento=requerimiento.departamento).exists():
-                return JsonResponse({'error': 'No tiene permiso para eliminar este detalle.'}, status=403)
-            bloquear_departamento(requerimiento.departamento)
-            requerimiento = Requerimiento.objects.select_for_update().get(pk=requerimiento.pk)
-            detalle = DetalleRequerimiento.objects.select_for_update().get(pk=pk)
-            if requerimiento.estado != 'pendiente':
-                return JsonResponse({'error': 'Solo se pueden eliminar detalles de un requerimiento pendiente.'}, status=400)
-            if detalle.cantidad_despachada or detalle.estado != 'pendiente':
-                return JsonResponse({'error': 'No se puede eliminar un detalle que ya tiene despachos.'}, status=400)
-            if Kardex.objects.filter(fuente_despacho=detalle).exists():
-                return JsonResponse({'error': 'El detalle tiene movimientos en Kardex; no se puede eliminar su historial.'}, status=400)
-            if requerimiento.solicitudes_origen.exists() or DetalleSolicitudRequerimiento.objects.filter(
-                    detalle_requerimiento=detalle).exists():
-                return JsonResponse({'error': 'El detalle conserva una fuente reservada de una solicitud. Anule el requerimiento para liberar sus reservas y cree una nueva solicitud con el desglose correcto.'}, status=400)
-            # Las reservas directas sin solicitud se calculan desde los detalles
-            # pendientes. Borrar esta fila libera solo su reserva, sin crear entradas.
-            detalle.delete()
+        cancelar_detalle_pendiente(pk, request.user, request.POST.get('motivo', ''),
+                                  request.POST.get('requerimiento_id'))
         return JsonResponse({'success': True})
     except DetalleRequerimiento.DoesNotExist:
         return JsonResponse({'error': 'Detalle no encontrado. Es posible que ya haya sido eliminado.'}, status=404)
+    except PermissionDenied as exc:
+        return JsonResponse({'error': str(exc)}, status=403)
+    except ValidationError as exc:
+        logger.warning('Cancelación rechazada para detalle %s: %s', pk, exc.messages)
+        return JsonResponse({'error': '; '.join(exc.messages)}, status=400)
     except Exception:
         logger.exception('Error al eliminar detalle de requerimiento %s', pk)
         return JsonResponse({'error': 'No se pudo eliminar el detalle. No se guardaron cambios; intente nuevamente o contacte al administrador.'}, status=500)

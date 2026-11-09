@@ -4,8 +4,9 @@
   document.addEventListener('DOMContentLoaded', function () {
     const element = document.getElementById('confirmDeleteModal');
     const button = document.getElementById('confirmDeleteButton');
+    const reason = document.getElementById('motivoEliminarDetalle');
     const message = document.getElementById('errorEliminarDetalle');
-    if (!element || !button || !message) return;
+    if (!element || !button || !message || !reason) return;
     const modal = bootstrap.Modal.getOrCreateInstance(element);
     let deleteUrl = '';
     let busy = false;
@@ -13,6 +14,7 @@
       trigger.addEventListener('click', function () {
         if (busy) return;
         deleteUrl = trigger.dataset.url;
+        reason.value = '';
         message.hidden = true;
         message.textContent = '';
         modal.show();
@@ -24,6 +26,7 @@
     });
     button.addEventListener('click', async function () {
       if (busy || !deleteUrl) return;
+      if (!reason.reportValidity()) return;
       busy = true;
       button.disabled = true;
       message.hidden = true;
@@ -34,7 +37,7 @@
           method: 'POST',
           credentials: 'same-origin',
           headers: {'X-CSRFToken': csrf.value, 'Accept': 'application/json'},
-          body: new URLSearchParams({requerimiento_id: element.dataset.requerimientoId}),
+          body: new URLSearchParams({requerimiento_id: element.dataset.requerimientoId, motivo: reason.value.trim()}),
         });
         const json = (response.headers.get('content-type') || '').includes('application/json');
         if (response.redirected || !json) {

@@ -94,7 +94,7 @@
 {% endif %}
 
 <!-- Botón para abrir modal de despachar -->
-{% if puede_despachar_requerimiento and requerimiento.estado == 'enviado' %}
+{% if puede_despachar_requerimiento and detalles_requerimiento and requerimiento.estado == 'enviado' %}
   <button type="button" class="btn btn-outline-warning btn-lg action-btn gestor-btn" data-bs-toggle="modal" data-bs-target="#modalDespachar">
     <i class="fa fa-truck"></i> Despachar Requerimiento
   </button>
@@ -224,7 +224,7 @@
                       {% empty %}
                         <tr>
                           <td colspan="4" class="text-center text-muted py-4">
-                            No hay artículos registrados en este requerimiento.
+                            Este requerimiento no tiene detalles activos.
                           </td>
                         </tr>
                       {% endfor %}
@@ -544,6 +544,25 @@
 </div> 
 
 <!-- Modal de Confirmación para eliminar detalle (actualizado con estilo e imagen) -->
+{% if detalles_cancelados %}
+<div class="card mt-3"><div class="card-body">
+  <h5>Historial de detalles eliminados</h5>
+  <div class="table-responsive"><table class="table">
+    <thead><tr><th>Artículo</th><th>Cantidad original</th><th>Origen conservado</th><th>Usuario / fecha</th><th>Motivo</th></tr></thead>
+    <tbody>{% for cancelado in detalles_cancelados %}<tr>
+      <td>{{ cancelado.articulo.codigo }} — {{ cancelado.articulo.nombre }}</td>
+      <td>{{ cancelado.cantidad|cantidad_formato }}</td>
+      <td>{% with origen=cancelado.detalle_solicitud_origen %}
+        {% if origen.division_articulo_ubicacion_id %}División: {{ origen.division_articulo_ubicacion.division_articulo.division }} (fuente {{ origen.division_articulo_ubicacion_id }})
+        {% elif origen.asignacion_directa_id %}Directo (asignación {{ origen.asignacion_directa_id }})
+        {% else %}Directo sin solicitud{% endif %}{% endwith %}</td>
+      <td>{{ cancelado.cancelado_por|default:'Usuario no disponible' }} / {{ cancelado.cancelado_en|date:'d/m/Y H:i' }}</td>
+      <td>{{ cancelado.motivo_cancelacion }}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+</div></div>
+{% endif %}
+
 <div class="modal fade" id="confirmDeleteModal" data-requerimiento-id="{{ requerimiento.pk }}" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
@@ -571,9 +590,11 @@
 
           <!-- Mensaje de confirmación -->
           <div class="text-center mb-4">
-            <p>¿Estás seguro de que deseas eliminar este detalle?</p>
+            <p>Se eliminará únicamente este detalle del listado activo y se liberará su reserva pendiente en la fuente original. Se conservará su historial.</p>
           </div>
 
+          <label for="motivoEliminarDetalle" class="form-label">Motivo de eliminación</label>
+          <textarea id="motivoEliminarDetalle" class="form-control mb-3" minlength="3" maxlength="500" required></textarea>
           <div id="errorEliminarDetalle" class="alert alert-danger" role="alert" hidden></div>
 
           <!-- Botones -->
@@ -622,7 +643,7 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
 
-<script src="{% static 'almacen_app/js/eliminar_detalle_requerimiento.js' %}?v=20261109.1"></script>
+<script src="{% static 'almacen_app/js/eliminar_detalle_requerimiento.js' %}?v=20261109.2"></script>
 
 <script>
   document.addEventListener('DOMContentLoaded', function () {

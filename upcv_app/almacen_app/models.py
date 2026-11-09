@@ -829,7 +829,25 @@ class Requerimiento(models.Model):
         return f"Requerimiento #{self.id} - {self.departamento.nombre}"
 
 
+class DetallesRequerimientoActivos(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(cancelado_en__isnull=True)
+
+
 class DetalleRequerimiento(models.Model):
+    # El manager operativo excluye cancelados; los vínculos históricos utilizan
+    # all_objects como base manager y conservan la relación PROTECT de la solicitud.
+    objects = DetallesRequerimientoActivos()
+    all_objects = models.Manager()
+    cancelado_en = models.DateTimeField(null=True, blank=True, editable=False)
+    cancelado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True,
+        blank=True, editable=False, related_name='detalles_requerimiento_cancelados')
+    motivo_cancelacion = models.CharField(max_length=500, blank=True, editable=False)
+
+    class Meta:
+        base_manager_name = 'all_objects'
+        default_manager_name = 'objects'
+
     requerimiento = models.ForeignKey(Requerimiento, related_name='detalles', on_delete=models.CASCADE)
     articulo = models.ForeignKey(Articulo, on_delete=models.CASCADE)
     cantidad = models.PositiveIntegerField()

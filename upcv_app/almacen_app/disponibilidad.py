@@ -59,6 +59,8 @@ def fuentes_departamento(departamento):
     ).select_related('solicitud__requerimiento', 'detalle_requerimiento')
     for detalle in detalles:
         solicitud = detalle.solicitud
+        if detalle.detalle_requerimiento_id and detalle.detalle_requerimiento.cancelado_en:
+            continue
         consumido = Decimal(detalle.detalle_requerimiento.cantidad_despachada if detalle.detalle_requerimiento_id else 0)
         if detalle.asignacion_directa_id:
             consumos_exactos[detalle.asignacion_directa_id] += consumido
@@ -171,7 +173,8 @@ def mensaje_saldo(fila, cantidad):
 def liberar_reservas_division(solicitud):
     """Cabecera ya bloqueada; usar solo una vez al cambiar a estado terminal."""
     for detalle in solicitud.detalles.select_related('detalle_requerimiento'):
-        if not detalle.division_articulo_ubicacion_id:
+        if not detalle.division_articulo_ubicacion_id or (
+                detalle.detalle_requerimiento_id and detalle.detalle_requerimiento.cancelado_en):
             continue
         consumido = detalle.detalle_requerimiento.cantidad_despachada if detalle.detalle_requerimiento_id else 0
         restante = max(ZERO, Decimal(detalle.cantidad - consumido))
