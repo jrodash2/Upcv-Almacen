@@ -2193,20 +2193,40 @@ def agregar_detalle_factura(request, form1h_id):
 def eliminar_detalle_requerimiento(request, pk):
     if request.user.groups.filter(name='Gestor').exists():
         return JsonResponse({'error': 'No tiene permiso para eliminar detalles.'}, status=403)
-    if request.method == 'POST':
-        try:
+    try:
+        # Un savepoint permite devolver JSON y revertir todo si delete() falla.
+        with transaction.atomic():
             detalle = DetalleRequerimiento.objects.get(pk=pk)
-            bloquear_departamento(detalle.requerimiento.departamento)
-            detalle = DetalleRequerimiento.objects.select_for_update().get(pk=detalle.pk)
-            if detalle.cantidad_despachada:
+            requerimiento = detalle.requerimiento
+            esperado = request.POST.get('requerimiento_id')
+            if esperado is not None and str(requerimiento.pk) != esperado:
+                return JsonResponse({'error': 'Detalle no encontrado en este requerimiento.'}, status=404)
+            es_administrador = request.user.is_superuser or request.user.groups.filter(
+                name__in=['Administrador', 'Almacen']).exists()
+            if not es_administrador and not UsuarioDepartamento.objects.filter(
+                    usuario=request.user, departamento=requerimiento.departamento).exists():
+                return JsonResponse({'error': 'No tiene permiso para eliminar este detalle.'}, status=403)
+            bloquear_departamento(requerimiento.departamento)
+            requerimiento = Requerimiento.objects.select_for_update().get(pk=requerimiento.pk)
+            detalle = DetalleRequerimiento.objects.select_for_update().get(pk=pk)
+            if requerimiento.estado != 'pendiente':
+                return JsonResponse({'error': 'Solo se pueden eliminar detalles de un requerimiento pendiente.'}, status=400)
+            if detalle.cantidad_despachada or detalle.estado != 'pendiente':
                 return JsonResponse({'error': 'No se puede eliminar un detalle que ya tiene despachos.'}, status=400)
-            if detalle.requerimiento.solicitudes_origen.exists():
-                return JsonResponse({'error': 'El detalle tiene una fuente reservada. Anule el requerimiento para liberar sus reservas.'}, status=400)
+            if Kardex.objects.filter(fuente_despacho=detalle).exists():
+                return JsonResponse({'error': 'El detalle tiene movimientos en Kardex; no se puede eliminar su historial.'}, status=400)
+            if requerimiento.solicitudes_origen.exists() or DetalleSolicitudRequerimiento.objects.filter(
+                    detalle_requerimiento=detalle).exists():
+                return JsonResponse({'error': 'El detalle conserva una fuente reservada de una solicitud. Anule el requerimiento para liberar sus reservas y cree una nueva solicitud con el desglose correcto.'}, status=400)
+            # Las reservas directas sin solicitud se calculan desde los detalles
+            # pendientes. Borrar esta fila libera solo su reserva, sin crear entradas.
             detalle.delete()
-            return JsonResponse({'success': True})
-        except DetalleRequerimiento.DoesNotExist:
-            return JsonResponse({'error': 'Detalle no encontrado'}, status=404)
-    return HttpResponseNotAllowed(['POST'])
+        return JsonResponse({'success': True})
+    except DetalleRequerimiento.DoesNotExist:
+        return JsonResponse({'error': 'Detalle no encontrado. Es posible que ya haya sido eliminado.'}, status=404)
+    except Exception:
+        logger.exception('Error al eliminar detalle de requerimiento %s', pk)
+        return JsonResponse({'error': 'No se pudo eliminar el detalle. No se guardaron cambios; intente nuevamente o contacte al administrador.'}, status=500)
 
 # Views for Departamento
 @login_required

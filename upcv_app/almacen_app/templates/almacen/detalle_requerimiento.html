@@ -544,7 +544,7 @@
 </div> 
 
 <!-- Modal de Confirmación para eliminar detalle (actualizado con estilo e imagen) -->
-<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+<div class="modal fade" id="confirmDeleteModal" data-requerimiento-id="{{ requerimiento.pk }}" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
       <div class="modal-body social-profile text-start p-4">
@@ -573,6 +573,8 @@
           <div class="text-center mb-4">
             <p>¿Estás seguro de que deseas eliminar este detalle?</p>
           </div>
+
+          <div id="errorEliminarDetalle" class="alert alert-danger" role="alert" hidden></div>
 
           <!-- Botones -->
           <div class="modal-footer justify-content-center">
@@ -620,54 +622,7 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
 
-<script>
-let deleteUrl = '';
-let confirmDeleteModal;
-
-document.addEventListener('DOMContentLoaded', function () {
-  const modalElement = document.getElementById('confirmDeleteModal');
-
-  if (modalElement) {
-    confirmDeleteModal = new bootstrap.Modal(modalElement);
-  } else {
-    console.error("Modal de confirmación no encontrado");
-    return;
-  }
-
-  document.querySelectorAll('.eliminar-detalle-btn').forEach(btn => {
-    btn.addEventListener('click', function () {
-      deleteUrl = this.getAttribute('data-url');
-      confirmDeleteModal.show();
-    });
-  });
-
-  const confirmButton = document.getElementById('confirmDeleteButton');
-  if (confirmButton) {
-    confirmButton.addEventListener('click', function () {
-      fetch(deleteUrl, {
-        method: 'POST',
-        headers: {
-          'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-          'Accept': 'application/json',
-        },
-      })
-      .then(response => {
-        if (response.ok) {
-          location.reload();
-        } else {
-          alert('Error al eliminar el detalle.');
-        }
-      })
-      .catch(() => alert('Error al procesar la solicitud.'))
-      .finally(() => {
-        confirmDeleteModal.hide();
-      });
-    });
-  } else {
-    console.error("Botón de confirmación no encontrado");
-  }
-});
-</script>
+<script src="{% static 'almacen_app/js/eliminar_detalle_requerimiento.js' %}?v=20261109.1"></script>
 
 <script>
   document.addEventListener('DOMContentLoaded', function () {
